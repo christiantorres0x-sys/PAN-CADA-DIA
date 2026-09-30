@@ -1,0 +1,198 @@
+@media (max-width: 1000px) {
+  .sidebar {
+    width: 210px;
+  }
+
+  .nav a {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .profile-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .beneficiary-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .overview-panel {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dash-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bmi-snapshot-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 10px;
+    overflow-x: auto;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .sidebar .brand {
+    padding: 0;
+    flex: none;
+    flex-direction: row;
+  }
+
+  .sidebar .brand-mark {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0;
+  }
+
+  .sidebar .brand small {
+    display: none;
+  }
+
+  .nav {
+    flex-direction: row;
+    flex: none;
+  }
+
+  /* Keep the text labels on phones (icons alone are ambiguous) and keep
+     Sign Out reachable. */
+  .nav a {
+    flex-direction: column;
+    gap: 2px;
+    font-size: 11px;
+    padding: 6px 10px;
+    min-width: 66px;
+    min-height: 48px;
+    text-align: center;
+  }
+
+  .sidebar-foot {
+    display: flex;
+    flex: none;
+    border-top: 0;
+    padding: 0;
+    margin: 0 0 0 auto;
+  }
+
+  .sidebar-foot .account {
+    display: none;
+  }
+
+  .signout {
+    flex-direction: column;
+    gap: 2px;
+    font-size: 11px;
+    padding: 6px 10px;
+    min-width: 60px;
+  }
+
+  .hide-sm {
+    display: none;
+  }
+
+  .scope-row .field {
+    min-width: 100%;
+  }
+
+  .slideover-body .form-actions {
+    margin-bottom: 0;
+  }
+
+  .content {
+    padding: 12px;
+  }
+
+  .cards,
+  .form-grid,
+  .form-grid-3,
+  .profile-grid,
+  .filter-grid,
+  .quick-grid,
+  .bmi-snapshot-grid,
+  .milestone-panel,
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* full-width on phones: keep text at a sensible size */
+  .pending-card {
+    max-width: none;
+  }
+
+  .pending-card strong {
+    font-size: 40px;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-title {
+    flex-direction: column;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search {
+    max-width: none;
+  }
+}
+
+@media print {
+  .sidebar,
+  .btn,
+  .toolbar,
+  .page-actions {
+    display: none !important;
+  }
+
+  .content {
+    max-width: none;
+    padding: 0;
+  }
+
+  .panel,
+  .stat {
+    box-shadow: none;
+    border: 1px solid #bbb;
+  }
+
+  .layout {
+    display: block;
+  }
+}
