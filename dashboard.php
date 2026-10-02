@@ -48,13 +48,7 @@ require __DIR__ . '/partials/header.php';
     </section>
 </div>
 
-<h2 class="dash-section-title">Overview</h2>
-<div class="overview-panel">
-    <div class="stat blue"><span>Total Beneficiaries</span><strong><?= $total ?></strong><small class="muted">All registered</small></div>
-    <div class="stat orange"><span>Active Feeding Sites</span><strong><?= $sites ?></strong><small class="muted">Operating sites</small></div>
-    <div class="stat gray"><span>Health Records</span><strong><?= $records ?></strong><small class="muted">Total measurements</small></div>
-    <div class="stat green"><span>Currently Enrolled</span><strong><?= $enrolled ?></strong><small class="muted">of <?= $total ?> registered</small></div>
-</div>
+
 
 <section class="panel">
     <div class="panel-head">
