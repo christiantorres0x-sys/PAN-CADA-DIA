@@ -25,7 +25,7 @@ require __DIR__ . '/partials/header.php';
 <div class="dash-top-grid">
     <div class="dash-top-left">
         <a class="stat pending-card" href="beneficiaries.php" title="Go to Beneficiaries">
-            <span class="pending-card-label">Baseline Pending</span>
+            <span class="pending-card-label">Pending Enrollments</span>
             <strong><?= $baselinePending ?></strong>
             <small class="muted"><?= $baselineDone ?> of <?= $total ?> children profiled</small>
             <span class="pending-card-review">

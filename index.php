@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <img src="assets/images/CCES-logo.png" alt="<?= e(APP_NAME) ?> logo">
     </div>
     <h1><?= e(APP_NAME) ?></h1>
-    <p class="muted">Feeding Program Health Monitoring System</p>
+    <p class="muted">Health Monitoring System</p>
 
     <?php if ($error): ?>
         <div class="alert danger"><?= e($error) ?></div>
