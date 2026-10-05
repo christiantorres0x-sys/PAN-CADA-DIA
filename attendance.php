@@ -249,21 +249,10 @@ require __DIR__ . '/partials/header.php';
             <input type="hidden" name="return_site_id" value="<?= $siteId ?>">
             <input type="hidden" name="return_program_id" value="<?= $programId ?>">
             <input type="hidden" name="return_q" value="<?= e($q) ?>">
-            <button class="btn secondary sm">Mark all unrecorded as Present (<?= (int)$counts['UNRECORDED'] ?>)</button>
         </form>
         <?php endif; ?>
     </div>
-    <div class="attendance-guide" role="note">
-        <svg class="guide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5.5M12 7.6v.01"/></svg>
-        <div class="guide-body">
-            <strong>How to record attendance</strong>
-            <ul>
-                <li><span class="guide-key present"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></span> Tap to mark <b>Present</b></li>
-                <li><span class="guide-key absent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></span> Tap to mark <b>Absent</b></li>
-                <li>It <b>saves right away</b>. Use <b>Save note</b> only after typing a remark.</li>
-            </ul>
-        </div>
-    </div>
+    
     <div class="table-wrap">
         <table class="attendance-table">
             <thead>

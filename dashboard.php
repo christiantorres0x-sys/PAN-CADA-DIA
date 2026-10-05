@@ -7,7 +7,7 @@ $enrolled = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries WHERE program_s
 $sites = (int)$pdo->query("SELECT COUNT(*) FROM feeding_sites WHERE status='ACTIVE'")->fetchColumn();
 $records = (int)$pdo->query("SELECT COUNT(*) FROM health_records")->fetchColumn();
 $baselineDone = (int)$pdo->query("SELECT COUNT(*) FROM health_records WHERE milestone='BASELINE'")->fetchColumn();
-$baselinePending = max(0, $total - $baselineDone);
+$pendingEnrollment = max(0, $total - $enrolled);
 
 $latest = $pdo->query("
     SELECT hr.*, b.full_name, b.birth_date, b.sex, b.grade_level, b.program_status, s.site_name
@@ -26,10 +26,9 @@ require __DIR__ . '/partials/header.php';
     <div class="dash-top-left">
         <a class="stat pending-card" href="beneficiaries.php" title="Go to Beneficiaries">
             <span class="pending-card-label">Pending Enrollments</span>
-            <strong><?= $baselinePending ?></strong>
-            <small class="muted"><?= $baselineDone ?> of <?= $total ?> children profiled</small>
+            <strong><?= $pendingEnrollment ?></strong>
             <span class="pending-card-review">
-                Review
+                Manage
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </span>
         </a>
@@ -53,7 +52,7 @@ require __DIR__ . '/partials/header.php';
 <section class="panel">
     <div class="panel-head">
         <div>
-            <h2>Recent Report</h2>
+            <h2>Recent Records</h2>
             <span class="muted" style="font-size:12.5px;">Latest measurements recorded across all sites</span>
         </div>
         <a href="reports.php" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.4px;">View Reports &amp; Analysis</a>

@@ -106,16 +106,6 @@
   font-size: 13.5px;
 }
 
-.dash-top-right {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-}
-
 .quick-actions-body {
   flex: 1;
   display: flex;
@@ -218,6 +208,13 @@
   display: block;
   font-size: 42px;
   color: var(--red);
+  margin-top: 8px;
+}.
+
+pending-card strong-0 {
+  display: block;
+  font-size: 42px;
+  color: var(--black);
   margin-top: 8px;
 }
 
@@ -449,13 +446,13 @@ tbody tr.clickable-row {
 }
 
 .btn.primary {
-  background: var(--primary);
+  background: var(--success);
   color: #fff;
   box-shadow: 0 1px 2px rgba(74, 95, 223, .3);
 }
 
 .btn.primary:hover {
-  background: var(--primary-dark);
+  background: var(--success-dark);
   text-decoration: none;
 }
 
