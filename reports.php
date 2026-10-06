@@ -232,25 +232,6 @@ require __DIR__ . '/partials/header.php';
     <?php endif; ?>
 </section>
 
-<section class="panel" id="site-analysis">
-
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr><th>Feeding Site</th><th class="num">Beneficiaries</th><th class="num">Health Records</th><th class="num">Average BMI</th></tr>
-            </thead>
-            <tbody>
-                <?php foreach ($siteSummary as $site => $r): ?>
-                
-                <?php endforeach; ?>
-                <?php if (!$siteSummary): ?>
-                <tr><td colspan="4" class="empty">No records match the selected filters.</td></tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-</section>
-
 <section class="panel" id="records">
     <h2>Health Monitoring Records</h2>
     <div class="table-wrap">

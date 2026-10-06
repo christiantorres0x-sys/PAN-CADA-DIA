@@ -64,19 +64,6 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 
-<section class="panel">
-    <h2>Program Milestones</h2>
-    <div class="milestone-panel" style="margin-top:8px;">
-        <?php foreach (MILESTONES as $m): ?>
-        <div class="milestone-slot">
-            <h3><?= e(milestone_label($m)) ?></h3>
-            <div class="big-number" style="font-size:20px; margin:4px 0 2px;"><?= $milestoneCounts[$m] ?></div>
-            <div class="milestone-meta">beneficiaries recorded</div>
-        </div>
-        <?php endforeach; ?>
-    </div>
-</section>
-
 <div class="grid-2">
     <section class="panel">
         <details class="collapsible"><summary><h2>Add Feeding Site</h2></summary>

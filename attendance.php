@@ -208,10 +208,6 @@ require __DIR__ . '/partials/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="field <?= $q !== '' ? 'filter-field is-active' : '' ?>">
-                <label for="att_q">Find a child</label>
-                <input id="att_q" type="search" name="q" value="<?= e($q) ?>" placeholder="Type a name">
-            </div>
             <button class="btn primary">Apply</button>
             <?php if ($siteId > 0 || $programId > 0 || $q !== ''): ?><a class="btn secondary" href="attendance.php?date=<?= e($date) ?>">Reset</a><?php endif; ?>
         </div>
@@ -252,11 +248,10 @@ require __DIR__ . '/partials/header.php';
         </form>
         <?php endif; ?>
     </div>
-    
     <div class="table-wrap">
         <table class="attendance-table">
             <thead>
-                <tr><th>Beneficiary</th><th class="hide-sm">Site</th><th class="hide-sm">Program</th><th>Status</th><th>Remarks</th><th><span class="sr-only">Action</span></th></tr>
+                <tr><th>Beneficiary</th><th>Status</th><th><span class="sr-only">Action</span></th></tr>
             </thead>
             <tbody>
                 <?php foreach ($rows as $r): ?>
@@ -270,8 +265,7 @@ require __DIR__ . '/partials/header.php';
                         <input type="hidden" name="return_program_id" value="<?= $programId ?>">
                         <input type="hidden" name="return_q" value="<?= e($q) ?>">
                     <td><a href="beneficiary.php?id=<?= $r['beneficiary_id'] ?>"><?= e($r['full_name']) ?></a></td>
-                    <td class="hide-sm"><?= e($r['site_name'] ?? '—') ?></td>
-                    <td class="hide-sm"><?= e($r['program_name'] ?? '—') ?></td>
+
                     <?php
                         $curStatus = $r['attendance_status'] ?? '';
                         $statusLabel = ['PRESENT' => 'Present', 'ABSENT' => 'Absent'][$curStatus] ?? 'Unrecorded';
@@ -279,8 +273,7 @@ require __DIR__ . '/partials/header.php';
                     ?>
                     <td>
                         <div class="status-cell">
-                            <span class="badge <?= $statusBadgeClass ?>"><?= $statusLabel ?></span>
-                            <div class="status-quick">
+
                                 <button type="submit" name="quick_status" value="PRESENT" class="status-btn present <?= $curStatus === 'PRESENT' ? 'active' : '' ?>" title="Mark Present" aria-label="Mark Present">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
                                 </button>
@@ -291,8 +284,7 @@ require __DIR__ . '/partials/header.php';
                             <input type="hidden" name="attendance_status" value="<?= e($curStatus ?: 'PRESENT') ?>">
                         </div>
                     </td>
-                    <td><input name="remarks" value="<?= e($r['remarks'] ?? '') ?>" placeholder="Add a note (optional)" aria-label="Remarks for <?= e($r['full_name']) ?>"></td>
-                    <td><button class="btn secondary sm">Save note</button></td>
+            
                     </form>
                 </tr>
                 <?php endforeach; ?>

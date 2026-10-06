@@ -60,10 +60,7 @@ require __DIR__ . '/partials/header.php';
 ?>
 <section class="panel filters-panel">
     <form class="scope-row" method="get" data-autosubmit>
-        <div class="field">
-            <label for="q">Search</label>
-            <input id="q" name="q" type="search" value="<?= e($q) ?>" placeholder="Name or grade level">
-        </div>
+        
         <div class="field filter-field <?= $siteId > 0 ? 'is-active' : '' ?>">
             <label for="site_id">Feeding Site</label>
             <select id="site_id" name="site_id">
@@ -73,22 +70,12 @@ require __DIR__ . '/partials/header.php';
                 <?php endforeach; ?>
             </select>
         </div>
-        <button class="btn primary">Search</button>
-        <?php if ($activeFilters): ?><a class="btn secondary" href="beneficiaries.php">Reset</a><?php endif; ?>
+        <button class="btn primary">Filter</button>
     </form>
-    <?php if ($activeFilters): ?>
-    <div class="active-filters">
-        <span class="label">Active filters:</span>
-        <?php foreach ($activeFilters as $af): ?>
-            <span class="filter-chip"><?= e($af['label']) ?> <a href="beneficiaries.php?<?= e(http_build_query($af['clear'])) ?>" title="Remove this filter" aria-label="Remove filter: <?= e($af['label']) ?>">&times;</a></span>
-        <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
 </section>
 
 <section class="panel">
     <p class="list-count">Total Beneficiaries: <?= count($rows) ?></p>
-    <p class="hint-line">A red marker on the left means the latest weight status is underweight or severely underweight.</p>
     <div class="table-wrap">
         <table>
             <thead>

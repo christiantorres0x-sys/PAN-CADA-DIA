@@ -252,7 +252,7 @@ pending-card strong-0 {
 }
 
 .list-count {
-  color: var(--primary);
+  color: var(--text);
   font-weight: 800;
   font-size: 12.5px;
   margin: 0 0 8px;

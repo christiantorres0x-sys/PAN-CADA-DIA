@@ -84,7 +84,7 @@ $pcd_css = static fn(string $f): string => 'assets/css/' . $f . '?v=' . (@filemt
             <img src="assets/images/CCES-logo.png" alt="Pan Cada Dia logo" class="brand-image">
         </span>
         <strong><?= e(APP_NAME) ?></strong>
-        <small>Feeding Program Health Monitoring System</small>
+        <small>Health Monitoring System</small>
     </div>
     <nav class="nav" aria-label="Main navigation">
         <?php foreach ($pcd_nav_items as $pcd_item): ?>
