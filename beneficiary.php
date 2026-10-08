@@ -27,7 +27,6 @@ $at->execute([$id]);
 $attendance = $at->fetchAll();
 
 $pageTitle = 'Beneficiary Profile';
-$pageSubtitle = 'View and manage beneficiary information';
 $pageEyebrowHtml = '<a class="back-link" href="beneficiaries.php">&larr; Back to Beneficiaries</a>';
 $healthActionLabel = $nextUp ? 'Record ' . milestone_label($nextUp) : 'Record Measurement';
 $pageActionsHtml = '<a class="btn secondary" href="beneficiary_form.php?id=' . $id . '" data-slideover="beneficiary_form.php?panel=1&id=' . $id . '" data-slideover-title="Edit Beneficiary">Edit Profile</a> '

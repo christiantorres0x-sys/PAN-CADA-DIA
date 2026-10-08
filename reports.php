@@ -205,14 +205,6 @@ $pageTitle = 'Reports & Analysis';
 $activeNav = 'reports.php';
 require __DIR__ . '/partials/header.php';
 ?>
-<nav class="jump-nav" aria-label="Jump to section">
-    <span class="label">Jump to:</span>
-    <a href="#site-analysis">Sites</a>
-    <a href="#records">Records</a>
-    <a href="#bmi-charts">BMI charts</a>
-    <a href="#attendance">Attendance</a>
-    <a href="#age">Age</a>
-</nav>
 
 <section class="panel">
     <span class="filter-label">Filter</span>
@@ -226,35 +218,8 @@ require __DIR__ . '/partials/header.php';
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="filter-field <?= $programId > 0 ? 'is-active' : '' ?>">
-            <label>Program</label>
-            <select name="program_id">
-                <option value="0">All programs</option>
-                <?php foreach ($programs as $p): ?>
-                    <option value="<?= $p['program_id'] ?>" <?= $programId === $p['program_id'] ? 'selected' : '' ?>><?= e($p['program_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="filter-field <?= $status !== '' ? 'is-active' : '' ?>">
-            <label>Program Status</label>
-            <select name="status">
-                <option value="">All statuses</option>
-                <option <?= $status === 'ENROLLED' ? 'selected' : '' ?>>ENROLLED</option>
-                <option <?= $status === 'COMPLETED' ? 'selected' : '' ?>>COMPLETED</option>
-                <option <?= $status === 'INACTIVE' ? 'selected' : '' ?>>INACTIVE</option>
-            </select>
-        </div>
-        <div class="filter-field <?= $from !== '' ? 'is-active' : '' ?>">
-            <label>Record From</label>
-            <input type="date" name="from" value="<?= e($from) ?>">
-        </div>
-        <div class="filter-field <?= $to !== '' ? 'is-active' : '' ?>">
-            <label>Record To</label>
-            <input type="date" name="to" value="<?= e($to) ?>">
-        </div>
         <div class="filter-actions">
             <button class="btn primary">Generate</button>
-            <a class="btn secondary" href="reports.php">Reset</a>
         </div>
     </form>
     <?php if ($activeFilters): ?>
@@ -265,40 +230,6 @@ require __DIR__ . '/partials/header.php';
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
-</section>
-
-<div class="cards">
-    <div class="stat blue"><span>Filtered Records</span><strong><?= $totalRecords ?></strong></div>
-    <div class="stat green"><span>Beneficiaries Represented</span><strong><?= $uniqueBeneficiaries ?></strong></div>
-    <div class="stat orange"><span>Average Recorded BMI</span><strong><?= $avgBmi !== null ? e($avgBmi) : '—' ?></strong></div>
-    <div class="stat gray"><span>Scope</span><strong><?= ($from || $to) ? 'Date range' : 'All dates' ?></strong></div>
-</div>
-
-<section class="panel" id="site-analysis">
-    <div class="panel-head">
-        <h2>Analysis by Feeding Site</h2>
-        <a class="btn secondary" href="export.php?<?= e(http_build_query($_GET)) ?>">Export CSV</a>
-    </div>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr><th>Feeding Site</th><th class="num">Beneficiaries</th><th class="num">Health Records</th><th class="num">Average BMI</th></tr>
-            </thead>
-            <tbody>
-                <?php foreach ($siteSummary as $site => $r): ?>
-                <tr>
-                    <td><?= e($site) ?></td>
-                    <td class="num"><?= $r['beneficiary_count'] ?></td>
-                    <td class="num"><?= $r['records'] ?></td>
-                    <td class="num"><?= e($r['avg_bmi'] ?? '—') ?></td>
-                </tr>
-                <?php endforeach; ?>
-                <?php if (!$siteSummary): ?>
-                <tr><td colspan="4" class="empty">No records match the selected filters.</td></tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
 </section>
 
 <section class="panel" id="records">

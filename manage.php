@@ -55,37 +55,12 @@ $pageTitle = 'Program Setup';
 $activeNav = 'manage.php';
 require __DIR__ . '/partials/header.php';
 ?>
-<section class="panel">
-    <span class="filter-label">Program Information</span>
-    <div class="program-info">
-        <span class="brand-mark"><img src="assets/images/CCES-logo.png" alt="<?= e(APP_NAME) ?> logo"></span>
-        <div>
-            <h3><?= e(APP_NAME) ?></h3>
-            <p>Nutrition program that aims to improve the health and nutritional status of children in the community through regular meals and health monitoring.</p>
-        </div>
-    </div>
-</section>
 
 <section class="panel">
     <h2>Program Summary</h2>
     <div class="cards" style="margin-top:8px; margin-bottom:0;">
         <div class="stat green"><span>Total Beneficiaries</span><strong><?= $totalCount ?></strong><small class="muted"><?= $enrolledCount ?> enrolled</small></div>
         <div class="stat red"><span>Total Feeding Sites</span><strong><?= count($sites) ?></strong><small class="muted"><?= $activeSiteCount ?> active</small></div>
-        <div class="stat orange"><span>Active Programs</span><strong><?= $activeProgramCount ?></strong><small class="muted">of <?= count($programs) ?> configured</small></div>
-        <div class="stat gray"><span>Program Duration</span><strong><?= $avgDuration !== null ? $avgDuration . 'd' : '—' ?></strong><small class="muted">Average cycle length</small></div>
-    </div>
-</section>
-
-<section class="panel">
-    <h2>Program Milestones</h2>
-    <div class="milestone-panel" style="margin-top:8px;">
-        <?php foreach (MILESTONES as $m): ?>
-        <div class="milestone-slot">
-            <h3><?= e(milestone_label($m)) ?></h3>
-            <div class="big-number" style="font-size:20px; margin:4px 0 2px;"><?= $milestoneCounts[$m] ?></div>
-            <div class="milestone-meta">beneficiaries recorded</div>
-        </div>
-        <?php endforeach; ?>
     </div>
 </section>
 
@@ -108,31 +83,6 @@ require __DIR__ . '/partials/header.php';
         </details>
     </section>
 
-    <section class="panel">
-        <details class="collapsible"><summary><h2>Add Feeding Program</h2></summary>
-        <form method="post">
-            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-            <input type="hidden" name="type" value="program">
-            <label>Program Name *</label>
-            <input name="program_name" required>
-            <label>Description</label>
-            <textarea name="description"></textarea>
-            <label>Duration (days)</label>
-            <input type="number" name="duration_days" min="1">
-            <div class="form-grid">
-                <div><label>Start Date</label><input type="date" name="start_date"></div>
-                <div><label>End Date</label><input type="date" name="end_date"></div>
-            </div>
-            <label>Status</label>
-            <select name="status">
-                <option>ACTIVE</option>
-                <option>COMPLETED</option>
-                <option>INACTIVE</option>
-            </select>
-            <div class="form-actions"><button class="btn primary">Add Program</button></div>
-        </form>
-        </details>
-    </section>
 </div>
 
 <section class="panel">
@@ -149,28 +99,6 @@ require __DIR__ . '/partials/header.php';
                     <td><?= e($s['barangay']) ?></td>
                     <td><?= e($s['municipality']) ?></td>
                     <td><?= pcd_badge($s['status']) ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-</section>
-
-<section class="panel">
-    <h2>Configured Feeding Programs</h2>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr><th>Name</th><th>Duration</th><th>Start</th><th>End</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-                <?php foreach ($programs as $p): ?>
-                <tr>
-                    <td><?= e($p['program_name']) ?></td>
-                    <td><?= e($p['duration_days'] ?? '—') ?></td>
-                    <td><?= e($p['start_date'] ?? '—') ?></td>
-                    <td><?= e($p['end_date'] ?? '—') ?></td>
-                    <td><?= pcd_badge($p['status']) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
