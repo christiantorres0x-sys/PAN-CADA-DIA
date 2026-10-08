@@ -2,6 +2,8 @@
 require_once __DIR__ . '/db.php';
 require_login();
 
+$q = trim($_GET['q'] ?? '');
+$siteId = (int)($_GET['site_id'] ?? 0);
 $total = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries")->fetchColumn();
 $enrolled = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries WHERE program_status='ENROLLED'")->fetchColumn();
 $sites = (int)$pdo->query("SELECT COUNT(*) FROM feeding_sites WHERE status='ACTIVE'")->fetchColumn();
@@ -22,32 +24,43 @@ $pageTitle = 'Dashboard';
 $activeNav = 'dashboard.php';
 require __DIR__ . '/partials/header.php';
 ?>
-<div class="dash-top-grid">
-    <div class="dash-top-left">
-        <a class="stat pending-card" href="beneficiaries.php" title="Go to Beneficiaries">
-            <span class="pending-card-label">Pending Enrollments</span>
-            <strong class="pending-count-<?= $pendingEnrollment === 0 ? 'zero' : 'positive' ?>"><?= $pendingEnrollment ?></strong>
-            <span class="pending-card-review">
-                Manage
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            </span>
-        </a>
-        <a class="btn primary dash-add-beneficiary" href="beneficiary_form.php" data-slideover="beneficiary_form.php?panel=1" data-slideover-title="Add Beneficiary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Beneficiary</span></a>
+<div class="dashboard-page">
+    <div class="dash-top-grid">
+        <div class="dash-top-left">
+            <a class="stat pending-card" href="beneficiaries.php" title="Go to Beneficiaries">
+                <span class="pending-card-label">Pending Enrollments</span>
+                <strong class="pending-count-<?= $pendingEnrollment === 0 ? 'zero' : 'positive' ?>"><?= $pendingEnrollment ?></strong>
+                <span class="pending-card-review">
+                    Manage
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </span>
+            </a>
+        </div>
+
+        <section class="dash-top-right">
+            <span class="filter-label">Quick Actions</span>
+            <div class="quick-actions-body">
+                <div class="quick-actions-grid">
+                    <a class="btn primary dash-add-beneficiary" href="beneficiary_form.php" data-slideover="beneficiary_form.php?panel=1" data-slideover-title="Add Beneficiary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Beneficiary</span></a>
+                    <a class="btn quick-primary" href="attendance.php?date=<?= date('Y-m-d') ?>">Take Today&rsquo;s Attendance</a>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <section class="dash-top-right">
-        <span class="filter-label">Quick Actions</span>
-        <div class="quick-actions-body">
-            <div class="quick-actions-grid">
-                <a class="btn quick-primary" href="attendance.php?date=<?= date('Y-m-d') ?>">Take Today&rsquo;s Attendance</a>
-                <a class="btn quick-primary" href="beneficiaries.php">Find a Beneficiary</a>
-                <a class="btn quick-primary" href="reports.php">View Reports &amp; Analysis</a>
+    <form class="scope-row beneficiary-search-row" method="get">
+        <input type="hidden" name="site_id" value="<?= $siteId ?>">
+        <div class="field">
+            <label class="sr-only" for="beneficiary-search">Search beneficiaries by name or grade level</label>
+            <div class="search">
+                <input id="beneficiary-search" type="search" name="q" value="<?= e($q) ?>" placeholder="Enter Beneficiary's Name">
+                <button class="search-submit" type="submit" aria-label="Search beneficiaries" title="Search beneficiaries">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                </button>
             </div>
         </div>
-    </section>
+    </form>
 </div>
-
-
 
 <section class="panel">
     <div class="panel-head">
