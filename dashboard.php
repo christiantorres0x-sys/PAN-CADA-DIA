@@ -26,7 +26,7 @@ require __DIR__ . '/partials/header.php';
     <div class="dash-top-left">
         <a class="stat pending-card" href="beneficiaries.php" title="Go to Beneficiaries">
             <span class="pending-card-label">Pending Enrollments</span>
-            <strong><?= $pendingEnrollment ?></strong>
+            <strong class="pending-count-<?= $pendingEnrollment === 0 ? 'zero' : 'positive' ?>"><?= $pendingEnrollment ?></strong>
             <span class="pending-card-review">
                 Manage
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>

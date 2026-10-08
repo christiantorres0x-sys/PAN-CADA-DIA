@@ -265,7 +265,6 @@ require __DIR__ . '/partials/header.php';
                         <input type="hidden" name="return_program_id" value="<?= $programId ?>">
                         <input type="hidden" name="return_q" value="<?= e($q) ?>">
                     <td><a href="beneficiary.php?id=<?= $r['beneficiary_id'] ?>"><?= e($r['full_name']) ?></a></td>
-
                     <?php
                         $curStatus = $r['attendance_status'] ?? '';
                         $statusLabel = ['PRESENT' => 'Present', 'ABSENT' => 'Absent'][$curStatus] ?? 'Unrecorded';
