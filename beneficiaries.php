@@ -53,8 +53,7 @@ foreach ($hrStmt->fetchAll() as $row) {
 }
 
 $pageTitle = 'Beneficiaries';
-$pageSubtitle = 'Click on each row to edit beneficiary profile and/or record milestones.';
-$pageEyebrowHtml = '<a class="back-link" href="dashboard.php"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Back to Dashboard</a>';
+$pageSubtitle = 'Click on row to view beneficiary profile.';
 $pageActionsHtml = '<a class="btn primary" href="beneficiary_form.php" data-slideover="beneficiary_form.php?panel=1" data-slideover-title="Add Beneficiary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Beneficiary</span></a>';
 $activeNav = 'beneficiaries.php';
 require __DIR__ . '/partials/header.php';

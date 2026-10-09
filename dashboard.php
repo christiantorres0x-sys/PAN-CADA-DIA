@@ -65,10 +65,10 @@ require __DIR__ . '/partials/header.php';
 <section class="panel">
     <div class="panel-head">
         <div>
-            <h2>Recent Records</h2>
+            <h2 style="font-size:18px">Recent Records</h2>
             <span class="muted" style="font-size:12.5px;">Latest measurements recorded across all sites</span>
         </div>
-        <a href="reports.php" style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.4px;">View Reports &amp; Analysis</a>
+        <a href="reports.php" style="font-size:12px; font-weight:800; text-transform:uppercase;">View Reports &amp; Analysis</a>
     </div>
     <?php if (!$latest): ?>
         <p class="empty">No health records yet.</p>

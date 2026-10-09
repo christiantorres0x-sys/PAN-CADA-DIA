@@ -15,6 +15,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  margin: 0 16px 0 16px;
 }
 
 .stat {
@@ -294,6 +295,7 @@
   border-radius: 20px;
   box-shadow: none;
   margin: 0 16px;
+  margin-bottom: 8px;
 }
 
 .beneficiaries-page .search:focus-within,
@@ -523,9 +525,8 @@ tbody tr.clickable-row {
 .filter-label {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: .5px;
   text-transform: uppercase;
   margin-bottom: 8px;
 }
@@ -555,6 +556,7 @@ tbody tr.clickable-row {
   background: var(--success);
   color: #fff;
   box-shadow: 0 1px 2px rgba(74, 95, 223, .3);
+    margin-right: 16px;
 }
 
 .btn.primary:hover {
