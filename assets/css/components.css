@@ -15,6 +15,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  margin: 0 16px 0 16px;
 }
 
 .stat {
@@ -83,10 +84,10 @@
 
 .dash-top-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 250px 1fr;
   gap: 14px;
   align-items: stretch;
-  margin-bottom: 14px;
+  margin-bottom: 30px;
 }
 
 .dash-top-left {
@@ -188,6 +189,7 @@
   flex-direction: column;
   max-width: 320px;
   padding: 16px 18px;
+  margin-left: 16px;
   color: var(--text);
   cursor: pointer;
   transition: background .15s ease, border-color .15s ease;
@@ -209,13 +211,14 @@
   font-size: 42px;
   color: var(--red);
   margin-top: 8px;
-}.
+}
 
-pending-card strong-0 {
-  display: block;
-  font-size: 42px;
-  color: var(--black);
-  margin-top: 8px;
+.pending-card strong.pending-count-zero {
+  color: #000;
+}
+
+.pending-card strong.pending-count-positive {
+  color: var(--red);
 }
 
 .pending-card-review {
@@ -251,11 +254,116 @@ pending-card strong-0 {
   flex: none;
 }
 
+.beneficiary-search-row {
+  margin-bottom: 10px;
+}
+
 .list-count {
   color: var(--text);
   font-weight: 800;
   font-size: 12.5px;
   margin: 0 0 8px;
+}
+
+.beneficiaries-page .beneficiaries-scope {
+  margin-bottom: 14px;
+}
+
+.beneficiaries-page .filter-label {
+  margin: 0 0 10px 4px;
+}
+
+.beneficiaries-page .beneficiary-search-row {
+  margin-bottom: 14px;
+}
+
+.beneficiaries-page .beneficiary-search-row .field,
+.beneficiaries-page .search,
+.dashboard-page .beneficiary-search-row .field,
+.dashboard-page .search {
+  width: 100%;
+  max-width: none;
+}
+
+.beneficiaries-page .search,
+.dashboard-page .search {
+  width: calc(100% - 32px);
+  box-sizing: border-box;
+  min-height: 36px;
+  padding-right: 6px;
+  border: 1px solid #a4a4a4;
+  border-radius: 20px;
+  box-shadow: none;
+  margin: 0 16px;
+  margin-bottom: 8px;
+}
+
+.beneficiaries-page .search:focus-within,
+.dashboard-page .search:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.beneficiaries-page .search input,
+.dashboard-page .search input {
+  min-height: 34px;
+  padding-left: 10px;
+}
+
+.beneficiaries-page .search-submit,
+.dashboard-page .search-submit {
+  width: 30px;
+  height: 30px;
+  color: var(--muted);
+}
+
+.beneficiaries-page .search-submit:hover,
+.beneficiaries-page .search-submit:focus-visible,
+.dashboard-page .search-submit:hover,
+.dashboard-page .search-submit:focus-visible {
+  color: var(--text);
+  background: transparent;
+}
+
+.beneficiaries-results {
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+}
+
+.beneficiaries-results .table-wrap {
+  flex: 1;
+}
+
+.beneficiaries-results th {
+  font-size: 10px;
+  color: #263449;
+}
+
+.beneficiaries-results td {
+  font-size: 11.5px;
+  vertical-align: middle;
+}
+
+.beneficiaries-results .list-count {
+  margin: 10px 0 0;
+  text-align: right;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.beneficiary-nutrition-alert {
+  color: var(--red);
+}
+
+@media (max-width: 760px) {
+  .beneficiaries-results {
+    min-height: 0;
+  }
+
+  .beneficiaries-results table {
+    min-width: 760px;
+  }
 }
 
 /* Simple CSS conic-gradient pie chart, built server-side from real counts */
@@ -417,9 +525,8 @@ tbody tr.clickable-row {
 .filter-label {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: .5px;
   text-transform: uppercase;
   margin-bottom: 8px;
 }
@@ -449,6 +556,7 @@ tbody tr.clickable-row {
   background: var(--success);
   color: #fff;
   box-shadow: 0 1px 2px rgba(74, 95, 223, .3);
+    margin-right: 16px;
 }
 
 .btn.primary:hover {
@@ -546,6 +654,32 @@ tbody tr.clickable-row {
 
 .search button {
   margin-left: auto;
+}
+
+.search-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.search-submit:hover,
+.search-submit:focus-visible {
+  color: var(--text);
+  background: #f5f7fb;
+}
+
+.search-submit .icon {
+  width: 18px;
+  height: 18px;
 }
 
 .btn.icon-only {
