@@ -187,6 +187,7 @@
 .pending-card {
   display: flex;
   flex-direction: column;
+  height: 150px;
   max-width: 320px;
   padding: 16px 18px;
   margin-left: 16px;
