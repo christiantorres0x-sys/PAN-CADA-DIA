@@ -179,7 +179,6 @@ $paginationBase = $_GET;
 unset($paginationBase['page']);
 
 $pageTitle = 'Attendance';
-$pageActionsHtml = '<a class="btn primary" href="beneficiary_form.php" data-slideover="beneficiary_form.php?panel=1" data-slideover-title="Add Beneficiary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Beneficiary</span></a>';
 $activeNav = 'attendance.php';
 require __DIR__ . '/partials/header.php';
 ?>
