@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $date = $_POST['record_date'] ?? date('Y-m-d');
     $height = (float)($_POST['height_cm'] ?? 0);
     $weight = (float)($_POST['weight_kg'] ?? 0);
-    $remarks = trim($_POST['remarks'] ?? '');
+    $remarks = capitalize_sentences(trim($_POST['remarks'] ?? ''));
 
     if (!in_array($milestone, MILESTONES, true)) {
         flash('danger', 'Please select which milestone this measurement is for.');

@@ -120,6 +120,17 @@ CREATE TABLE IF NOT EXISTS audit_log (
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
+-- Failed-login counters used to temporarily lock a username / IP after repeated
+-- wrong passwords (see LOGIN_* settings in config.php). The app also creates
+-- this table automatically on first login attempt, so existing databases do not
+-- need to re-run this file.
+CREATE TABLE IF NOT EXISTS login_throttle (
+    throttle_key VARCHAR(190) NOT NULL PRIMARY KEY,
+    fail_count INT UNSIGNED NOT NULL DEFAULT 0,
+    last_failed_at INT UNSIGNED NOT NULL DEFAULT 0,
+    locked_until INT UNSIGNED NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
+
 INSERT INTO users (full_name, username, password_hash, role)
 SELECT 'System Administrator', 'admin',
        '$2y$12$Brmg1..UVzMoaLtjOGHg7e72HSMnDnocdyX/GLfWNk2qdGVbNdFMu',

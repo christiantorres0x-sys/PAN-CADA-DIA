@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $quick = null;
     }
     $status = $quick ?? ($_POST['attendance_status'] ?? 'PRESENT');
-    $remarks = trim($_POST['remarks'] ?? '');
+    $remarks = capitalize_sentences(trim($_POST['remarks'] ?? ''));
 
     if (!in_array($status, ['PRESENT', 'ABSENT'], true)) {
         $status = 'PRESENT';

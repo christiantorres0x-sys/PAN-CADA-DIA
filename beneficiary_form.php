@@ -52,21 +52,23 @@ if ($isEdit) {
 $sites = $pdo->query("SELECT * FROM feeding_sites WHERE status='ACTIVE' ORDER BY site_name")->fetchAll();
 $programs = $pdo->query("SELECT * FROM feeding_programs WHERE status <> 'INACTIVE' ORDER BY start_date DESC, program_name")->fetchAll();
 
-$gradeLevelOptions = ['Day Care', 'Kinder', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'];
-if ($beneficiary['grade_level'] !== '' && !in_array($beneficiary['grade_level'], $gradeLevelOptions, true)) {
-    $gradeLevelOptions[] = $beneficiary['grade_level'];
-}
-
 $duplicateMatch = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
 
-    $firstName = trim($_POST['first_name'] ?? '');
-    $middleName = trim($_POST['middle_name'] ?? '');
-    $lastName = trim($_POST['last_name'] ?? '');
+    $firstName = capitalize_words(trim($_POST['first_name'] ?? ''));
+    $middleName = capitalize_words(trim($_POST['middle_name'] ?? ''));
+    $lastName = capitalize_words(trim($_POST['last_name'] ?? ''));
     $fullName = trim($firstName . ' ' . $lastName);
     $code = generate_beneficiary_code($firstName, $middleName);
+
+    // Grade level: either one of the listed options, or "Other" + typed text.
+    $gradeChoice = trim($_POST['grade_level'] ?? '');
+    $gradeOtherText = capitalize_words(trim($_POST['grade_level_other'] ?? ''));
+    $gradeValue = $gradeChoice === GRADE_LEVEL_OTHER
+        ? ($gradeOtherText !== '' ? str_limit_utf8($gradeOtherText, GRADE_LEVEL_MAX_LENGTH) : GRADE_LEVEL_OTHER)
+        : $gradeChoice;
 
     // Keep whatever the user typed on screen if we have to re-show the form
     // (validation error or duplicate warning) instead of resetting it.
@@ -78,12 +80,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'beneficiary_code' => $code,
         'birth_date' => $_POST['birth_date'] ?? '',
         'sex' => $_POST['sex'] ?? 'Male',
-        'grade_level' => trim($_POST['grade_level'] ?? ''),
+        'grade_level' => $gradeValue,
         'site_id' => $_POST['site_id'] ?? '',
         'program_id' => $_POST['program_id'] ?? '',
         'program_status' => $_POST['program_status'] ?? 'ENROLLED',
         'date_enlisted' => $_POST['date_enlisted'] ?? '',
-        'remarks' => trim($_POST['remarks'] ?? ''),
+        'remarks' => capitalize_sentences(trim($_POST['remarks'] ?? '')),
     ]);
 
     $siteId = ($_POST['site_id'] ?? '') !== '' ? (int)$_POST['site_id'] : null;
@@ -92,6 +94,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($fullName === '' || $beneficiary['birth_date'] === '') {
         $msg = 'First name, last name, and birthdate are required.';
+        flash('danger', $msg);
+        if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
+    } elseif ($gradeChoice === GRADE_LEVEL_OTHER && $gradeOtherText === '') {
+        $msg = 'Please type the grade level or category for "Other".';
         flash('danger', $msg);
         if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
     } else {
@@ -132,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $baselineWeight = (float)($_POST['baseline_weight_kg'] ?? 0);
             $baselineDate = ($_POST['baseline_date'] ?? '') !== '' ? $_POST['baseline_date'] : date('Y-m-d');
             $weightStatus = trim($_POST['weight_status'] ?? '');
-            $baselineRemarks = trim($_POST['baseline_remarks'] ?? '');
+            $baselineRemarks = capitalize_sentences(trim($_POST['baseline_remarks'] ?? ''));
             $hasBaselineMeasurement = $baselineHeight > 0 && $baselineWeight > 0;
 
             $pdo->beginTransaction();
@@ -184,6 +190,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     }
+}
+
+// Grade level dropdown state. A stored value that isn't one of the listed
+// options (older records, or a category typed under "Other") is shown as
+// "Other" with its text filled in, so editing never silently drops it.
+$gradeGroups = grade_level_groups();
+$gradeSelected = (string)$beneficiary['grade_level'];
+$gradeOtherValue = '';
+if ($gradeSelected !== '' && $gradeSelected !== GRADE_LEVEL_OTHER && !in_array($gradeSelected, grade_level_known_values(), true)) {
+    $gradeOtherValue = $gradeSelected;
+    $gradeSelected = GRADE_LEVEL_OTHER;
+} elseif ($gradeSelected === GRADE_LEVEL_OTHER) {
+    $gradeOtherValue = (string)($_POST['grade_level_other'] ?? '');
 }
 
 $pageTitle = $isEdit ? 'Edit Beneficiary' : 'Add Beneficiary';
@@ -273,13 +292,22 @@ require __DIR__ . '/partials/header.php';
                             </select>
                         </div>
                         <div>
-                            <label>Grade Level *</label>
-                            <select name="grade_level" required>
+                            <label>Grade Level / Category *</label>
+                            <select name="grade_level" id="grade_level_select" required>
                                 <option value="">Select grade level</option>
-                                <?php foreach ($gradeLevelOptions as $g): ?>
-                                    <option <?= $beneficiary['grade_level'] === $g ? 'selected' : '' ?>><?= e($g) ?></option>
+                                <?php foreach ($gradeGroups as $groupLabel => $groupOptions): ?>
+                                    <optgroup label="<?= e($groupLabel) ?>">
+                                        <?php foreach ($groupOptions as $g): ?>
+                                            <option value="<?= e($g) ?>" <?= $gradeSelected === $g ? 'selected' : '' ?>><?= e($g) ?></option>
+                                        <?php endforeach; ?>
+                                    </optgroup>
                                 <?php endforeach; ?>
+                                <option value="<?= e(GRADE_LEVEL_OTHER) ?>" <?= $gradeSelected === GRADE_LEVEL_OTHER ? 'selected' : '' ?>>Other (specify)</option>
                             </select>
+                        </div>
+                        <div class="full-col" id="grade_other_wrap" style="<?= $gradeSelected === GRADE_LEVEL_OTHER ? '' : 'display:none;' ?>">
+                            <label>Specify Grade Level / Category *</label>
+                            <input name="grade_level_other" id="grade_level_other" maxlength="<?= GRADE_LEVEL_MAX_LENGTH ?>" value="<?= e($gradeOtherValue) ?>" placeholder="e.g. Madrasah, Home-schooled" <?= $gradeSelected === GRADE_LEVEL_OTHER ? 'required' : '' ?>>
                         </div>
                     </div>
                 </div>

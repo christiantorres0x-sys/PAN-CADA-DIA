@@ -69,6 +69,47 @@ foreach ($siteSummary as $k => $v) {
     $siteSummary[$k]['avg_bmi'] = count($v['bmi']) ? round(array_sum($v['bmi']) / count($v['bmi']), 2) : null;
 }
 
+// Health Monitoring Records: one row per beneficiary, with a Baseline,
+// Midline and Endline column group side by side, each holding its own
+// date / height / weight / BMI / weight status, so a child's progress reads
+// left to right. A milestone with no record yet shows as Pending. Older
+// records saved without a milestone get a small note row under the child
+// so nothing disappears.
+$recordGroups = [];
+foreach ($rows as $r) {
+    $bid = (int)$r['beneficiary_id'];
+    if (!isset($recordGroups[$bid])) {
+        $recordGroups[$bid] = ['info' => $r, 'by' => array_fill_keys(MILESTONES, null), 'other' => []];
+    }
+    $m = strtoupper((string)($r['milestone'] ?? ''));
+    if (array_key_exists($m, $recordGroups[$bid]['by']) && $recordGroups[$bid]['by'][$m] === null) {
+        $recordGroups[$bid]['by'][$m] = $r;
+    } else {
+        $recordGroups[$bid]['other'][] = $r;
+    }
+}
+$dateFilterActive = ($from !== '' || $to !== '');
+
+// Renders one milestone's three compact cells for a beneficiary:
+//   Date | Height + Weight (stacked) | BMI + Weight Status (stacked)
+// Stacking keeps the whole Baseline / Midline / Endline comparison on one
+// screen without sideways scrolling. A milestone with no record becomes a
+// single "Pending" cell spanning its three columns.
+$fmtDate = fn(string $d): string => ($ts = strtotime($d)) ? date('M j, Y', $ts) : $d;
+$fmtNum = fn($n): string => rtrim(rtrim(number_format((float)$n, 2, '.', ''), '0'), '.');
+$renderMilestoneCells = function (?array $r) use ($dateFilterActive, $fmtDate, $fmtNum): string {
+    if ($r === null) {
+        $note = $dateFilterActive ? 'No record in date range' : 'Pending';
+        return '<td colspan="3" class="ms-start ms-pending">' . e($note) . '</td>';
+    }
+    $lower = strtolower($r['nutritional_status']);
+    $flag = str_contains($lower, 'under') || str_contains($lower, 'severe');
+    $status = $r['nutritional_status'] !== 'Pending child reference' ? pcd_badge($r['nutritional_status']) : '<span class="muted">Pending</span>';
+    return '<td class="ms-start ms-date' . ($flag ? ' is-flag' : '') . '">' . e($fmtDate($r['record_date'])) . '</td>'
+        . '<td class="ms-hw"><span>' . e($fmtNum($r['height_cm'])) . ' cm</span><span>' . e($fmtNum($r['weight_kg'])) . ' kg</span></td>'
+        . '<td class="ms-bmi"><strong>' . e(number_format((float)$r['bmi'], 2, '.', '')) . '</strong><span>' . $status . '</span></td>';
+};
+
 // Chips shown above the tables summarizing which filters are actually
 // narrowing the results (and a quick link to drop just that one).
 $activeFilters = [];
@@ -235,24 +276,37 @@ require __DIR__ . '/partials/header.php';
 <section class="panel" id="records">
     <h2>Health Monitoring Records</h2>
     <div class="table-wrap">
-        <table>
+        <table class="milestone-table">
             <thead>
-                <tr><th>ID</th><th>Name</th><th>Grade Level</th><th>Birth Date</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Program Status</th></tr>
+                <tr>
+                    <th rowspan="2">ID</th><th rowspan="2">Name</th>
+                    <?php foreach (MILESTONES as $m): ?>
+                    <th colspan="3" class="ms-start ms-group"><?= e(milestone_label($m)) ?></th>
+                    <?php endforeach; ?>
+                    <th rowspan="2" class="ms-start">Grade Level</th><th rowspan="2">Birth Date</th><th rowspan="2">Sex</th><th rowspan="2">Program Status</th>
+                </tr>
+                <tr>
+                    <?php foreach (MILESTONES as $m): ?>
+                    <th class="ms-start">Date</th><th>Height / Weight</th><th>BMI / Status</th>
+                    <?php endforeach; ?>
+                </tr>
             </thead>
             <tbody>
-                <?php foreach ($rows as $r): $flag = str_contains(strtolower($r['nutritional_status']), 'under') || str_contains(strtolower($r['nutritional_status']), 'severe'); ?>
-                <tr class="<?= $flag ? 'row-flag' : '' ?>">
-                    <td><?= $r['beneficiary_code'] ? '<span class="code-tag">' . e($r['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
-                    <td><strong><a href="beneficiary.php?id=<?= $r['beneficiary_id'] ?>"><?= e($r['full_name']) ?></a></strong></td>
-                    <td><?= e($r['grade_level'] ?: '—') ?></td>
-                    <td><?= e($r['birth_date']) ?></td>
-                    <td><?= e($r['sex']) ?></td>
-                    <td class="num"><?= e($r['height_cm']) ?> cm</td>
-                    <td class="num"><?= e($r['weight_kg']) ?> kg</td>
-                    <td class="num"><strong><?= e($r['bmi']) ?></strong> kg/m<sup>2</sup></td>
-                    <td><?= $r['nutritional_status'] !== 'Pending child reference' ? pcd_badge($r['nutritional_status']) : '<span class="muted">Pending</span>' ?></td>
-                    <td><?= pcd_badge($r['program_status'] ?? 'ENROLLED') ?></td>
+                <?php foreach ($recordGroups as $g): $info = $g['info']; $span = 1 + count($g['other']); ?>
+                <tr class="group-start">
+                    <td rowspan="<?= $span ?>"><?= $info['beneficiary_code'] ? '<span class="code-tag">' . e($info['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
+                    <td rowspan="<?= $span ?>"><strong><a href="beneficiary.php?id=<?= (int)$info['beneficiary_id'] ?>"><?= e($info['full_name']) ?></a></strong></td>
+                    <?php foreach (MILESTONES as $m): ?><?= $renderMilestoneCells($g['by'][$m]) ?><?php endforeach; ?>
+                    <td rowspan="<?= $span ?>" class="ms-start"><?= e($info['grade_level'] ?: '—') ?></td>
+                    <td rowspan="<?= $span ?>"><?= e($fmtDate($info['birth_date'])) ?></td>
+                    <td rowspan="<?= $span ?>"><?= e($info['sex']) ?></td>
+                    <td rowspan="<?= $span ?>"><?= pcd_badge($info['program_status'] ?? 'ENROLLED') ?></td>
                 </tr>
+                <?php foreach ($g['other'] as $r): ?>
+                <tr class="unlabeled-row">
+                    <td colspan="9" class="muted">Record without a milestone &middot; <?= e($fmtDate($r['record_date'])) ?> &middot; <?= e($fmtNum($r['height_cm'])) ?> cm &middot; <?= e($fmtNum($r['weight_kg'])) ?> kg &middot; BMI <?= e(number_format((float)$r['bmi'], 2, '.', '')) ?></td>
+                </tr>
+                <?php endforeach; ?>
                 <?php endforeach; ?>
             </tbody>
         </table>

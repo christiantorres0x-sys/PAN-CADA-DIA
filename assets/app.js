@@ -38,6 +38,25 @@ function pcdWireFormExtras(root) {
     sync(false);
   }
 
+  // Grade level "Other (please specify)": reveal the text box only when needed,
+  // and only require it while it's visible (a hidden required field would
+  // silently block the form from submitting).
+  const gradeSelect = root.querySelector('#grade_level_select');
+  const gradeOtherWrap = root.querySelector('#grade_other_wrap');
+  const gradeOther = root.querySelector('#grade_level_other');
+  if (gradeSelect && gradeOtherWrap && gradeOther) {
+    const syncGrade = () => {
+      const isOther = gradeSelect.value === 'Other';
+      gradeOtherWrap.style.display = isOther ? '' : 'none';
+      gradeOther.required = isOther;
+      if (!isOther) gradeOther.value = '';
+    };
+    gradeSelect.addEventListener('change', () => {
+      syncGrade();
+      if (gradeSelect.value === 'Other') gradeOther.focus();
+    });
+  }
+
   // Soft-lock warning when recording Midline/Endline without a prior milestone on file.
   const milestoneSelect = root.querySelector('#milestone_select');
   const milestoneWarning = root.querySelector('#milestone_warning');
@@ -55,6 +74,56 @@ function pcdWireFormExtras(root) {
     milestoneSelect.addEventListener('change', sync2);
     sync2();
   }
+}
+
+// ---------------------------------------------------------------------
+// Auto-capitalize first letters as the user types, in every form that
+// saves data (method="post"):
+//   - single-line text fields (names, places, titles): first letter of each
+//     word  ->  "juan dela cruz" becomes "Juan Dela Cruz"
+//   - remarks / description / notes and any textarea: first letter of each
+//     sentence  ->  "ate all. went home" becomes "Ate all. Went home"
+// Only first letters change; the rest of what was typed is left alone.
+// Opt a field out with data-no-capitalize (e.g. usernames). Search/filter
+// forms use GET, so they're untouched. Keep the regexes in sync with
+// capitalize_words() / capitalize_sentences() in config.php, which does
+// the same on the server.
+// ---------------------------------------------------------------------
+function pcdCapitalizeWords(text) {
+  return text.replace(/(^|[\s\-\/(])(\p{Ll})/gu, (m, lead, ch) => lead + ch.toLocaleUpperCase());
+}
+
+function pcdCapitalizeSentences(text) {
+  return text.replace(/(^\s*|[.!?]\s+|[\r\n]+\s*)(\p{Ll})/gu, (m, lead, ch) => lead + ch.toLocaleUpperCase());
+}
+
+function pcdWireAutoCapitalize(root) {
+  const selector = [
+    'form[method="post" i] input:not([type])',
+    'form[method="post" i] input[type="text"]',
+    'form[method="post" i] textarea',
+  ].join(', ');
+
+  root.querySelectorAll(selector).forEach((el) => {
+    if (el.dataset.pcdCapWired || el.readOnly || el.disabled || el.hasAttribute('data-no-capitalize')) return;
+    el.dataset.pcdCapWired = '1';
+
+    const sentenceMode = el.tagName === 'TEXTAREA' || /remark|description|note/i.test(el.name || '');
+    const fix = sentenceMode ? pcdCapitalizeSentences : pcdCapitalizeWords;
+
+    el.addEventListener('input', (e) => {
+      if (e.isComposing) return; // don't interfere with IME composition
+      const before = el.value;
+      const after = fix(before);
+      if (after === before) return;
+      // Replacing a letter with its capital normally keeps the length; restore
+      // the caret anyway so typing in the middle of text doesn't jump to the end.
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      el.value = after;
+      if (start !== null && after.length === before.length) el.setSelectionRange(start, end);
+    });
+  });
 }
 
 // ---------------------------------------------------------------------
@@ -125,6 +194,7 @@ async function pcdOpenSlideover(url, title) {
     pcdWireSlideoverForms(body);
     pcdLinkLabels(body);
     pcdWireInlineValidation(body);
+    pcdWireAutoCapitalize(body);
     const firstField = body.querySelector('input:not([type="hidden"]):not([readonly]), select, textarea');
     if (firstField) firstField.focus();
   } catch (err) {
@@ -344,6 +414,7 @@ function pcdWireConfirmForms(root) {
 document.addEventListener('DOMContentLoaded', () => {
   pcdLinkLabels(document);
   pcdWireInlineValidation(document);
+  pcdWireAutoCapitalize(document);
   pcdWireAutosubmit(document);
   pcdWireConfirmForms(document);
   pcdWireFormExtras(document);

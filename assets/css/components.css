@@ -1383,3 +1383,79 @@ details.collapsible[open] > summary {
 
 .attendance-guide .guide-key.present { background: var(--green); }
 .attendance-guide .guide-key.absent { background: var(--red); }
+
+/* Reports > Health Monitoring Records: one row per beneficiary. Baseline /
+   Midline / Endline come first (3 compact columns each); the profile columns
+   (grade, birth date, sex, program status) sit at the far right. Sized to fit
+   a normal desktop width without sideways scrolling; .table-wrap still
+   scrolls as a fallback on very narrow screens. */
+table.milestone-table {
+  min-width: 900px;
+  font-size: 12px;
+}
+
+table.milestone-table th,
+table.milestone-table td {
+  padding: 7px 5px;
+}
+
+table.milestone-table th {
+  font-size: 10.5px;
+  letter-spacing: .2px;
+}
+
+table.milestone-table td {
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+table.milestone-table th.ms-group {
+  text-align: center;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+table.milestone-table .ms-start {
+  border-left: 2px solid var(--border);
+}
+
+table.milestone-table td.ms-pending {
+  text-align: center;
+  font-style: italic;
+  color: var(--muted);
+}
+
+table.milestone-table td.is-flag {
+  box-shadow: inset 3px 0 0 var(--red);
+}
+
+/* Stacked cells: height over weight, BMI over weight status. */
+table.milestone-table td.ms-hw,
+table.milestone-table td.ms-bmi {
+  line-height: 1.35;
+}
+
+table.milestone-table td.ms-hw span,
+table.milestone-table td.ms-bmi span {
+  display: block;
+  white-space: nowrap;
+}
+
+table.milestone-table td.ms-bmi span {
+  font-size: 11px;
+}
+
+/* Dates may wrap onto two lines ("Oct 12," / "2026") — rows are two lines tall anyway. */
+table.milestone-table td.ms-date {
+  min-width: 48px;
+}
+
+table.milestone-table tr.group-start td {
+  border-top: 1px solid var(--border);
+}
+
+table.milestone-table tr.unlabeled-row td {
+  font-size: 11.5px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}

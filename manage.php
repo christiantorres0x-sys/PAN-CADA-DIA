@@ -7,20 +7,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $type = $_POST['type'] ?? '';
 
     if ($type === 'site') {
-        $name = trim($_POST['site_name'] ?? '');
+        $name = capitalize_words(trim($_POST['site_name'] ?? ''));
         if ($name !== '') {
             $s = $pdo->prepare("INSERT INTO feeding_sites (site_name, address, barangay, municipality) VALUES (?, ?, ?, ?)");
-            $s->execute([$name, trim($_POST['address'] ?? ''), trim($_POST['barangay'] ?? ''), trim($_POST['municipality'] ?? '')]);
+            $s->execute([
+                $name,
+                capitalize_words(trim($_POST['address'] ?? '')),
+                capitalize_words(trim($_POST['barangay'] ?? '')),
+                capitalize_words(trim($_POST['municipality'] ?? '')),
+            ]);
             log_action($pdo, 'CREATE_SITE', 'feeding_sites', (int)$pdo->lastInsertId(), 'Created feeding site');
             flash('success', 'Feeding site added.');
         }
     } elseif ($type === 'program') {
-        $name = trim($_POST['program_name'] ?? '');
+        $name = capitalize_words(trim($_POST['program_name'] ?? ''));
         if ($name !== '') {
             $s = $pdo->prepare("INSERT INTO feeding_programs (program_name, description, duration_days, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, ?)");
             $s->execute([
                 $name,
-                trim($_POST['description'] ?? ''),
+                capitalize_sentences(trim($_POST['description'] ?? '')),
                 ($_POST['duration_days'] ?? '') !== '' ? (int)$_POST['duration_days'] : null,
                 ($_POST['start_date'] ?? '') ?: null,
                 ($_POST['end_date'] ?? '') ?: null,
