@@ -26,8 +26,9 @@
 .stat span {
   display: block;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: .3px;
   text-transform: uppercase;
 }
 
@@ -86,7 +87,23 @@
   grid-template-columns: 250px 1fr;
   gap: 14px;
   align-items: stretch;
+  margin-top: 28px;
   margin-bottom: 30px;
+}
+
+/* Quick Actions: label floats above the row so the tiles line up with the
+   Pending Enrollments card (same top and bottom edge). */
+.dash-top-right {
+  position: relative;
+  display: flex;
+}
+
+.dash-top-right .filter-label {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin-bottom: 6px;
+  white-space: nowrap;
 }
 
 .dash-top-left {
@@ -99,38 +116,74 @@
   max-width: none;
 }
 
-.btn.dash-add-beneficiary {
+.dash-add-beneficiary {
   justify-content: center;
   gap: 8px;
   padding: 10px 16px;
-  font-size: 14px;
-  max-height: 135px;
-  width: 135px;
-  max-width: 135px;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.btn.dash-add-beneficiary .icon {
-  display: block;
-  width: 24px;
-  height: 24px;
-  color: #fff;
-  align-self: center;
+  font-size: 13.5px;
 }
 
 .quick-actions-body {
-  flex: 1;
   display: flex;
-  align-items: center;
+  align-items: stretch;
 }
 
 .quick-actions-grid {
-  width: max-content;
   display: grid;
-  grid-template-columns: repeat(2, 135px);
+  grid-template-columns: repeat(2, 150px);
   gap: 10px;
+}
+
+/* Square quick-action tiles: icon over label, centered */
+.quick-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.quick-tile:hover,
+.quick-tile:focus-visible {
+  text-decoration: none;
+}
+
+.quick-tile .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.quick-tile-add {
+  background: var(--success);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(34, 164, 93, .3);
+  font-size: 13.5px;
+}
+
+.quick-tile-add:hover,
+.quick-tile-add:focus-visible {
+  background: var(--success-dark);
+}
+
+.quick-tile-attendance {
+  background: #e6f6f1;
+  color: #0d5a47;
+  border-color: #b7e3d6;
+}
+
+.quick-tile-attendance:hover,
+.quick-tile-attendance:focus-visible {
+  background: #d3efe6;
 }
 
 /* Dashboard overview: one wide panel (same width as Recent Report) split into
@@ -180,15 +233,13 @@
   background: #e6f6f1;
   color: #0d5a47;
   border-color: #b7e3d6;
-  font-size: 16px;
+  font-size: 14.5px;
   padding: 14px 18px;
-  min-height: 135px;
-  width: 135px;
+  min-height: 56px;
   border-radius: 10px;
   justify-content: center;
   text-align: center;
   line-height: 1.3;
-  margin-right: 0;
 }
 
 .btn.quick-primary:hover {
@@ -202,7 +253,7 @@
 .pending-card {
   display: flex;
   flex-direction: column;
-  height: 160px;
+  height: 150px;
   max-width: 320px;
   padding: 16px 18px;
   margin-left: 16px;
@@ -220,12 +271,11 @@
 
 .pending-card-label {
   font-size: 13px;
-  margin: 2px 0 2px 2px;
 }
 
 .pending-card strong {
   display: block;
-  font-size: 65px;
+  font-size: 42px;
   color: var(--red);
   margin-top: 8px;
 }
@@ -243,7 +293,7 @@
   align-items: center;
   gap: 5px;
   align-self: flex-end;
-  margin: 15px 2px 2px 2px;
+  margin-top: 10px;
   font-size: 15px;
   color: var(--muted);
   font-weight: 700;
@@ -287,11 +337,11 @@
 }
 
 .beneficiaries-page .filter-label {
-  margin: 4px 4px 10px 4px;
+  margin: 0 0 10px 4px;
 }
 
 .beneficiaries-page .beneficiary-search-row {
-  margin: 10px 0 8px 0;
+  margin-bottom: 14px;
 }
 
 .beneficiaries-page .beneficiary-search-row .field,
@@ -312,8 +362,7 @@
   border-radius: 20px;
   box-shadow: none;
   margin: 0 16px;
-  margin-bottom: 6px;
-  margin-top: 20px;
+  margin-bottom: 8px;
 }
 
 .beneficiaries-page .search:focus-within,
@@ -346,7 +395,7 @@
 .beneficiaries-results {
   display: flex;
   flex-direction: column;
-  min-height: 475px;
+  min-height: 380px;
 }
 
 .beneficiaries-results .table-wrap {
@@ -354,21 +403,19 @@
 }
 
 .beneficiaries-results th {
-  font-size: 12px;
-  color: #000000;
-  text-align: center;
+  font-size: 10px;
+  color: #263449;
 }
 
 .beneficiaries-results td {
-  font-size: 12px;
+  font-size: 11.5px;
   vertical-align: middle;
-  text-align: center;
 }
 
 .beneficiaries-results .list-count {
-  margin: 10px 0 14px 2px;
-  text-align: left;
-  font-size: 12px;
+  margin: 10px 0 0;
+  text-align: right;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
@@ -561,7 +608,7 @@ tbody tr.clickable-row {
   min-height: 40px;
   font-weight: 700;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
   line-height: 1.2;
   justify-content: center;
@@ -570,28 +617,18 @@ tbody tr.clickable-row {
 .btn .icon {
   width: 14px;
   height: 14px;
-  align-items: center;
 }
 
 .btn.primary {
   background: var(--success);
   color: #fff;
   box-shadow: 0 1px 2px rgba(74, 95, 223, .3);
-  margin-right: 16px;
+    margin-right: 16px;
 }
 
 .btn.primary:hover {
   background: var(--success-dark);
   text-decoration: none;
-}
-
-.beneficiaries-scope .scope-row > .btn.primary {
-  background: var(--primary);
-  margin:  0 2px 0 2px;
-  }
-
-.beneficiaries-scope .scope-row > .btn.primary:hover {
-  background: var(--primary-dark);
 }
 
 .btn.success {
@@ -819,12 +856,12 @@ td {
 }
 
 th {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--muted);
   background: #f8fafc;
   text-transform: uppercase;
+  letter-spacing: .4px;
   font-weight: 700;
-  text-align: center;
 }
 
 td {
@@ -1030,7 +1067,7 @@ tbody tr:last-child td {
 .empty {
   text-align: center;
   color: var(--muted-2);
-  padding: 28px;
+  padding: 18px;
 }
 
 .alert {
@@ -1142,7 +1179,9 @@ section.notice {
   inset: 0;
   background: rgba(15, 23, 42, .45);
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
   z-index: 1000;
   opacity: 0;
   pointer-events: none;
@@ -1157,16 +1196,18 @@ section.notice {
 .slideover-panel {
   background: #fff;
   width: min(760px, 100%);
-  height: 100%;
-  box-shadow: -8px 0 24px rgba(15, 23, 42, .18);
+  max-height: 100%;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, .28);
   display: flex;
   flex-direction: column;
-  transform: translateX(100%);
+  transform: translateY(40px);
   transition: transform .25s ease;
 }
 
 .slideover-backdrop.open .slideover-panel {
-  transform: translateX(0);
+  transform: translateY(0);
 }
 
 .slideover-head {
@@ -1487,4 +1528,144 @@ table.milestone-table tr.unlabeled-row td {
   font-size: 11.5px;
   padding-top: 3px;
   padding-bottom: 3px;
+}
+
+/* ---- Remarks: always show the full text ------------------------------ */
+.remarks-text {
+  white-space: pre-wrap;          /* keep the line breaks that were typed */
+  overflow-wrap: anywhere;        /* long words / URLs wrap instead of overflowing */
+  word-break: break-word;
+  font-size: 14px;
+  line-height: 1.55;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.remarks-empty {
+  margin: 0;
+}
+
+td.remarks-cell {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 200px;
+  line-height: 1.5;
+}
+
+textarea.remarks-input {
+  overflow: hidden;               /* grows with its content (see pcdWireAutogrow) */
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+}
+
+/* Phones: each history row becomes a stacked card so the remarks get the
+   full width instead of a sliver of a sideways-scrolling table. */
+@media (max-width: 640px) {
+  table.history-table,
+  table.history-table tbody,
+  table.history-table tr,
+  table.history-table td {
+    display: block;
+    width: 100%;
+  }
+
+  table.history-table thead {
+    display: none;
+  }
+
+  table.history-table tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    margin-bottom: 10px;
+  }
+
+  table.history-table td,
+  table.history-table td.num {
+    border-bottom: 0;
+    padding: 4px 0;
+    text-align: left;
+    white-space: normal;
+    min-width: 0;
+  }
+
+  table.history-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    color: var(--muted);
+  }
+
+  table.history-table td.remarks-cell {
+    white-space: pre-wrap;
+  }
+
+  table.history-table td:empty {
+    display: none;
+  }
+}
+
+/* ---- Delete / deactivate beneficiary --------------------------------- */
+.btn.danger {
+  background: var(--red);
+  color: #fff;
+}
+
+.btn.danger:hover {
+  background: #9b2c2c;
+  text-decoration: none;
+}
+
+.btn.danger-outline {
+  color: var(--red);
+  border-color: #f1b8b8;
+}
+
+.btn.danger-outline:hover {
+  background: var(--red-bg);
+}
+
+.delete-facts {
+  margin: 8px 0 12px;
+  padding-left: 18px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.delete-choice {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-weight: 400;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.delete-choice input {
+  width: auto;
+  min-height: 0;
+  margin-right: 6px;
+}
+
+.delete-choice strong {
+  font-weight: 700;
+}
+/* Beneficiaries page: Filter button */
+.btn.primary.btn-filter {
+  background: #4b5ee4;
+  box-shadow: 0 1px 2px rgba(75, 94, 228, .3);
+  margin-right: 0;
+}
+
+.btn.primary.btn-filter:hover {
+  background: #3f51cf;
 }

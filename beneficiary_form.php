@@ -92,8 +92,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $programId = ($_POST['program_id'] ?? '') !== '' ? (int)$_POST['program_id'] : null;
     $dateEnlisted = ($_POST['date_enlisted'] ?? '') !== '' ? $_POST['date_enlisted'] : null;
 
+    // Baseline measurement (add mode only; the edit form has none). A new
+    // enrollment must always record a real baseline (date + height + weight,
+    // typed in the selected unit and converted once to cm / kg). A blank
+    // baseline is never saved as a record.
+    $baselineMode = '';
+    $baselineHeight = null; $baselineWeight = null; $baselineError = null;
+    $baselineDate = null;
+    if (!$isEdit) {
+        $baselineMode = 'record'; // baseline is always required when adding a beneficiary
+        if ($baselineMode === 'record') {
+            [$baselineHeight, $hErr] = parse_height_cm($_POST, 'baseline_');
+            [$baselineWeight, $wErr] = parse_weight_kg($_POST, 'baseline_');
+            $baselineDate = trim((string)($_POST['baseline_date'] ?? ''));
+            $bd = $baselineDate !== '' ? DateTimeImmutable::createFromFormat('!Y-m-d', $baselineDate) : null;
+            if ($hErr !== null) {
+                $baselineError = $hErr;
+            } elseif ($baselineHeight === null) {
+                $baselineError = 'Baseline height is required.';
+            } elseif ($wErr !== null) {
+                $baselineError = $wErr;
+            } elseif ($baselineWeight === null) {
+                $baselineError = 'Baseline weight is required.';
+            } elseif ($baselineDate === '') {
+                $baselineError = 'Baseline measurement date is required.';
+            } elseif (!$bd || $bd->format('Y-m-d') !== $baselineDate) {
+                $baselineError = 'Please enter a valid baseline measurement date.';
+            } elseif ($baselineDate > date('Y-m-d')) {
+                $baselineError = 'The baseline measurement date cannot be in the future.';
+            } elseif ($beneficiary['birth_date'] !== '' && $baselineDate < $beneficiary['birth_date']) {
+                $baselineError = 'The baseline measurement date cannot be before the birthdate.';
+            }
+        }
+    }
+
     if ($fullName === '' || $beneficiary['birth_date'] === '') {
         $msg = 'First name, last name, and birthdate are required.';
+        flash('danger', $msg);
+        if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
+    } elseif ($baselineError !== null) {
+        $msg = preg_match('/^(Baseline|The baseline|Please)/', $baselineError) ? $baselineError : 'Baseline measurement: ' . $baselineError;
         flash('danger', $msg);
         if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
     } elseif ($gradeChoice === GRADE_LEVEL_OTHER && $gradeOtherText === '') {
@@ -128,18 +166,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: beneficiary.php?id=' . $id);
             exit;
         } else {
-            // Optional baseline capture, shown directly on the Add form.
-            // This is a soft step: the beneficiary is created either way.
-            // Both height and weight must be given together for a baseline
-            // to be recorded; a lone value is treated as "not enough to
-            // record yet" rather than an error, since the officer may just
-            // be filling the form out ahead of the actual weigh-in.
-            $baselineHeight = (float)($_POST['baseline_height_cm'] ?? 0);
-            $baselineWeight = (float)($_POST['baseline_weight_kg'] ?? 0);
-            $baselineDate = ($_POST['baseline_date'] ?? '') !== '' ? $_POST['baseline_date'] : date('Y-m-d');
+            // Baseline (already validated above): either a complete, real
+            // measurement - never a blank.
             $weightStatus = trim($_POST['weight_status'] ?? '');
             $baselineRemarks = capitalize_sentences(trim($_POST['baseline_remarks'] ?? ''));
-            $hasBaselineMeasurement = $baselineHeight > 0 && $baselineWeight > 0;
+            $hasBaselineMeasurement = $baselineMode === 'record' && $baselineHeight !== null && $baselineWeight !== null && $baselineDate !== null;
 
             $pdo->beginTransaction();
             try {
@@ -153,16 +184,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $newId = (int)$pdo->lastInsertId();
                 log_action($pdo, 'CREATE_BENEFICIARY', 'beneficiaries', $newId, 'Created beneficiary profile');
 
-                if ($hasBaselineMeasurement) {
-                    $bmi = calculate_bmi($baselineWeight, $baselineHeight);
-                    $stmt = $pdo->prepare("
-                        INSERT INTO health_records
-                        (beneficiary_id, record_date, milestone, height_cm, weight_kg, bmi, nutritional_status, remarks, recorded_by)
-                        VALUES (?, ?, 'BASELINE', ?, ?, ?, ?, ?, ?)
-                    ");
-                    $stmt->execute([$newId, $baselineDate, $baselineHeight, $baselineWeight, $bmi, $weightStatus !== '' ? $weightStatus : null, $baselineRemarks, $_SESSION['user_id']]);
-                    log_action($pdo, 'CREATE_HEALTH_RECORD', 'health_records', (int)$pdo->lastInsertId(), 'Baseline captured during enrollment; BMI ' . $bmi);
-                }
+                $bmi = calculate_bmi($baselineWeight, $baselineHeight);
+                $stmt = $pdo->prepare("
+                    INSERT INTO health_records
+                    (beneficiary_id, record_date, milestone, height_cm, weight_kg, bmi, nutritional_status, remarks, recorded_by)
+                    VALUES (?, ?, 'BASELINE', ?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([$newId, $baselineDate, $baselineHeight, $baselineWeight, $bmi, $weightStatus !== '' ? $weightStatus : null, $baselineRemarks, $_SESSION['user_id']]);
+                log_action($pdo, 'CREATE_HEALTH_RECORD', 'health_records', (int)$pdo->lastInsertId(), 'Baseline captured during enrollment; BMI ' . $bmi);
 
                 $pdo->commit();
             } catch (Throwable $e) {
@@ -174,11 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
 
-            if ($hasBaselineMeasurement) {
-                flash('success', 'Beneficiary added and baseline recorded.');
-            } else {
-                flash('success', 'Beneficiary added. Baseline is still pending — add it from the profile page once the child is weighed.');
-            }
+            flash('success', 'Beneficiary added and baseline recorded.');
             if (($_POST['add_another'] ?? '') === '1') {
                 $qs = http_build_query(['site_id' => $siteId, 'program_id' => $programId, 'date_enlisted' => $dateEnlisted]);
                 if (is_ajax_request()) json_response(['ok' => true, 'redirect' => 'beneficiaries.php', 'reopen' => 'beneficiary_form.php?panel=1&' . $qs]);
@@ -209,7 +234,7 @@ $pageTitle = $isEdit ? 'Edit Beneficiary' : 'Add Beneficiary';
 $pageEyebrowHtml = '<a class="back-link" href="' . ($isEdit ? 'beneficiary.php?id=' . $id : 'beneficiaries.php') . '">&larr; Back to ' . ($isEdit ? 'Beneficiary Profile' : 'Dashboard') . '</a>';
 require __DIR__ . '/partials/header.php';
 ?>
-<div class="form-panel <?= $isEdit ? '' : 'form-panel-wide' ?>">
+<div class="form-panel">
     <?php if ($duplicateMatch): ?>
     <div class="notice danger">
         <strong>Possible duplicate:</strong> a beneficiary named
@@ -224,7 +249,7 @@ require __DIR__ . '/partials/header.php';
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <?php if ($duplicateMatch): ?><input type="hidden" name="confirm_duplicate" value="1"><?php endif; ?>
 
-        <div class="beneficiary-form-grid <?= $isEdit ? 'single' : '' ?>">
+        <div class="beneficiary-form-grid single">
             <section class="panel form-subpanel">
                 <div class="form-section">
                     <h3 class="form-section-title">Enrollment Info</h3>
@@ -258,6 +283,10 @@ require __DIR__ . '/partials/header.php';
                         <div>
                             <label>Date Enlisted</label>
                             <input type="date" name="date_enlisted" value="<?= e($beneficiary['date_enlisted']) ?>">
+                        </div>
+                        <div class="full-col">
+                            <label>Remarks</label>
+                            <textarea name="remarks" class="remarks-input" data-autogrow rows="3" placeholder="Optional notes about this beneficiary"><?= e($beneficiary['remarks']) ?></textarea>
                         </div>
                     </div>
                 </div>
@@ -311,26 +340,15 @@ require __DIR__ . '/partials/header.php';
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <?php if (!$isEdit): ?>
-            <section class="panel form-subpanel">
+                <?php if (!$isEdit): ?>
                 <div class="form-section">
-                    <h3 class="form-section-title">Baseline Measurement <span class="muted" style="font-weight:600; text-transform:none; letter-spacing:0;">(optional — can be added later)</span></h3>
-                    <label class="checkbox-label"><input type="checkbox" id="capture_baseline_toggle"> Record baseline measurement now</label>
-                    <div class="form-grid" id="baseline_fields" style="display:none; margin-top:8px;">
+                    <h3 class="form-section-title">Baseline Measurement <span class="muted" style="font-weight:600; text-transform:none; letter-spacing:0;">(required)</span></h3>
+                    <div class="form-grid" id="baseline_fields" style="margin-top:8px;">
                         <div>
-                            <label>Date of Measurement</label>
-                            <input type="date" name="baseline_date" value="<?= date('Y-m-d') ?>">
+                            <label>Date of Measurement *</label>
+                            <input type="date" name="baseline_date" value="<?= e($_POST['baseline_date'] ?? date('Y-m-d')) ?>" max="<?= date('Y-m-d') ?>" required>
                         </div>
-                        <div>
-                            <label>Height (cm)</label>
-                            <input id="height_cm" type="number" name="baseline_height_cm" min="40" max="220" step="0.1" inputmode="decimal" placeholder="e.g. 115">
-                        </div>
-                        <div>
-                            <label>Weight (kgs)</label>
-                            <input id="weight_kg" type="number" name="baseline_weight_kg" min="3" max="200" step="0.1" inputmode="decimal" placeholder="e.g. 20.5">
-                        </div>
+                        <?php $mPrefix = 'baseline_'; $mRequired = true; require __DIR__ . '/partials/measurement_fields.php'; ?>
                         <div>
                             <label>Calculated BMI</label>
                             <input id="bmi_preview" readonly placeholder="Enter height and weight">
@@ -348,13 +366,13 @@ require __DIR__ . '/partials/header.php';
                             <span class="form-hint">Leave as Pending until the child growth reference is confirmed.</span>
                         </div>
                         <div class="full-col">
-                            <label>Remarks</label>
-                            <input name="baseline_remarks">
+                            <label>Baseline Remarks</label>
+                            <textarea name="baseline_remarks" class="remarks-input" data-autogrow rows="2"></textarea>
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
             </section>
-            <?php endif; ?>
         </div>
 
         <div class="form-actions">

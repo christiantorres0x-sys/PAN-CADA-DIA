@@ -156,7 +156,20 @@
   }
 
   .quick-actions-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .dash-top-right {
+    margin-top: 26px;
+  }
+
+  .quick-actions-body {
+    width: 100%;
+  }
+
+  .quick-tile {
+    height: 120px;
   }
 
   .page-title {

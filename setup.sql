@@ -1,12 +1,3 @@
--- PAN CADA DIA — complete database setup (single file, no separate migrations).
--- Fresh install: just run this file.
--- If you already created the database with an older version of this file,
--- uncomment the next line once to rebuild it from scratch (this ERASES all data):
--- DROP DATABASE IF EXISTS pan_cada_dia;
-
-CREATE DATABASE IF NOT EXISTS pan_cada_dia
-  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE pan_cada_dia;
 
 CREATE TABLE IF NOT EXISTS users (
     user_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

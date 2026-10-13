@@ -1,10 +1,10 @@
 <?php
-// PAN CADA DIA configuration
-// For XAMPP: MySQL host=127.0.0.1, database=pan_cada_dia, user=root, password=''
-define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'pan_cada_dia');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// Database settings (used by db.php, which creates $pdo)
+define('DB_HOST', 'sql104.byethost4.com');
+define('DB_NAME', 'b4_43152274_pan_cada_dia');
+define('DB_USER', 'b4_43152274');
+define('DB_PASS', '283154');
+
 
 define('APP_NAME', 'PAN CADA DIA');
 define('APP_FULL_NAME', 'Feeding Program Health Monitoring System');
@@ -167,6 +167,124 @@ function calculate_bmi(float $weightKg, float $heightCm): float {
     $heightM = $heightCm / 100;
     if ($heightM <= 0) throw new InvalidArgumentException('Height must be greater than zero.');
     return round($weightKg / ($heightM * $heightM), 2);
+}
+
+// ---------------------------------------------------------------------
+// Measurement units. The database ALWAYS stores height in centimetres and
+// weight in kilograms (health_records.height_cm / weight_kg), and BMI is
+// always computed from those stored, rounded values. The forms let the user
+// type height as cm or ft + in, and weight as kg or lb; the conversion
+// happens exactly once, here on the server, from the unit that was
+// selected when the form was submitted.
+// ---------------------------------------------------------------------
+const CM_PER_INCH = 2.54;
+const KG_PER_LB = 0.45359237;
+const HEIGHT_MIN_CM = 40.0;
+const HEIGHT_MAX_CM = 220.0;
+const WEIGHT_MIN_KG = 3.0;
+const WEIGHT_MAX_KG = 200.0;
+
+/** cm -> "3 ft 9.3 in" (display helper). */
+function cm_to_ft_in_label(float $cm): string {
+    $totalIn = round($cm / CM_PER_INCH, 1);
+    $ft = (int)floor($totalIn / 12);
+    $in = round($totalIn - $ft * 12, 1);
+    if ($in >= 12) { $ft++; $in = 0.0; }
+    return $ft . ' ft ' . rtrim(rtrim(number_format($in, 1, '.', ''), '0'), '.') . ' in';
+}
+
+/** kg -> "45.2 lb" (display helper). */
+function kg_to_lb_label(float $kg): string {
+    return number_format($kg / KG_PER_LB, 1, '.', '') . ' lb';
+}
+
+/**
+ * Read and validate a height from a form submission and return it in cm.
+ * Fields read: {prefix}height_unit ('cm' | 'ftin'), {prefix}height_cm,
+ * {prefix}height_ft, {prefix}height_in.
+ * Returns [?float $cm, ?string $error]. [null, null] means "left blank".
+ */
+function parse_height_cm(array $in, string $prefix = ''): array {
+    $unit = (string)($in[$prefix . 'height_unit'] ?? 'cm');
+    $rangeMsg = 'Height must be between ' . (int)HEIGHT_MIN_CM . ' and ' . (int)HEIGHT_MAX_CM . ' cm ('
+        . cm_to_ft_in_label(HEIGHT_MIN_CM) . ' to ' . cm_to_ft_in_label(HEIGHT_MAX_CM) . ').';
+
+    if ($unit === 'cm') {
+        $raw = trim((string)($in[$prefix . 'height_cm'] ?? ''));
+        if ($raw === '') return [null, null];
+        if (!is_numeric($raw)) return [null, 'Height must be a number.'];
+        $cm = (float)$raw;
+    } elseif ($unit === 'ftin') {
+        $ftRaw = trim((string)($in[$prefix . 'height_ft'] ?? ''));
+        $inRaw = trim((string)($in[$prefix . 'height_in'] ?? ''));
+        if ($ftRaw === '' && $inRaw === '') return [null, null];
+        if ($ftRaw === '') $ftRaw = '0';
+        if ($inRaw === '') $inRaw = '0';
+        if (!ctype_digit($ftRaw)) return [null, 'Feet must be a whole number.'];
+        if (!is_numeric($inRaw) || (float)$inRaw < 0 || (float)$inRaw >= 12) {
+            return [null, 'Inches must be a number from 0 up to (but not including) 12.'];
+        }
+        $cm = ((int)$ftRaw * 12 + (float)$inRaw) * CM_PER_INCH;
+    } else {
+        return [null, 'Unknown height unit.'];
+    }
+
+    $cm = round($cm, 2);
+    if ($cm <= 0) return [null, 'Height must be greater than zero.'];
+    if ($cm < HEIGHT_MIN_CM || $cm > HEIGHT_MAX_CM) return [null, $rangeMsg];
+    return [$cm, null];
+}
+
+/**
+ * Read and validate a weight from a form submission and return it in kg.
+ * Fields read: {prefix}weight_unit ('kg' | 'lb'), {prefix}weight_value.
+ * Returns [?float $kg, ?string $error]. [null, null] means "left blank".
+ */
+function parse_weight_kg(array $in, string $prefix = ''): array {
+    $unit = (string)($in[$prefix . 'weight_unit'] ?? 'kg');
+    if ($unit !== 'kg' && $unit !== 'lb') return [null, 'Unknown weight unit.'];
+
+    $raw = trim((string)($in[$prefix . 'weight_value'] ?? ''));
+    if ($raw === '') return [null, null];
+    if (!is_numeric($raw)) return [null, 'Weight must be a number.'];
+
+    $kg = round($unit === 'lb' ? (float)$raw * KG_PER_LB : (float)$raw, 2);
+    if ($kg <= 0) return [null, 'Weight must be greater than zero.'];
+    if ($kg < WEIGHT_MIN_KG || $kg > WEIGHT_MAX_KG) {
+        return [null, 'Weight must be between ' . (int)WEIGHT_MIN_KG . ' and ' . (int)WEIGHT_MAX_KG . ' kg ('
+            . kg_to_lb_label(WEIGHT_MIN_KG) . ' to ' . kg_to_lb_label(WEIGHT_MAX_KG) . ').'];
+    }
+    return [$kg, null];
+}
+
+// ---------------------------------------------------------------------
+// Who may edit saved health measurements.
+//   can_edit_health_records()      - any signed-in user may correct a weight /
+//                                    height / remarks. Tighten here (e.g. by
+//                                    role) if only some accounts should.
+//   can_change_measurement_date()  - only Admin accounts may move the date a
+//                                    measurement was taken; everyone else
+//                                    keeps the original date.
+// ---------------------------------------------------------------------
+function can_edit_health_records(): bool {
+    return !empty($_SESSION['user_id']);
+}
+
+function can_change_measurement_date(): bool {
+    return strcasecmp((string)($_SESSION['role'] ?? ''), 'Admin') === 0;
+}
+
+/** Fingerprint of an editable record, used to detect that someone else changed it while a form was open. */
+function health_record_token(array $r): string {
+    return md5(implode('|', [
+        $r['record_date'], $r['height_cm'], $r['weight_kg'], $r['bmi'],
+        (string)$r['nutritional_status'], (string)$r['remarks'],
+    ]));
+}
+
+/** Only Admin accounts may deactivate or permanently delete a beneficiary. */
+function can_delete_beneficiaries(): bool {
+    return strcasecmp((string)($_SESSION['role'] ?? ''), 'Admin') === 0;
 }
 
 function age_in_years(string $birthDate, ?string $asOf = null): int {

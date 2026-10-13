@@ -4,38 +4,122 @@
 // against content injected into a slide-over — not just the initial page.
 // ---------------------------------------------------------------------
 function pcdWireFormExtras(root) {
-  const h = root.querySelector('#height_cm');
-  const w = root.querySelector('#weight_kg');
+  // Height (cm or ft/in) and weight (kg or lb) with a unit selector. This
+  // only drives the unit toggle and the live BMI preview; the server does
+  // the real conversion to cm / kg from the unit that is selected on submit
+  // (parse_height_cm / parse_weight_kg in config.php).
   const out = root.querySelector('#bmi_preview');
+  const CM_PER_IN = 2.54;
+  const KG_PER_LB = 0.45359237;
+  const hBox = root.querySelector('[data-measure="height"]');
+  const wBox = root.querySelector('[data-measure="weight"]');
 
-  function calc() {
-    if (!h || !w || !out) return;
-    const heightCm = parseFloat(h.value);
-    const weightKg = parseFloat(w.value);
-    if (heightCm > 0 && weightKg > 0) {
-      const meters = heightCm / 100;
-      out.value = (weightKg / (meters * meters)).toFixed(2);
-    } else {
-      out.value = '';
-    }
-  }
-  h?.addEventListener('input', calc);
-  w?.addEventListener('input', calc);
+  if (hBox && wBox && !hBox.dataset.pcdWired) {
+    hBox.dataset.pcdWired = '1';
+    const hUnit = hBox.querySelector('[data-m="height-unit"]');
+    const cmIn = hBox.querySelector('[data-m="cm"]');
+    const ftinWrap = hBox.querySelector('[data-m="ftin"]');
+    const ftIn = hBox.querySelector('[data-m="ft"]');
+    const inIn = hBox.querySelector('[data-m="in"]');
+    const wUnit = wBox.querySelector('[data-m="weight-unit"]');
+    const wIn = wBox.querySelector('[data-m="weight"]');
+    const required = cmIn.required;
+    const round1 = (n) => Math.round(n * 10) / 10;
+    const round2 = (n) => Math.round(n * 100) / 100;
 
-  // Optional "capture baseline now" section on the Add Beneficiary form.
-  const toggle = root.querySelector('#capture_baseline_toggle');
-  const fields = root.querySelector('#baseline_fields');
-  if (toggle && fields) {
-    const sync = (clear) => {
-      fields.style.display = toggle.checked ? 'grid' : 'none';
-      if (clear && !toggle.checked) {
-        fields.querySelectorAll('input:not([type="date"]), select').forEach((el) => {
-          el.value = '';
-        });
+    // Canonical values (cm / kg) of what the user last typed. Switching units
+    // re-displays these instead of converting the displayed, rounded number
+    // back and forth, so toggling never drifts the value.
+    let canonCm = null;
+    let canonKg = null;
+
+    const readCm = () => {
+      if (hUnit.value === 'cm') {
+        const v = parseFloat(cmIn.value);
+        return v > 0 ? v : null;
       }
+      const ft = parseFloat(ftIn.value);
+      const inch = parseFloat(inIn.value);
+      if (isNaN(ft) && isNaN(inch)) return null;
+      const total = (isNaN(ft) ? 0 : ft) * 12 + (isNaN(inch) ? 0 : inch);
+      return total > 0 ? total * CM_PER_IN : null;
     };
-    toggle.addEventListener('change', () => sync(true));
-    sync(false);
+    const readKg = () => {
+      const v = parseFloat(wIn.value);
+      if (!(v > 0)) return null;
+      return wUnit.value === 'lb' ? v * KG_PER_LB : v;
+    };
+
+    function showBmi() {
+      if (!out) return;
+      const cm = readCm();
+      const kg = readKg();
+      if (cm && kg) {
+        const m = Math.round(cm * 100) / 10000;       // same 2-decimal cm the server stores
+        const k = Math.round(kg * 100) / 100;         // same 2-decimal kg the server stores
+        out.value = (k / (m * m)).toFixed(2);
+      } else {
+        out.value = '';
+      }
+    }
+
+    function applyHeightUnit() {
+      const ftin = hUnit.value === 'ftin';
+      cmIn.style.display = ftin ? 'none' : '';
+      ftinWrap.style.display = ftin ? 'flex' : 'none';
+      cmIn.required = required && !ftin;
+      ftIn.required = required && ftin;
+      if (ftin) {
+        if (canonCm) {
+          const totalIn = round1(canonCm / CM_PER_IN);
+          let ft = Math.floor(totalIn / 12);
+          let inch = round1(totalIn - ft * 12);
+          if (inch >= 12) { ft += 1; inch = 0; }
+          ftIn.value = ft;
+          inIn.value = inch;
+        }
+      } else if (canonCm) {
+        cmIn.value = round2(canonCm);
+      }
+      showBmi();
+    }
+
+    function applyWeightUnit() {
+      if (canonKg) wIn.value = wUnit.value === 'lb' ? round1(canonKg / KG_PER_LB) : round2(canonKg);
+      // Range hints for the browser's own validation, in the chosen unit.
+      wIn.min = wUnit.value === 'lb' ? '6.6' : '3';
+      wIn.max = wUnit.value === 'lb' ? '440.9' : '200';
+      showBmi();
+    }
+
+    [cmIn, ftIn, inIn].forEach((el) => el.addEventListener('input', () => { canonCm = readCm(); showBmi(); }));
+    wIn.addEventListener('input', () => { canonKg = readKg(); showBmi(); });
+    hUnit.addEventListener('change', applyHeightUnit);
+    wUnit.addEventListener('change', applyWeightUnit);
+    // A form opened with saved values (edit measurement) starts in cm / kg;
+    // remember those exact numbers so switching units never re-rounds them.
+    canonCm = readCm();
+    canonKg = readKg();
+    applyHeightUnit();
+    applyWeightUnit();
+  }
+
+  // Baseline measurement on the Add Beneficiary form is always required:
+  // date, height and weight. Friendly messages for the required fields.
+  const fields = root.querySelector('#baseline_fields');
+  if (fields) {
+    const messages = {
+      baseline_date: 'Enter the date the baseline was measured.',
+      baseline_height_cm: 'Baseline height is required.',
+      baseline_height_ft: 'Baseline height is required (feet).',
+      baseline_weight_value: 'Baseline weight is required.',
+    };
+    fields.querySelectorAll('input[required]').forEach((el) => {
+      const msg = messages[el.name];
+      if (!msg) return;
+      el.addEventListener('invalid', () => { if (el.validity.valueMissing) el.setCustomValidity(msg); });
+      el.addEventListener('input', () => el.setCustomValidity(''));
+    });
   }
 
   // Grade level "Other (please specify)": reveal the text box only when needed,
@@ -74,6 +158,29 @@ function pcdWireFormExtras(root) {
     milestoneSelect.addEventListener('change', sync2);
     sync2();
   }
+}
+
+// ---------------------------------------------------------------------
+// Remarks boxes (textarea[data-autogrow]) grow with what is typed so the
+// whole entry is always visible, with no inner scrollbar. Re-run after a
+// slide-over loads, and whenever a box becomes visible (a hidden box has no
+// measurable height).
+// ---------------------------------------------------------------------
+function pcdWireAutogrow(root) {
+  root.querySelectorAll('textarea[data-autogrow]').forEach((ta) => {
+    const fit = () => {
+      if (ta.offsetParent === null) return;   // hidden: measure later
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 2 + 'px';
+    };
+    if (!ta.dataset.pcdGrow) {
+      ta.dataset.pcdGrow = '1';
+      ta.addEventListener('input', fit);
+      ta.addEventListener('focus', fit);
+      window.addEventListener('resize', fit);
+    }
+    fit();
+  });
 }
 
 // ---------------------------------------------------------------------
@@ -195,6 +302,7 @@ async function pcdOpenSlideover(url, title) {
     pcdLinkLabels(body);
     pcdWireInlineValidation(body);
     pcdWireAutoCapitalize(body);
+    pcdWireAutogrow(body);
     const firstField = body.querySelector('input:not([type="hidden"]):not([readonly]), select, textarea');
     if (firstField) firstField.focus();
   } catch (err) {
@@ -411,10 +519,87 @@ function pcdWireConfirmForms(root) {
   });
 }
 
+// ---------------------------------------------------------------------
+// Program Setup: Duration (days) is calculated from Start/End Date
+// (inclusive of both days) but stays editable. Once the user types their
+// own value it is left alone; clearing the field hands control back to the
+// automatic calculation. Also blocks an End Date before the Start Date.
+// ---------------------------------------------------------------------
+function pcdWireProgramDates(root) {
+  const form = root.querySelector('#program-form');
+  if (!form || form.dataset.pcdDatesWired) return;
+  form.dataset.pcdDatesWired = '1';
+  const start = form.querySelector('#program_start_date');
+  const end = form.querySelector('#program_end_date');
+  const dur = form.querySelector('#program_duration_days');
+  const hint = form.querySelector('#program_duration_hint');
+  if (!start || !end || !dur) return;
+  const defaultHint = hint ? hint.textContent : '';
+  let manual = false;
+
+  const setHint = (msg) => { if (hint) hint.textContent = msg || defaultHint; };
+  const dayCount = () => {
+    if (!start.value || !end.value) return null;
+    const a = Date.parse(start.value + 'T00:00:00Z');
+    const b = Date.parse(end.value + 'T00:00:00Z');
+    if (isNaN(a) || isNaN(b)) return null;
+    return Math.round((b - a) / 86400000) + 1;
+  };
+
+  function validateDates() {
+    const bad = start.value && end.value && end.value < start.value;
+    end.setCustomValidity(bad ? 'End Date cannot be earlier than Start Date.' : '');
+    end.classList.toggle('is-invalid', !!bad);
+    let err = end.nextElementSibling;
+    if (err && !err.classList.contains('field-error')) err = null;
+    if (bad && !err) {
+      err = document.createElement('span');
+      err.className = 'field-error';
+      err.setAttribute('role', 'alert');
+      end.insertAdjacentElement('afterend', err);
+    }
+    if (err) { if (bad) err.textContent = end.validationMessage; else err.remove(); }
+    return !bad;
+  }
+
+  function recalc() {
+    const ok = validateDates();
+    if (manual) return;
+    const n = ok ? dayCount() : null;
+    dur.value = n !== null && n >= 1 ? String(n) : '';
+  }
+
+  start.addEventListener('input', recalc);
+  start.addEventListener('change', recalc);
+  end.addEventListener('input', recalc);
+  end.addEventListener('change', recalc);
+
+  dur.addEventListener('input', () => {
+    manual = dur.value.trim() !== '';
+    const v = Number(dur.value);
+    dur.setCustomValidity(manual && (!Number.isInteger(v) || v < 1 || v > 3650)
+      ? 'Duration must be a whole number of days between 1 and 3650.' : '');
+    const n = dayCount();
+    setHint(manual && n !== null && n !== v ? 'Edited manually (the dates span ' + n + ' days).' : '');
+    if (!manual) recalc();
+  });
+
+  form.addEventListener('submit', (e) => {
+    recalc();
+    const invalid = [end, dur].find((el) => !el.checkValidity());
+    if (invalid) {
+      e.preventDefault();
+      invalid.reportValidity();
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  pcdWireProgramDates(document);
   pcdLinkLabels(document);
   pcdWireInlineValidation(document);
   pcdWireAutoCapitalize(document);
+  pcdWireAutogrow(document);
   pcdWireAutosubmit(document);
   pcdWireConfirmForms(document);
   pcdWireFormExtras(document);
