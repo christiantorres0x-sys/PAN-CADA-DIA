@@ -1,9 +1,9 @@
 <?php
 // Database settings (used by db.php, which creates $pdo)
-define('DB_HOST', 'sql104.byethost4.com');
-define('DB_NAME', 'b4_43152274_pan_cada_dia');
-define('DB_USER', 'b4_43152274');
-define('DB_PASS', '283154');
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'pan_cada_dia');
+define('DB_USER', 'root');
+define('DB_PASS', '');
 
 
 define('APP_NAME', 'PAN CADA DIA');
