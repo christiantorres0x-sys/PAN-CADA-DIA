@@ -11,14 +11,26 @@ $records = (int)$pdo->query("SELECT COUNT(*) FROM health_records")->fetchColumn(
 $baselineDone = (int)$pdo->query("SELECT COUNT(*) FROM health_records WHERE milestone='BASELINE'")->fetchColumn();
 $pendingEnrollment = max(0, $total - $enrolled);
 
-$latest = $pdo->query("
+// Search box: only names where a word starts with what was typed
+// (typing "k" shows Kyle / Anna Kim, not "Mika"). Case-insensitive.
+$searchSql = '';
+$searchParams = [];
+if ($q !== '') {
+    $esc = addcslashes($q, '\\%_');
+    $searchSql = 'WHERE (b.full_name LIKE ? OR b.full_name LIKE ?)';
+    $searchParams = [$esc . '%', '% ' . $esc . '%'];
+}
+$latestStmt = $pdo->prepare("
     SELECT hr.*, b.full_name, b.birth_date, b.sex, b.grade_level, b.program_status, s.site_name
     FROM health_records hr
     JOIN beneficiaries b ON b.beneficiary_id = hr.beneficiary_id
     LEFT JOIN feeding_sites s ON s.site_id = b.site_id
+    $searchSql
     ORDER BY hr.record_date DESC, hr.record_id DESC
     LIMIT 8
-")->fetchAll();
+");
+$latestStmt->execute($searchParams);
+$latest = $latestStmt->fetchAll();
 
 $pageTitle = 'Dashboard';
 $activeNav = 'dashboard.php';
@@ -51,7 +63,7 @@ require __DIR__ . '/partials/header.php';
     <form class="scope-row beneficiary-search-row" method="get">
         <input type="hidden" name="site_id" value="<?= $siteId ?>">
         <div class="field">
-            <label class="sr-only" for="beneficiary-search">Search beneficiaries by name or grade level</label>
+            <label class="sr-only" for="beneficiary-search">Search beneficiaries by name</label>
             <div class="search">
                 <input id="beneficiary-search" type="search" name="q" value="<?= e($q) ?>" placeholder="Enter Beneficiary's Name">
                 <button class="search-submit" type="submit" aria-label="Search beneficiaries" title="Search beneficiaries">
@@ -71,7 +83,7 @@ require __DIR__ . '/partials/header.php';
         <a href="reports.php" style="font-size:12px; font-weight:800; text-transform:uppercase;">View Reports &amp; Analysis</a>
     </div>
     <?php if (!$latest): ?>
-        <p class="empty">No health records yet.</p>
+        <p class="empty"><?= $q !== '' ? 'No records found for names starting with &ldquo;' . e($q) . '&rdquo;.' : 'No health records yet.' ?></p>
     <?php else: ?>
     <div class="table-wrap">
         <table>
