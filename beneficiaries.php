@@ -10,10 +10,12 @@ $sites = $pdo->query("SELECT * FROM feeding_sites WHERE status='ACTIVE' ORDER BY
 $where = [];
 $params = [];
 if ($q !== '') {
-    $where[] = '(b.full_name LIKE ? OR b.grade_level LIKE ?)';
-    $like = "%$q%";
-    $params[] = $like;
-    $params[] = $like;
+    // Names only, and only names where a word STARTS with what was typed
+    // (typing "k" shows Kyle / Anna Kim, not "Mika"). Case-insensitive.
+    $esc = addcslashes($q, '\\%_');
+    $where[] = "(b.full_name LIKE ? OR b.full_name LIKE ?)";
+    $params[] = $esc . '%';
+    $params[] = '% ' . $esc . '%';
 }
 if ($siteId > 0) {
     $where[] = 'b.site_id = ?';
@@ -79,7 +81,7 @@ require __DIR__ . '/partials/header.php';
 <form class="scope-row beneficiary-search-row" method="get">
     <input type="hidden" name="site_id" value="<?= $siteId ?>">
     <div class="field">
-        <label class="sr-only" for="beneficiary-search">Search beneficiaries by name or grade level</label>
+        <label class="sr-only" for="beneficiary-search">Search beneficiaries by name</label>
         <div class="search">
             <input id="beneficiary-search" type="search" name="q" value="<?= e($q) ?>" placeholder="Enter Beneficiary's Name">
             <button class="search-submit" type="submit" aria-label="Search beneficiaries" title="Search beneficiaries">
