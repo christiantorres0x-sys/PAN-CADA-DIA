@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bParams = [$bDate, $_SESSION['user_id'], $bDate];
         if ($bSite > 0) { $bWhere[] = 'b.site_id=?'; $bParams[] = $bSite; }
         if ($bProg > 0) { $bWhere[] = 'b.program_id=?'; $bParams[] = $bProg; }
-        if ($bQ !== '') { $bWhere[] = 'b.full_name LIKE ?'; $bParams[] = '%' . $bQ . '%'; }
+        if ($bQ !== '') { $bEsc = addcslashes($bQ, '\\%_'); $bWhere[] = '(b.full_name LIKE ? OR b.full_name LIKE ?)'; $bParams[] = $bEsc . '%'; $bParams[] = '% ' . $bEsc . '%'; }
 
         $bulk = $pdo->prepare("
             INSERT INTO attendance_records (beneficiary_id, attendance_date, attendance_status, remarks, recorded_by)
@@ -127,8 +127,10 @@ if ($programId > 0) {
     $params[] = $programId;
 }
 if ($q !== '') {
-    $where[] = 'b.full_name LIKE ?';
-    $params[] = '%' . $q . '%';
+    $esc = addcslashes($q, '\\%_');
+    $where[] = '(b.full_name LIKE ? OR b.full_name LIKE ?)';
+    $params[] = $esc . '%';
+    $params[] = '% ' . $esc . '%';
 }
 $ws = 'WHERE ' . implode(' AND ', $where);
 
