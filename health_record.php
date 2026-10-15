@@ -1,184 +1,160 @@
 <?php
 /**
- * Edit one saved health measurement (weight, height, remarks, weight status
- * and - for Admin accounts only - the measurement date).
+ * Record a growth milestone (Baseline / Midline / Endline) or a plain
+ * measurement for one beneficiary.
  *
- * Safety rules:
- *  - The UPDATE targets exactly one row (record_id AND beneficiary_id); the
- *    milestone and every other record are never touched.
- *  - Values are typed in the selected unit and converted once to kg / cm
- *    (parse_weight_kg / parse_height_cm); BMI is recomputed from the stored
- *    values, so it always matches the saved height and weight.
- *  - The original date is kept unless the signed-in user is allowed to change
- *    it (can_change_measurement_date()).
- *  - A fingerprint of the record (orig_token) is posted back; if the record
- *    changed while the form was open the save is refused instead of
- *    overwriting someone else's edit.
- *  - Every change is written to the audit log with old -> new values.
+ *  - ?beneficiary_id=ID            -> milestone preselected to the next one not yet recorded
+ *  - ?beneficiary_id=ID&milestone= -> that milestone preselected (from the profile's milestone slots)
+ *  - Each milestone can only be recorded once per child (unique key in the DB);
+ *    to fix a saved one, use the Edit button (health_record_edit.php).
+ *  - Soft workflow: recording Midline/Endline without an earlier milestone is
+ *    allowed, the form just warns about the gap (see milestone_prerequisite_gap()).
+ *  - BMI is always recalculated server-side from the converted cm / kg values.
  * Works as a slide-over (?panel=1, JSON replies) or as a normal page.
  */
 require_once __DIR__ . '/db.php';
 require_login();
 
-$recordId = (int)($_GET['id'] ?? $_POST['record_id'] ?? 0);
+$beneficiaryId = (int)($_GET['beneficiary_id'] ?? $_POST['beneficiary_id'] ?? 0);
 $isAjax = is_ajax_request();
 
-function pcd_edit_fail(string $message, ?string $redirect, bool $isAjax): void {
-    flash('danger', $message);
-    if ($isAjax) json_response(['ok' => false, 'message' => $message]);
-    if ($redirect) { header('Location: ' . $redirect); exit; }
+$stmt = $pdo->prepare("SELECT beneficiary_id, full_name, birth_date FROM beneficiaries WHERE beneficiary_id = ?");
+$stmt->execute([$beneficiaryId]);
+$b = $stmt->fetch();
+if (!$b) {
+    if ($isAjax && $_SERVER['REQUEST_METHOD'] === 'POST') json_response(['ok' => false, 'message' => 'That beneficiary no longer exists.']);
+    exit('Beneficiary not found.');
 }
 
-$load = $pdo->prepare("
-    SELECT hr.*, b.full_name, b.birth_date
-    FROM health_records hr
-    JOIN beneficiaries b ON b.beneficiary_id = hr.beneficiary_id
-    WHERE hr.record_id = ?
-");
-$load->execute([$recordId]);
-$rec = $load->fetch();
-if (!$rec) {
-    if ($isAjax && $_SERVER['REQUEST_METHOD'] === 'POST') json_response(['ok' => false, 'message' => 'That measurement no longer exists.']);
-    exit('Measurement not found.');
-}
-$beneficiaryId = (int)$rec['beneficiary_id'];
 $profileUrl = 'beneficiary.php?id=' . $beneficiaryId . '#health';
-
-if (!can_edit_health_records()) {
-    pcd_edit_fail('You are not allowed to edit health measurements.', $profileUrl, $isAjax);
-    exit;
-}
-$canDate = can_change_measurement_date();
+$milestoneRecords = get_milestone_records($pdo, $beneficiaryId);
 $statusOptions = ['Severely Underweight', 'Underweight', 'Normal', 'Overweight', 'Obese'];
+
+// Which milestone is preselected: the one in the link, else the next one due.
+$requested = strtoupper(trim((string)($_GET['milestone'] ?? $_POST['milestone'] ?? '')));
+$selected = in_array($requested, MILESTONES, true) ? $requested : (next_milestone($milestoneRecords) ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
-    $self = 'health_record_edit.php?id=' . $recordId;
 
+    $milestone = strtoupper(trim((string)($_POST['milestone'] ?? '')));
+    $milestone = $milestone === '' ? null : $milestone;
     [$height, $heightErr] = parse_height_cm($_POST);
     [$weight, $weightErr] = parse_weight_kg($_POST);
     $remarks = capitalize_sentences(trim($_POST['remarks'] ?? ''));
     $status = trim($_POST['weight_status'] ?? '');
-    $status = ($status === '') ? null : $status;
-    if ($status !== null && !in_array($status, $statusOptions, true) && $status !== $rec['nutritional_status']) {
-        $status = $rec['nutritional_status'];   // ignore unknown values
-    }
+    $status = in_array($status, $statusOptions, true) ? $status : null;
 
-    // Date: keep the original unless this user may change it.
-    $newDate = $rec['record_date'];
-    $dateErr = null;
-    if ($canDate) {
-        $postedDate = trim($_POST['record_date'] ?? '');
-        if ($postedDate !== '' && $postedDate !== $rec['record_date']) {
-            $d = DateTimeImmutable::createFromFormat('!Y-m-d', $postedDate);
-            if (!$d || $d->format('Y-m-d') !== $postedDate) {
-                $dateErr = 'Please enter a valid measurement date.';
-            } elseif ($postedDate > date('Y-m-d')) {
-                $dateErr = 'The measurement date cannot be in the future.';
-            } elseif ($rec['birth_date'] && $postedDate < $rec['birth_date']) {
-                $dateErr = 'The measurement date cannot be before the child\'s birthdate.';
-            } else {
-                $newDate = $postedDate;
-            }
-        }
-    }
+    $date = trim((string)($_POST['record_date'] ?? ''));
+    $d = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
 
-    $error = $heightErr ?? $weightErr ?? $dateErr;
-    if ($error === null && ($height === null || $weight === null)) {
+    $error = null;
+    if ($milestone !== null && !in_array($milestone, MILESTONES, true)) {
+        $error = 'Please choose a valid milestone.';
+    } elseif ($milestone !== null && !empty($milestoneRecords[$milestone])) {
+        $error = milestone_label($milestone) . ' is already recorded for this child. Use Edit on the existing record to correct it.';
+    } elseif (!$d || $d->format('Y-m-d') !== $date) {
+        $error = 'Please enter a valid measurement date.';
+    } elseif ($date > date('Y-m-d')) {
+        $error = 'The measurement date cannot be in the future.';
+    } elseif ($b['birth_date'] && $date < $b['birth_date']) {
+        $error = 'The measurement date cannot be before the child\'s birthdate.';
+    } elseif ($heightErr !== null || $weightErr !== null) {
+        $error = $heightErr ?? $weightErr;
+    } elseif ($height === null || $weight === null) {
         $error = 'Please enter both height and weight.';
     }
-    if ($error === null && ($_POST['orig_token'] ?? '') !== health_record_token($rec)) {
-        $error = 'This measurement was changed by someone else while you were editing. Close this form and open it again to see the latest values.';
-    }
 
-    if ($error !== null) {
-        flash('danger', $error);
-        if ($isAjax) json_response(['ok' => false, 'message' => $error]);
-    } else {
+    if ($error === null) {
         $bmi = calculate_bmi($weight, $height);
-        $changed = [];
-        if ($newDate !== $rec['record_date']) $changed[] = 'date ' . $rec['record_date'] . ' -> ' . $newDate;
-        if ((float)$rec['height_cm'] !== $height) $changed[] = 'height ' . $rec['height_cm'] . ' -> ' . $height . ' cm';
-        if ((float)$rec['weight_kg'] !== $weight) $changed[] = 'weight ' . $rec['weight_kg'] . ' -> ' . $weight . ' kg';
-        if ((float)$rec['bmi'] !== $bmi) $changed[] = 'BMI ' . $rec['bmi'] . ' -> ' . $bmi;
-        if ((string)$rec['nutritional_status'] !== (string)$status) $changed[] = 'weight status ' . ($rec['nutritional_status'] ?? 'Pending') . ' -> ' . ($status ?? 'Pending');
-        if ((string)$rec['remarks'] !== $remarks) $changed[] = 'remarks edited';
-
-        if (!$changed) {
-            flash('success', 'No changes to save.');
-        } else {
-            // One row only: this record, and only if it still belongs to this child.
-            $upd = $pdo->prepare("UPDATE health_records SET record_date=?, height_cm=?, weight_kg=?, bmi=?, nutritional_status=?, remarks=? WHERE record_id=? AND beneficiary_id=?");
-            $upd->execute([$newDate, $height, $weight, $bmi, $status, $remarks, $recordId, $beneficiaryId]);
-            log_action($pdo, 'UPDATE_HEALTH_RECORD', 'health_records', $recordId,
-                ($rec['milestone'] ? milestone_label($rec['milestone']) . ' ' : '') . 'record edited for beneficiary ID ' . $beneficiaryId . ': ' . implode('; ', $changed));
-            flash('success', 'Measurement updated. Weight ' . $weight . ' kg, height ' . $height . ' cm, BMI ' . $bmi . '.');
+        try {
+            $ins = $pdo->prepare("
+                INSERT INTO health_records
+                (beneficiary_id, record_date, milestone, height_cm, weight_kg, bmi, nutritional_status, remarks, recorded_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $ins->execute([$beneficiaryId, $date, $milestone, $height, $weight, $bmi, $status, $remarks, $_SESSION['user_id'] ?? null]);
+            $newId = (int)$pdo->lastInsertId();
+            log_action($pdo, 'CREATE_HEALTH_RECORD', 'health_records', $newId,
+                ($milestone ? milestone_label($milestone) . ' ' : '') . 'measurement recorded for beneficiary ID ' . $beneficiaryId
+                . ': ' . $height . ' cm, ' . $weight . ' kg, BMI ' . $bmi);
+            $label = $milestone ? milestone_label($milestone) : 'Measurement';
+            flash('success', $label . ' recorded. Weight ' . $weight . ' kg, height ' . $height . ' cm, BMI ' . $bmi . '.');
+            if ($isAjax) json_response(['ok' => true, 'redirect' => 'beneficiary.php?id=' . $beneficiaryId]);
+            header('Location: ' . $profileUrl);
+            exit;
+        } catch (PDOException $e) {
+            // 23000 = duplicate (beneficiary, milestone), e.g. two people saving at once.
+            $error = $e->getCode() === '23000'
+                ? 'That milestone was just recorded by someone else. Reload the profile to see it.'
+                : 'Could not save the measurement. Please try again.';
         }
-        if ($isAjax) json_response(['ok' => true, 'redirect' => 'beneficiary.php?id=' . $beneficiaryId]);
-        header('Location: ' . $profileUrl);
-        exit;
     }
-    // Non-AJAX validation failure: fall through and redraw the form with the saved values.
+
+    flash('danger', $error);
+    if ($isAjax) json_response(['ok' => false, 'message' => $error]);
+    $selected = $milestone ?? '';   // redraw the form on the same milestone
 }
 
-$title = $rec['milestone'] ? milestone_label($rec['milestone']) . ' Measurement' : 'Measurement';
-$pageTitle = 'Edit ' . $title;
-$pageSubtitle = 'Correct a previously recorded measurement';
+$pageTitle = $selected ? 'Record ' . milestone_label($selected) : 'Record Measurement';
+$pageSubtitle = 'Add a height and weight measurement';
 $pageEyebrowHtml = '<a class="back-link" href="beneficiary.php?id=' . $beneficiaryId . '">&larr; Back to Beneficiary Profile</a>';
 require __DIR__ . '/partials/header.php';
+
+$keep = fn(string $k, string $default = '') => $_SERVER['REQUEST_METHOD'] === 'POST' ? (string)($_POST[$k] ?? $default) : $default;
 ?>
 <div class="form-panel">
     <div class="person-banner">
-        <strong><?= e($rec['full_name']) ?></strong>
-        <span><?= e($title) ?> · recorded <?= e($rec['record_date']) ?></span>
+        <strong><?= e($b['full_name']) ?></strong>
+        <span>New measurement</span>
     </div>
 
-    <form method="post" action="health_record_edit.php?id=<?= $recordId ?>">
+    <form method="post" action="health_record.php?beneficiary_id=<?= $beneficiaryId ?><?= ($_GET['panel'] ?? '') === '1' ? '&amp;panel=1' : '' ?>">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-        <input type="hidden" name="record_id" value="<?= $recordId ?>">
-        <input type="hidden" name="orig_token" value="<?= e(health_record_token($rec)) ?>">
+        <input type="hidden" name="beneficiary_id" value="<?= $beneficiaryId ?>">
         <div class="form-grid">
             <div>
                 <label>Milestone</label>
-                <input value="<?= e($rec['milestone'] ? milestone_label($rec['milestone']) : 'None') ?>" readonly tabindex="-1">
+                <select name="milestone" id="milestone_select">
+                    <?php foreach (MILESTONES as $m):
+                        $done = !empty($milestoneRecords[$m]);
+                        $gap = $done ? null : milestone_prerequisite_gap($m, $milestoneRecords); ?>
+                        <option value="<?= $m ?>" <?= $selected === $m ? 'selected' : '' ?> <?= $done ? 'disabled' : '' ?>
+                            data-gap="<?= $gap ? e(milestone_label($gap)) : '' ?>"><?= e(milestone_label($m)) ?><?= $done ? ' (already recorded)' : '' ?></option>
+                    <?php endforeach; ?>
+                    <option value="" <?= $selected === '' ? 'selected' : '' ?>>No milestone (extra measurement)</option>
+                </select>
             </div>
             <div>
-                <label>Measurement Date</label>
-                <?php if ($canDate): ?>
-                    <input type="date" name="record_date" value="<?= e($rec['record_date']) ?>" min="<?= e($rec['birth_date']) ?>" max="<?= date('Y-m-d') ?>">
-                <?php else: ?>
-                    <input value="<?= e($rec['record_date']) ?>" readonly tabindex="-1">
-                    <span class="form-hint">Only an administrator can change the measurement date.</span>
-                <?php endif; ?>
+                <label>Date of Measurement *</label>
+                <input type="date" name="record_date" value="<?= e($keep('record_date', date('Y-m-d'))) ?>" min="<?= e($b['birth_date']) ?>" max="<?= date('Y-m-d') ?>" required>
             </div>
-            <?php $mPrefix = ''; $mRequired = true; $mHeightCm = (float)$rec['height_cm']; $mWeightKg = (float)$rec['weight_kg']; require __DIR__ . '/partials/measurement_fields.php'; ?>
+            <div class="full-col">
+                <div id="milestone_warning" class="notice" style="display:none;"></div>
+            </div>
+            <?php $mPrefix = ''; $mRequired = true; require __DIR__ . '/partials/measurement_fields.php'; ?>
             <div>
                 <label>Calculated BMI</label>
-                <input id="bmi_preview" readonly value="<?= e($rec['bmi']) ?>">
+                <input id="bmi_preview" readonly placeholder="Enter height and weight">
             </div>
             <div>
                 <label>Weight Status</label>
                 <select name="weight_status">
                     <option value="">Pending</option>
-                    <?php
-                    $opts = $statusOptions;
-                    if ($rec['nutritional_status'] && !in_array($rec['nutritional_status'], $opts, true)) $opts[] = $rec['nutritional_status'];
-                    foreach ($opts as $o): ?>
-                        <option <?= $rec['nutritional_status'] === $o ? 'selected' : '' ?>><?= e($o) ?></option>
+                    <?php foreach ($statusOptions as $o): ?>
+                        <option <?= $keep('weight_status') === $o ? 'selected' : '' ?>><?= e($o) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <span class="form-hint">Leave as Pending until the child growth reference is confirmed.</span>
             </div>
             <div class="full-col">
                 <label>Remarks</label>
-                <textarea name="remarks" class="remarks-input" data-autogrow rows="2"><?= e($rec['remarks']) ?></textarea>
+                <textarea name="remarks" class="remarks-input" data-autogrow rows="2"><?= e($keep('remarks')) ?></textarea>
             </div>
-        </div>
-        <div class="notice">
-            Saving recalculates BMI from the new height and weight. The weight status is not recalculated automatically, so review it if the weight changed a lot. Other measurements for this child are not affected.
         </div>
         <div class="form-actions">
             <a class="btn secondary" href="beneficiary.php?id=<?= $beneficiaryId ?>#health">Cancel</a>
-            <button class="btn primary">Save Changes</button>
+            <button class="btn primary">Save Measurement</button>
         </div>
     </form>
 </div>
