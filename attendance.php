@@ -253,7 +253,7 @@ require __DIR__ . '/partials/header.php';
     <div class="table-wrap">
         <table class="attendance-table">
             <thead>
-                <tr><th>Beneficiary</th><th>Status</th><th><span class="sr-only">Action</span></th></tr>
+                <tr><th>ID</th><th>Beneficiary</th><th>Status</th><th><span class="sr-only">Action</span></th></tr>
             </thead>
             <tbody>
                 <?php foreach ($rows as $r): ?>
@@ -266,6 +266,7 @@ require __DIR__ . '/partials/header.php';
                         <input type="hidden" name="return_site_id" value="<?= $siteId ?>">
                         <input type="hidden" name="return_program_id" value="<?= $programId ?>">
                         <input type="hidden" name="return_q" value="<?= e($q) ?>">
+                    <td><?= $r['beneficiary_code'] ? '<span class="code-tag">' . e($r['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td><a href="beneficiary.php?id=<?= $r['beneficiary_id'] ?>"><?= e($r['full_name']) ?></a></td>
                     <?php
                         $curStatus = $r['attendance_status'] ?? '';

@@ -95,11 +95,12 @@ require __DIR__ . '/partials/header.php';
     <div class="table-wrap">
         <table>
             <thead>
-                <tr><th>Grade Level</th><th>Birth Date</th><th>Name</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>
+                <tr><th>ID</th><th>Grade Level</th><th>Birth Date</th><th>Name</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($rows as $b): $rec = $latestByBeneficiary[$b['beneficiary_id']] ?? null; $nutritionStatus = strtolower($rec['nutritional_status'] ?? ''); $flag = str_contains($nutritionStatus, 'under') || str_contains($nutritionStatus, 'severe'); $nutritionAlert = $flag || str_contains($nutritionStatus, 'over'); ?>
                 <tr class="clickable-row <?= $flag ? 'row-flag' : '' ?>" data-href="beneficiary.php?id=<?= (int)$b['beneficiary_id'] ?>" onclick="window.location=this.dataset.href">
+                    <td><?= $b['beneficiary_code'] ? '<span class="code-tag">' . e($b['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td><?= e($b['grade_level'] ?: '—') ?></td>
                     <td><?= e($b['birth_date'] ?: '—') ?></td>
                     <td><strong><a href="beneficiary.php?id=<?= (int)$b['beneficiary_id'] ?>"><?= e($b['full_name']) ?></a></strong></td>

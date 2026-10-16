@@ -123,27 +123,32 @@ function status_tone_for(string $raw): string {
 // ---------------------------------------------------------------------
 // Beneficiary ID generation & duplicate detection
 //
-// ID format: first 3 letters of the first name + '-' + middle-name
-// initial (e.g. "Christian" + "Carlo" -> "CHR-C"). If no middle name
-// is on file, the ID is just the first 3 letters. This is a display/
-// lookup aid, not a database surrogate key — beneficiary_id stays the
-// real primary key.
+// ID format: 2-digit year + 4-digit running order within that year, e.g.
+// the first beneficiary added in 2026 is 260001, the second 260002. The
+// count restarts at 0001 each January. The ID is assigned once when the
+// beneficiary is added and never changes afterwards (editing the name does
+// not touch it). It is a display/lookup aid, not a database surrogate key -
+// beneficiary_id stays the real primary key.
 // ---------------------------------------------------------------------
 
-function generate_beneficiary_code(string $firstName, string $middleName = ''): string {
-    $letters = strtoupper(preg_replace('/[^A-Za-z]/', '', $firstName));
-    $first3 = substr($letters, 0, 3);
-    if ($first3 === '') return '';
-    $mLetters = strtoupper(preg_replace('/[^A-Za-z]/', '', $middleName));
-    $mInitial = $mLetters !== '' ? substr($mLetters, 0, 1) : '';
-    return $mInitial !== '' ? $first3 . '-' . $mInitial : $first3;
+/** Next free ID for the given year (default: current year), e.g. "260001". */
+function next_beneficiary_code(PDO $pdo, ?int $year = null): string {
+    $yy = substr((string)($year ?? (int)date('Y')), -2);
+    $stmt = $pdo->prepare("SELECT MAX(CAST(SUBSTRING(beneficiary_code, 3) AS UNSIGNED)) FROM beneficiaries WHERE beneficiary_code REGEXP ?");
+    $stmt->execute(['^' . $yy . '[0-9]{4,}$']);
+    $last = (int)$stmt->fetchColumn();
+    return $yy . str_pad((string)($last + 1), 4, '0', STR_PAD_LEFT);
 }
 
-/** Finds an existing beneficiary sharing this code (excluding $excludeId, e.g. the record being edited). */
-function find_beneficiary_by_code(PDO $pdo, string $code, ?int $excludeId = null): ?array {
-    if ($code === '') return null;
-    $sql = "SELECT beneficiary_id, full_name, birth_date, program_status FROM beneficiaries WHERE beneficiary_code = ?";
-    $params = [$code];
+/**
+ * Finds an existing beneficiary with the same name and birthdate (excluding
+ * $excludeId, e.g. the record being edited). IDs are now unique by design, so
+ * this is what catches the same child being entered twice.
+ */
+function find_possible_duplicate(PDO $pdo, string $firstName, string $lastName, string $birthDate, ?int $excludeId = null): ?array {
+    if (trim($firstName) === '' || trim($lastName) === '' || $birthDate === '') return null;
+    $sql = "SELECT beneficiary_id, full_name, beneficiary_code, birth_date, program_status FROM beneficiaries WHERE LOWER(TRIM(first_name)) = LOWER(?) AND LOWER(TRIM(last_name)) = LOWER(?) AND birth_date = ?";
+    $params = [trim($firstName), trim($lastName), $birthDate];
     if ($excludeId !== null) {
         $sql .= " AND beneficiary_id <> ?";
         $params[] = $excludeId;

@@ -243,3 +243,21 @@ textarea.is-invalid {
   color: var(--muted);
   font-size: 12px;
 }
+
+/* Auto-calculated, read-only fields (BMI, Weight Status): no hover/focus
+   highlight so they are not mistaken for editable text fields. */
+input[readonly],
+input.auto-field {
+  background: #f4f6fa;
+  cursor: default;
+  pointer-events: none;
+}
+
+input[readonly]:hover,
+input[readonly]:focus,
+input.auto-field:hover,
+input.auto-field:focus {
+  outline: none;
+  border-color: var(--border);
+  box-shadow: none;
+}

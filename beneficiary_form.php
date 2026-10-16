@@ -24,7 +24,7 @@ $latestRecord = null;
 
 // "Save & add another" carries the last site/program/date forward.
 if (!$isEdit) {
-    foreach (['site_id', 'program_id', 'date_enlisted'] as $k) {
+    foreach (['site_id', 'date_enlisted'] as $k) {
         if (isset($_GET[$k]) && $_GET[$k] !== '') $beneficiary[$k] = $_GET[$k];
     }
 }
@@ -50,7 +50,7 @@ if ($isEdit) {
 }
 
 $sites = $pdo->query("SELECT * FROM feeding_sites WHERE status='ACTIVE' ORDER BY site_name")->fetchAll();
-$programs = $pdo->query("SELECT * FROM feeding_programs WHERE status <> 'INACTIVE' ORDER BY start_date DESC, program_name")->fetchAll();
+$programs = !$isEdit ? [] : $pdo->query("SELECT * FROM feeding_programs WHERE status <> 'INACTIVE' ORDER BY start_date DESC, program_name")->fetchAll();
 
 $duplicateMatch = null;
 
@@ -61,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $middleName = capitalize_words(trim($_POST['middle_name'] ?? ''));
     $lastName = capitalize_words(trim($_POST['last_name'] ?? ''));
     $fullName = trim($firstName . ' ' . $lastName);
-    $code = generate_beneficiary_code($firstName, $middleName);
 
     // Grade level: either one of the listed options, or "Other" + typed text.
     $gradeChoice = trim($_POST['grade_level'] ?? '');
@@ -77,19 +76,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'middle_name' => $middleName,
         'last_name' => $lastName,
         'full_name' => $fullName,
-        'beneficiary_code' => $code,
         'birth_date' => $_POST['birth_date'] ?? '',
         'sex' => $_POST['sex'] ?? 'Male',
         'grade_level' => $gradeValue,
         'site_id' => $_POST['site_id'] ?? '',
-        'program_id' => $_POST['program_id'] ?? '',
+        'program_id' => $isEdit ? ($_POST['program_id'] ?? '') : '',
         'program_status' => $_POST['program_status'] ?? 'ENROLLED',
         'date_enlisted' => $_POST['date_enlisted'] ?? '',
         'remarks' => capitalize_sentences(trim($_POST['remarks'] ?? '')),
     ]);
 
     $siteId = ($_POST['site_id'] ?? '') !== '' ? (int)$_POST['site_id'] : null;
-    $programId = ($_POST['program_id'] ?? '') !== '' ? (int)$_POST['program_id'] : null;
+    $programId = $isEdit && ($_POST['program_id'] ?? '') !== '' ? (int)$_POST['program_id'] : null;
     $dateEnlisted = ($_POST['date_enlisted'] ?? '') !== '' ? $_POST['date_enlisted'] : null;
 
     // Baseline measurement (add mode only; the edit form has none). A new
@@ -139,24 +137,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('danger', $msg);
         if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
     } else {
-        // Duplicate check: does another beneficiary already generate this
-        // same ID? Skip the check (rather than block) if the name is too
-        // short to produce a code at all. Confirming once
-        // (confirm_duplicate=1) lets the officer proceed anyway — e.g.
-        // genuine siblings/same-name cases.
-        if ($code !== '') {
-            $duplicateMatch = find_beneficiary_by_code($pdo, $code, $isEdit ? $id : null);
-        }
+        // Duplicate check: is there already a beneficiary with the same name
+        // and birthdate? Confirming once (confirm_duplicate=1) lets the officer
+        // proceed anyway — e.g. genuine same-name cases.
+        $duplicateMatch = find_possible_duplicate($pdo, $firstName, $lastName, $beneficiary['birth_date'], $isEdit ? $id : null);
 
         if ($duplicateMatch && ($_POST['confirm_duplicate'] ?? '') !== '1') {
-            $msg = 'A beneficiary with the same generated ID (' . $code . ') already exists.';
+            $msg = 'A beneficiary with the same name and birthdate already exists (ID ' . ($duplicateMatch['beneficiary_code'] ?: 'none') . ').';
             flash('danger', $msg);
             if (is_ajax_request()) json_response(['ok' => false, 'duplicate' => true, 'message' => $msg]);
         } elseif ($isEdit) {
-            $sql = "UPDATE beneficiaries SET full_name=?, first_name=?, middle_name=?, last_name=?, beneficiary_code=?, birth_date=?, sex=?, grade_level=?, site_id=?, program_id=?, program_status=?, date_enlisted=?, remarks=? WHERE beneficiary_id=?";
+            $sql = "UPDATE beneficiaries SET full_name=?, first_name=?, middle_name=?, last_name=?, birth_date=?, sex=?, grade_level=?, site_id=?, program_id=?, program_status=?, date_enlisted=?, remarks=? WHERE beneficiary_id=?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                $fullName, $firstName, $middleName, $lastName, $code !== '' ? $code : null,
+                $fullName, $firstName, $middleName, $lastName,
                 $beneficiary['birth_date'], $beneficiary['sex'], $beneficiary['grade_level'],
                 $siteId, $programId, $beneficiary['program_status'], $dateEnlisted, $beneficiary['remarks'], $id,
             ]);
@@ -168,7 +162,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             // Baseline (already validated above): either a complete, real
             // measurement - never a blank.
-            $weightStatus = trim($_POST['weight_status'] ?? '');
             $baselineRemarks = capitalize_sentences(trim($_POST['baseline_remarks'] ?? ''));
             $hasBaselineMeasurement = $baselineMode === 'record' && $baselineHeight !== null && $baselineWeight !== null && $baselineDate !== null;
 
@@ -176,11 +169,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $sql = "INSERT INTO beneficiaries (full_name, first_name, middle_name, last_name, beneficiary_code, birth_date, sex, grade_level, site_id, program_id, program_status, date_enlisted, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    $fullName, $firstName, $middleName, $lastName, $code !== '' ? $code : null,
-                    $beneficiary['birth_date'], $beneficiary['sex'], $beneficiary['grade_level'],
-                    $siteId, $programId, $beneficiary['program_status'], $dateEnlisted, $beneficiary['remarks'],
-                ]);
+                // The ID (year + running order, e.g. 260001) is generated here. If two
+                // officers save at the same instant the unique key rejects the
+                // second one, so just take the next number and try again.
+                for ($attempt = 0; ; $attempt++) {
+                    $code = next_beneficiary_code($pdo);
+                    try {
+                        $stmt->execute([
+                            $fullName, $firstName, $middleName, $lastName, $code,
+                            $beneficiary['birth_date'], $beneficiary['sex'], $beneficiary['grade_level'],
+                            $siteId, $programId, $beneficiary['program_status'], $dateEnlisted, $beneficiary['remarks'],
+                        ]);
+                        break;
+                    } catch (PDOException $dupErr) {
+                        if (($dupErr->errorInfo[1] ?? 0) !== 1062 || $attempt >= 4) throw $dupErr;
+                    }
+                }
                 $newId = (int)$pdo->lastInsertId();
                 log_action($pdo, 'CREATE_BENEFICIARY', 'beneficiaries', $newId, 'Created beneficiary profile');
 
@@ -190,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     (beneficiary_id, record_date, milestone, height_cm, weight_kg, bmi, nutritional_status, remarks, recorded_by)
                     VALUES (?, ?, 'BASELINE', ?, ?, ?, ?, ?, ?)
                 ");
-                $stmt->execute([$newId, $baselineDate, $baselineHeight, $baselineWeight, $bmi, $weightStatus !== '' ? $weightStatus : null, $baselineRemarks, $_SESSION['user_id']]);
+                $stmt->execute([$newId, $baselineDate, $baselineHeight, $baselineWeight, $bmi, null, $baselineRemarks, $_SESSION['user_id']]);
                 log_action($pdo, 'CREATE_HEALTH_RECORD', 'health_records', (int)$pdo->lastInsertId(), 'Baseline captured during enrollment; BMI ' . $bmi);
 
                 $pdo->commit();
@@ -205,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             flash('success', 'Beneficiary added and baseline recorded.');
             if (($_POST['add_another'] ?? '') === '1') {
-                $qs = http_build_query(['site_id' => $siteId, 'program_id' => $programId, 'date_enlisted' => $dateEnlisted]);
+                $qs = http_build_query(['site_id' => $siteId, 'date_enlisted' => $dateEnlisted]);
                 if (is_ajax_request()) json_response(['ok' => true, 'redirect' => 'beneficiaries.php', 'reopen' => 'beneficiary_form.php?panel=1&' . $qs]);
                 header('Location: beneficiary_form.php?' . $qs);
                 exit;
@@ -239,8 +243,8 @@ require __DIR__ . '/partials/header.php';
     <div class="notice danger">
         <strong>Possible duplicate:</strong> a beneficiary named
         <strong><?= e($duplicateMatch['full_name']) ?></strong>
-        (born <?= e($duplicateMatch['birth_date']) ?>, <?= e(strtolower($duplicateMatch['program_status'])) ?>)
-        already generates the ID <strong><?= e($beneficiary['beneficiary_code']) ?></strong>.
+        (<?= $duplicateMatch['beneficiary_code'] ? 'ID ' . e($duplicateMatch['beneficiary_code']) . ', ' : '' ?>born <?= e($duplicateMatch['birth_date']) ?>, <?= e(strtolower($duplicateMatch['program_status'])) ?>)
+        is already on file with the same name and birthdate.
         <a href="beneficiary.php?id=<?= (int)$duplicateMatch['beneficiary_id'] ?>" target="_blank" rel="noopener">Review that record &rarr;</a>
         <br>If this is genuinely a different person, you can save anyway.
     </div>
@@ -271,6 +275,7 @@ require __DIR__ . '/partials/header.php';
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <?php if ($isEdit): ?>
                         <div>
                             <label>Program</label>
                             <select name="program_id">
@@ -280,6 +285,7 @@ require __DIR__ . '/partials/header.php';
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <?php endif; ?>
                         <div>
                             <label>Date Enlisted</label>
                             <input type="date" name="date_enlisted" value="<?= e($beneficiary['date_enlisted']) ?>">
@@ -303,7 +309,7 @@ require __DIR__ . '/partials/header.php';
                         </div>
                         <div>
                             <label>Middle Name</label>
-                            <input name="middle_name" value="<?= e($beneficiary['middle_name']) ?>" placeholder="Used for the ID's initial">
+                            <input name="middle_name" value="<?= e($beneficiary['middle_name']) ?>"<?= $isEdit ? ' placeholder="Used for the ID\'s initial"' : '' ?>>
                         </div>
                         <div>
                             <label>Last Name *</label>
@@ -351,19 +357,12 @@ require __DIR__ . '/partials/header.php';
                         <?php $mPrefix = 'baseline_'; $mRequired = true; require __DIR__ . '/partials/measurement_fields.php'; ?>
                         <div>
                             <label>Calculated BMI</label>
-                            <input id="bmi_preview" readonly placeholder="Enter height and weight">
+                            <input id="bmi_preview" class="auto-field" readonly tabindex="-1" placeholder="Enter height and weight">
                         </div>
                         <div class="full-col">
                             <label>Weight Status</label>
-                            <select name="weight_status">
-                                <option value="">Pending</option>
-                                <option>Severely Underweight</option>
-                                <option>Underweight</option>
-                                <option>Normal</option>
-                                <option>Overweight</option>
-                                <option>Obese</option>
-                            </select>
-                            <span class="form-hint">Leave as Pending until the child growth reference is confirmed.</span>
+                            <input class="auto-field" value="Pending" readonly tabindex="-1" aria-readonly="true">
+                            <span class="form-hint">Calculated automatically once the child growth reference is confirmed.</span>
                         </div>
                         <div class="full-col">
                             <label>Baseline Remarks</label>
