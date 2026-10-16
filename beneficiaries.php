@@ -62,11 +62,11 @@ require __DIR__ . '/partials/header.php';
 ?>
 <div class="beneficiaries-page">
 <section class="panel filters-panel beneficiaries-scope">
-    <span class="filter-label">Scope</span>
+    <span class="filter-label">Filter</span>
     <form class="scope-row" method="get" data-autosubmit>
         <input type="hidden" name="q" value="<?= e($q) ?>">
         <div class="field filter-field <?= $siteId > 0 ? 'is-active' : '' ?>">
-            <label for="site_id">Feeding Site</label>
+            <label class="sr-only" for="site_id">Feeding Site</label>
             <select id="site_id" name="site_id">
                 <option value="0">All feeding sites</option>
                 <?php foreach ($sites as $s): ?>
@@ -92,6 +92,7 @@ require __DIR__ . '/partials/header.php';
 </form>
 
 <section class="panel beneficiaries-results">
+    <p class="list-count">Total Beneficiaries: <?= count($rows) ?></p>
     <div class="table-wrap">
         <table>
             <thead>
@@ -118,7 +119,6 @@ require __DIR__ . '/partials/header.php';
             <p class="empty">No beneficiaries found.</p>
         <?php endif; ?>
     </div>
-    <p class="list-count">Total Beneficiaries: <?= count($rows) ?></p>
 </section>
 </div>
 <?php require __DIR__ . '/partials/footer.php'; ?>

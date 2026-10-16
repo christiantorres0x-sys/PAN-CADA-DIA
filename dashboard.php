@@ -54,8 +54,7 @@ require __DIR__ . '/partials/header.php';
             <div class="quick-actions-body">
                 <div class="quick-actions-grid">
                     <a class="quick-tile quick-tile-add" href="beneficiary_form.php" data-slideover="beneficiary_form.php?panel=1" data-slideover-title="Add Beneficiary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Beneficiary</span></a>
-                    <a class="quick-tile quick-tile-attendance" href="attendance.php?date=<?= date('Y-m-d') ?>"><span>Take Attendance</span></a>
-                </div>
+                    <a class="btn quick-primary" href="attendance.php?date=<?= date('Y-m-d') ?>">Take Attendance</a>                </div>
             </div>
         </section>
     </div>
@@ -65,7 +64,7 @@ require __DIR__ . '/partials/header.php';
         <div class="field">
             <label class="sr-only" for="beneficiary-search">Search beneficiaries by name</label>
             <div class="search">
-                <input id="beneficiary-search" type="search" name="q" value="<?= e($q) ?>" placeholder="Enter Beneficiary's Name">
+                <input id="beneficiary-search" type="search" name="q" value="<?= e($q) ?>" placeholder="Enter Beneficiary Name">
                 <button class="search-submit" type="submit" aria-label="Search beneficiaries" title="Search beneficiaries">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
                 </button>
@@ -77,13 +76,14 @@ require __DIR__ . '/partials/header.php';
 <section class="panel">
     <div class="panel-head">
         <div>
-            <h2 style="font-size:18px">Recent Records</h2>
-            <span class="muted" style="font-size:12.5px;">Latest measurements recorded across all sites</span>
+            <h2 style="font-size:16px; margin: 2px 0 2px 2px">Recently Added Beneficiaries</h2>
+            <span class="muted" style="font-size:12.5px; margin: 2px 0 2px 2px;">Latest beneficiaries across all sites</span>
         </div>
-        <a href="reports.php" style="font-size:12px; font-weight:800; text-transform:uppercase;">View Reports &amp; Analysis</a>
+        <a href="beneficiaries.php" style="font-size:12.5px; margin: 2px 2px 0 0; font-weight:800; text-transform:uppercase;">View All Beneficiaries</a>
+    </div>
     </div>
     <?php if (!$latest): ?>
-        <p class="empty"><?= $q !== '' ? 'No records found for names starting with &ldquo;' . e($q) . '&rdquo;.' : 'No health records yet.' ?></p>
+        <p class="empty"><?= $q !== '' ? 'No records found for names starting with &ldquo;' . e($q) . '&rdquo;.' : 'No beneficiaries added yet.' ?></p>
     <?php else: ?>
     <div class="table-wrap">
         <table>
