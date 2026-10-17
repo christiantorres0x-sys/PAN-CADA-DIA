@@ -705,6 +705,34 @@ tbody tr.clickable-row {
   text-decoration: none;
 }
 
+.btn.save-add-another {
+  background: #e7f8ee;
+  border-color: #b7e3c8;
+  color: #176b3a;
+}
+
+.btn.save-add-another:hover,
+.btn.save-add-another:focus-visible {
+  background: #d5f1df;
+  border-color: #9ed6b2;
+  color: #12572f;
+  text-decoration: none;
+}
+
+.btn.cancel-button {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.btn.cancel-button:hover,
+.btn.cancel-button:focus-visible {
+  background: #9b2c2c;
+  border-color: #9b2c2c;
+  color: #fff;
+  text-decoration: none;
+}
+
 .btn.sm {
   padding: 7px 12px;
   min-height: 36px;

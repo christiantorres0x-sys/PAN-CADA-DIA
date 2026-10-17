@@ -146,7 +146,7 @@ require __DIR__ . '/partials/header.php';
             </ul>
             <input type="hidden" name="action" value="deactivate">
             <div class="form-actions">
-                <a class="btn secondary" href="<?= e($profileUrl) ?>">Cancel</a>
+                <a class="btn secondary cancel-button" href="<?= e($profileUrl) ?>">Cancel</a>
                 <?php if ($alreadyInactive): ?>
                     <span class="muted">Already inactive.</span>
                 <?php else: ?>
@@ -167,7 +167,7 @@ require __DIR__ . '/partials/header.php';
                 <input type="checkbox" name="confirm_permanent" value="1"> I understand permanent deletion cannot be undone.
             </label>
             <div class="form-actions">
-                <a class="btn secondary" href="<?= e($profileUrl) ?>">Cancel</a>
+                <a class="btn secondary cancel-button" href="<?= e($profileUrl) ?>">Cancel</a>
                 <button class="btn danger">Confirm</button>
             </div>
         <?php endif; ?>

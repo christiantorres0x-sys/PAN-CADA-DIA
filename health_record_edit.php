@@ -177,7 +177,7 @@ require __DIR__ . '/partials/header.php';
             Saving recalculates BMI from the new height and weight. The weight status is not recalculated automatically, so review it if the weight changed a lot. Other measurements for this child are not affected.
         </div>
         <div class="form-actions">
-            <a class="btn secondary" href="beneficiary.php?id=<?= $beneficiaryId ?>#health">Cancel</a>
+            <a class="btn secondary cancel-button" href="beneficiary.php?id=<?= $beneficiaryId ?>#health">Cancel</a>
             <button class="btn primary">Save Changes</button>
         </div>
     </form>

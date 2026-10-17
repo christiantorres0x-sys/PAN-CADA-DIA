@@ -163,7 +163,7 @@ $keep = fn(string $k, string $default = '') => $_SERVER['REQUEST_METHOD'] === 'P
             </div>
         </div>
         <div class="form-actions">
-            <a class="btn secondary" href="beneficiary.php?id=<?= $beneficiaryId ?>#health">Cancel</a>
+            <a class="btn secondary cancel-button" href="beneficiary.php?id=<?= $beneficiaryId ?>#health">Cancel</a>
             <button class="btn primary">Save Measurement</button>
         </div>
     </form>
