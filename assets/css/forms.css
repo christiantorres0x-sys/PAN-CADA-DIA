@@ -237,6 +237,14 @@ textarea.is-invalid {
   font-weight: 600;
 }
 
+/* Height / weight sit in a flex row (input + unit). Put the error message on
+   its own line underneath so it can't squeeze the input down to nothing. */
+[data-measure] .field-error {
+  order: 3;
+  flex: 0 0 100%;
+  margin-top: 0;
+}
+
 .form-hint {
   display: block;
   margin-top: 3px;

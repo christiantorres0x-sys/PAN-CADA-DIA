@@ -1074,6 +1074,9 @@ tbody tr:last-child td {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .milestone-slot h3 {
@@ -1090,8 +1093,14 @@ tbody tr:last-child td {
   margin-top: 5px;
 }
 
+.milestone-slot > div:last-of-type {
+  margin-bottom: 6px;
+}
+
+/* Edit / Record buttons sit at the bottom of every card so they line up
+   across Baseline, Midline and Endline whatever text is above them. */
 .milestone-slot .btn {
-  margin-top: 6px;
+  margin-top: auto;
 }
 
 .empty {

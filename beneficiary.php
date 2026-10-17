@@ -28,12 +28,14 @@ $attendance = $at->fetchAll();
 
 $pageTitle = 'Beneficiary Profile';
 $pageEyebrowHtml = '<a class="back-link" href="beneficiaries.php">&larr; Back to Beneficiaries</a>';
-$healthActionLabel = $nextUp ? 'Record ' . milestone_label($nextUp) : 'Record Measurement';
 $deleteButtonHtml = can_delete_beneficiaries()
     ? ' <a class="btn secondary danger-outline" href="beneficiary_delete.php?id=' . $id . '" data-slideover="beneficiary_delete.php?panel=1&id=' . $id . '" data-slideover-title="Delete Beneficiary">Delete</a>'
     : '';
+$recordButtonHtml = $nextUp
+    ? '<a class="btn primary" href="health_record.php?beneficiary_id=' . $id . '&milestone=' . $nextUp . '" data-slideover="health_record.php?panel=1&beneficiary_id=' . $id . '&milestone=' . $nextUp . '" data-slideover-title="Record ' . e(milestone_label($nextUp)) . '"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Record ' . e(milestone_label($nextUp)) . '</span></a>'
+    : '';
 $pageActionsHtml = '<a class="btn secondary" href="beneficiary_form.php?id=' . $id . '" data-slideover="beneficiary_form.php?panel=1&id=' . $id . '" data-slideover-title="Edit Beneficiary">Edit Profile</a> '
-    . '<a class="btn primary" href="health_record.php?beneficiary_id=' . $id . '"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>' . e($healthActionLabel) . '</span></a>' . $deleteButtonHtml;
+    . $recordButtonHtml . $deleteButtonHtml;
 require __DIR__ . '/partials/header.php';
 ?>
 <section class="panel profile-grid">
@@ -111,7 +113,7 @@ require __DIR__ . '/partials/header.php';
 <section class="panel">
     <div class="panel-head">
         <h2>Growth Milestones</h2>
-        <span class="muted">Baseline · Midline · Endline</span>
+        <span class="muted"><?= $nextUp ? 'Baseline · Midline · Endline' : 'All three milestones recorded' ?></span>
     </div>
     <div class="milestone-panel">
         <?php foreach (MILESTONES as $m): $rec = $milestoneRecords[$m]; $gap = $rec ? milestone_prerequisite_gap($m, $milestoneRecords) : null; ?>
@@ -123,9 +125,12 @@ require __DIR__ . '/partials/header.php';
                 <?php if ($gap): ?>
                     <div class="milestone-meta" style="color:var(--orange);">⚠ No <?= e(milestone_label($gap)) ?> on file — not comparable yet.</div>
                 <?php endif; ?>
+                <?php if (can_edit_health_records()): ?>
+                    <a class="btn secondary sm" href="health_record_edit.php?id=<?= (int)$rec['record_id'] ?>" data-slideover="health_record_edit.php?panel=1&id=<?= (int)$rec['record_id'] ?>" data-slideover-title="Edit <?= e(milestone_label($m)) ?>">Edit <?= e(milestone_label($m)) ?></a>
+                <?php endif; ?>
             <?php else: ?>
                 <div class="muted">Pending</div>
-                <a class="btn secondary sm" href="health_record.php?beneficiary_id=<?= $id ?>&milestone=<?= $m ?>">Record <?= e(milestone_label($m)) ?></a>
+                <a class="btn secondary sm" href="health_record.php?beneficiary_id=<?= $id ?>&milestone=<?= $m ?>" data-slideover="health_record.php?panel=1&beneficiary_id=<?= $id ?>&milestone=<?= $m ?>" data-slideover-title="Record <?= e(milestone_label($m)) ?>">Record <?= e(milestone_label($m)) ?></a>
             <?php endif; ?>
         </div>
         <?php endforeach; ?>
