@@ -400,9 +400,12 @@ require __DIR__ . '/partials/header.php';
     <?php else: ?>
         <p class="empty">No height/weight measurements recorded yet for this child.</p>
     <?php endif; ?>
+    <?php $nextMilestone = next_milestone(get_milestone_records($pdo, $id)); ?>
+    <?php if ($nextMilestone): ?>
     <div class="form-actions" style="margin-top:10px;">
-        <a class="btn primary sm" href="health_record.php?beneficiary_id=<?= $id ?>">Record Measurement</a>
+        <a class="btn primary sm" href="health_record.php?beneficiary_id=<?= $id ?>&milestone=<?= e($nextMilestone) ?>" data-slideover="health_record.php?panel=1&beneficiary_id=<?= $id ?>&milestone=<?= e($nextMilestone) ?>" data-slideover-title="Record <?= e(milestone_label($nextMilestone)) ?>">Record <?= e(milestone_label($nextMilestone)) ?></a>
     </div>
+    <?php endif; ?>
 </section>
 <?php endif; ?>
 <?php require __DIR__ . '/partials/footer.php'; ?>

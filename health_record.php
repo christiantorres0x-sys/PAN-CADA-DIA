@@ -5,12 +5,14 @@
  *
  *  - ?beneficiary_id=ID            -> milestone preselected to the next one not yet recorded
  *  - ?beneficiary_id=ID&milestone= -> that milestone preselected (from the profile's milestone slots)
- *  - Each milestone can only be recorded once per child (unique key in the DB);
- *    to fix a saved one, use the Edit button (health_record_edit.php).
+ *  - Only Baseline, Midline and Endline can be recorded - once each per child.
+ *    There are no extra/"no milestone" measurements, and once all three are
+ *    on file nothing more can be added (enforced here on the server too).
+ *    To fix a saved one, use the Edit button (health_record_edit.php).
  *  - Soft workflow: recording Midline/Endline without an earlier milestone is
  *    allowed, the form just warns about the gap (see milestone_prerequisite_gap()).
  *  - BMI is always recalculated server-side from the converted cm / kg values.
- * Works as a slide-over (?panel=1, JSON replies) or as a normal page.
+ * Opens as a slide-over popup (?panel=1, JSON replies) from the profile, or as a normal page.
  */
 require_once __DIR__ . '/db.php';
 require_login();
@@ -32,7 +34,8 @@ $statusOptions = ['Severely Underweight', 'Underweight', 'Normal', 'Overweight',
 
 // Which milestone is preselected: the one in the link, else the next one due.
 $requested = strtoupper(trim((string)($_GET['milestone'] ?? $_POST['milestone'] ?? '')));
-$selected = in_array($requested, MILESTONES, true) ? $requested : (next_milestone($milestoneRecords) ?? '');
+$nextDue = next_milestone($milestoneRecords);   // null once all three are recorded
+$selected = (in_array($requested, MILESTONES, true) && empty($milestoneRecords[$requested])) ? $requested : ($nextDue ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -49,9 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $d = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
 
     $error = null;
-    if ($milestone !== null && !in_array($milestone, MILESTONES, true)) {
-        $error = 'Please choose a valid milestone.';
-    } elseif ($milestone !== null && !empty($milestoneRecords[$milestone])) {
+    if ($nextDue === null) {
+        $error = 'Baseline, Midline and Endline are all recorded for this child. No further measurements can be added.';
+    } elseif ($milestone === null || !in_array($milestone, MILESTONES, true)) {
+        $error = 'Please choose a milestone (Baseline, Midline or Endline).';
+    } elseif (!empty($milestoneRecords[$milestone])) {
         $error = milestone_label($milestone) . ' is already recorded for this child. Use Edit on the existing record to correct it.';
     } elseif (!$d || $d->format('Y-m-d') !== $date) {
         $error = 'Please enter a valid measurement date.';
@@ -93,11 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     flash('danger', $error);
     if ($isAjax) json_response(['ok' => false, 'message' => $error]);
-    $selected = $milestone ?? '';   // redraw the form on the same milestone
+    $selected = $nextDue === null ? '' : ($milestone ?? $nextDue);   // redraw the form on the same milestone
 }
 
-$pageTitle = $selected ? 'Record ' . milestone_label($selected) : 'Record Measurement';
-$pageSubtitle = 'Add a height and weight measurement';
+$pageTitle = $selected ? 'Record ' . milestone_label($selected) : 'Milestones Complete';
+$pageSubtitle = 'Record a milestone height and weight measurement';
 $pageEyebrowHtml = '<a class="back-link" href="beneficiary.php?id=' . $beneficiaryId . '">&larr; Back to Beneficiary Profile</a>';
 require __DIR__ . '/partials/header.php';
 
@@ -106,9 +111,15 @@ $keep = fn(string $k, string $default = '') => $_SERVER['REQUEST_METHOD'] === 'P
 <div class="form-panel">
     <div class="person-banner">
         <strong><?= e($b['full_name']) ?></strong>
-        <span>New measurement</span>
+        <span><?= $selected ? e(milestone_label($selected)) . ' measurement' : 'Milestone measurements' ?></span>
     </div>
 
+    <?php if ($selected === ''): ?>
+        <div class="notice">Baseline, Midline and Endline are all recorded for this child, so no more measurements can be added. To correct a saved one, use Edit in the Health History table.</div>
+        <div class="form-actions">
+            <a class="btn secondary" href="<?= e($profileUrl) ?>">Back to Profile</a>
+        </div>
+    <?php else: ?>
     <form method="post" action="health_record.php?beneficiary_id=<?= $beneficiaryId ?><?= ($_GET['panel'] ?? '') === '1' ? '&amp;panel=1' : '' ?>">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="beneficiary_id" value="<?= $beneficiaryId ?>">
@@ -122,7 +133,6 @@ $keep = fn(string $k, string $default = '') => $_SERVER['REQUEST_METHOD'] === 'P
                         <option value="<?= $m ?>" <?= $selected === $m ? 'selected' : '' ?> <?= $done ? 'disabled' : '' ?>
                             data-gap="<?= $gap ? e(milestone_label($gap)) : '' ?>"><?= e(milestone_label($m)) ?><?= $done ? ' (already recorded)' : '' ?></option>
                     <?php endforeach; ?>
-                    <option value="" <?= $selected === '' ? 'selected' : '' ?>>No milestone (extra measurement)</option>
                 </select>
             </div>
             <div>
@@ -157,5 +167,6 @@ $keep = fn(string $k, string $default = '') => $_SERVER['REQUEST_METHOD'] === 'P
             <button class="btn primary">Save Measurement</button>
         </div>
     </form>
+    <?php endif; ?>
 </div>
 <?php require __DIR__ . '/partials/footer.php'; ?>

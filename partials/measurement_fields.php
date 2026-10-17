@@ -15,7 +15,7 @@ $mHeightCm = $mHeightCm ?? null;   // optional prefill, always in cm
 $mWeightKg = $mWeightKg ?? null;   // optional prefill, always in kg
 $mFmt = fn($v) => $v === null ? '' : rtrim(rtrim(number_format((float)$v, 2, '.', ''), '0'), '.');
 $mStar = $mRequired ? ' *' : '';
-$rowStyle = 'display:flex; gap:6px; align-items:center;';
+$rowStyle = 'display:flex; flex-wrap:wrap; gap:6px; align-items:center;';
 ?>
 <div data-measure="height">
     <label>Height (cm)<?= $mStar ?></label>
