@@ -705,34 +705,6 @@ tbody tr.clickable-row {
   text-decoration: none;
 }
 
-.btn.save-add-another {
-  background: #e7f8ee;
-  border-color: #b7e3c8;
-  color: #176b3a;
-}
-
-.btn.save-add-another:hover,
-.btn.save-add-another:focus-visible {
-  background: #d5f1df;
-  border-color: #9ed6b2;
-  color: #12572f;
-  text-decoration: none;
-}
-
-.btn.cancel-button {
-  background: var(--red);
-  border-color: var(--red);
-  color: #fff;
-}
-
-.btn.cancel-button:hover,
-.btn.cancel-button:focus-visible {
-  background: #9b2c2c;
-  border-color: #9b2c2c;
-  color: #fff;
-  text-decoration: none;
-}
-
 .btn.sm {
   padding: 7px 12px;
   min-height: 36px;
@@ -1767,4 +1739,191 @@ textarea.remarks-input {
 
 .btn.primary.btn-filter:hover {
   background: #3f51cf;
+}
+
+/* ---- Beneficiary profile: one box, side column + main column ---------- */
+.bp {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 32px;
+  padding: 24px;
+  align-items: start;
+}
+
+.bp-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 16px;
+}
+
+.bp-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  background: var(--card);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, .07);
+}
+
+.bp-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.bp-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #cfd5de 0%, #bcc4d0 100%);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.bp-avatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bp-name {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.bp-role {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.bp-stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  width: 100%;
+  justify-content: center;
+}
+
+.bp-stats div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bp-stats strong {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.bp-stats span {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.bp-info h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.bp-info dl {
+  margin: 0;
+}
+
+.bp-info dl > div {
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+
+.bp-info dl > div:first-child {
+  border-top: 0;
+}
+
+.bp-info dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.bp-info dd {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.bp-main {
+  min-width: 0;
+}
+
+.bp-title {
+  margin: 0 0 16px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.bp-section {
+  padding: 22px 0;
+  border-top: 1px solid var(--border);
+}
+
+.bp-section .panel-head h2 {
+  font-size: 18px;
+}
+
+@media (max-width: 900px) {
+  .bp {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 16px;
+  }
+
+  .bp-side {
+    position: static;
+  }
+
+  .bp-title {
+    font-size: 22px;
+  }
+}
+
+/* Profile history tables: headers follow their column's alignment
+   (text left, numbers right) instead of the global centered <th>. */
+table.history-table th {
+  text-align: left;
+}
+
+table.history-table th.num {
+  text-align: right;
+}
+
+table.history-table td {
+  vertical-align: middle;
+}
+
+/* Delete confirmation: short message + Cancel (green) / Delete (red) */
+.delete-msg {
+  margin: 4px 0 6px;
+  font-size: 15px;
+}
+
+.delete-sub {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.form-panel .form-actions .btn.danger {
+  min-width: 96px;
+  justify-content: center;
 }
