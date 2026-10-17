@@ -38,22 +38,29 @@ $pageActionsHtml = '<a class="btn secondary" href="beneficiary_form.php?id=' . $
     . $recordButtonHtml . $deleteButtonHtml;
 require __DIR__ . '/partials/header.php';
 ?>
-<section class="panel profile-grid">
-    <div><span>Beneficiary ID</span><strong><?= $b['beneficiary_code'] ? '<span class="code-tag">' . e($b['beneficiary_code']) . '</span>' : '—' ?></strong></div>
-    <div><span>Name</span><strong><?= e($b['full_name']) ?></strong></div>
-    <div><span>Birthdate</span><strong><?= e($b['birth_date']) ?></strong></div>
-    <div><span>Sex</span><strong><?= e($b['sex']) ?></strong></div>
-    <div><span>Grade Level</span><strong><?= e($b['grade_level']) ?></strong></div>
-    <div><span>Status</span><strong><?= pcd_badge($b['program_status']) ?></strong></div>
-    <div><span>Feeding Site</span><strong><?= e($b['site_name'] ?? '—') ?></strong></div>
-    <div><span>Program</span><strong><?= e($b['program_name'] ?? '—') ?></strong></div>
-    <div><span>Date Enlisted</span><strong><?= e($b['date_enlisted'] ?? '—') ?></strong></div>
-</section>
+<section class="panel bp">
+    <aside class="bp-side">
+        <div class="bp-card bp-info">
+            <h2>Beneficiary information</h2>
+            <dl>
+                <div><dt>Beneficiary ID</dt><dd><?= $b['beneficiary_code'] ? '<span class="code-tag">' . e($b['beneficiary_code']) . '</span>' : '—' ?></dd></div>
+                <div><dt>Name</dt><dd><?= e($b['full_name']) ?></dd></div>
+                <div><dt>Birthdate</dt><dd><?= e($b['birth_date']) ?></dd></div>
+                <div><dt>Sex</dt><dd><?= e($b['sex']) ?></dd></div>
+                <div><dt>Grade Level</dt><dd><?= e($b['grade_level']) ?></dd></div>
+                <div><dt>Status</dt><dd><?= pcd_badge($b['program_status']) ?></dd></div>
+                <div><dt>Feeding Site</dt><dd><?= e($b['site_name'] ?? '—') ?></dd></div>
+                <div><dt>Date Enlisted</dt><dd><?= e($b['date_enlisted'] ?? '—') ?></dd></div>
+            </dl>
+        </div>
+    </aside>
 
-<section class="panel">
+    <div class="bp-main">
+        <h1 class="bp-title"><?= e($b['full_name']) ?></h1>
+
+<section class="bp-section">
     <div class="panel-head">
         <h2>Attendance History</h2>
-        <a class="btn secondary" href="attendance.php">Manage Attendance</a>
     </div>
     <div class="table-wrap">
         <table class="history-table">
@@ -76,7 +83,7 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 
-<section class="panel" id="health">
+<section class="bp-section" id="health">
     <div class="panel-head">
         <h2>Health History</h2>
         <span class="muted">BMI = kg / m²</span>
@@ -107,33 +114,7 @@ require __DIR__ . '/partials/header.php';
             <p class="empty">No health records yet.</p>
         <?php endif; ?>
     </div>
-    <p class="notice"><strong>About BMI:</strong> BMI is worked out from height and weight. For children, weight status is set from an age- and sex-specific growth reference, not adult BMI ranges, so some records show Pending.</p>
 </section>
-
-<section class="panel">
-    <div class="panel-head">
-        <h2>Growth Milestones</h2>
-        <span class="muted"><?= $nextUp ? 'Baseline · Midline · Endline' : 'All three milestones recorded' ?></span>
-    </div>
-    <div class="milestone-panel">
-        <?php foreach (MILESTONES as $m): $rec = $milestoneRecords[$m]; $gap = $rec ? milestone_prerequisite_gap($m, $milestoneRecords) : null; ?>
-        <div class="milestone-slot">
-            <h3><?= e(milestone_label($m)) ?></h3>
-            <?php if ($rec): ?>
-                <div><?= e($rec['record_date']) ?></div>
-                <div class="milestone-meta"><?= e($rec['height_cm']) ?> cm · <?= e($rec['weight_kg']) ?> kg · BMI <?= e($rec['bmi']) ?></div>
-                <?php if ($gap): ?>
-                    <div class="milestone-meta" style="color:var(--orange);">⚠ No <?= e(milestone_label($gap)) ?> on file — not comparable yet.</div>
-                <?php endif; ?>
-                <?php if (can_edit_health_records()): ?>
-                    <a class="btn secondary sm" href="health_record_edit.php?id=<?= (int)$rec['record_id'] ?>" data-slideover="health_record_edit.php?panel=1&id=<?= (int)$rec['record_id'] ?>" data-slideover-title="Edit <?= e(milestone_label($m)) ?>">Edit <?= e(milestone_label($m)) ?></a>
-                <?php endif; ?>
-            <?php else: ?>
-                <div class="muted">Pending</div>
-                <a class="btn secondary sm" href="health_record.php?beneficiary_id=<?= $id ?>&milestone=<?= $m ?>" data-slideover="health_record.php?panel=1&beneficiary_id=<?= $id ?>&milestone=<?= $m ?>" data-slideover-title="Record <?= e(milestone_label($m)) ?>">Record <?= e(milestone_label($m)) ?></a>
-            <?php endif; ?>
-        </div>
-        <?php endforeach; ?>
     </div>
 </section>
 <?php require __DIR__ . '/partials/footer.php'; ?>
