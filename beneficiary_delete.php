@@ -1,24 +1,5 @@
 <?php
-/**
- * Delete a beneficiary - safely.
- *
- * Why this is not a plain DELETE: attendance_records and health_records are
- * defined with ON DELETE CASCADE, so removing a beneficiary row would silently
- * erase their whole attendance and measurement history and change every
- * report total. So:
- *
- *   1. DEACTIVATE (default, always available): sets program_status to
- *      INACTIVE. The child leaves the daily attendance list, but their
- *      profile, measurements, attendance history and past report figures
- *      are all kept. It can be undone from Edit Profile (Status).
- *   2. PERMANENT DELETE: only allowed when the profile has NO health
- *      measurements and NO attendance records (e.g. a duplicate or a
- *      mistaken entry), so nothing can be lost. The rule is enforced in the
- *      DELETE statement itself, not just in the form.
- *
- * Only Admin accounts may use either action (can_delete_beneficiaries()).
- * Nothing happens on the Delete button click - the user must confirm here.
- */
+
 require_once __DIR__ . '/db.php';
 require_login();
 
@@ -121,14 +102,7 @@ require __DIR__ . '/partials/header.php';
 <div class="form-panel">
     <div class="person-banner">
         <strong><?= e($b['full_name']) ?></strong>
-        <span><?= $b['beneficiary_code'] ? 'ID: ' . e($b['beneficiary_code']) . ' · ' : '' ?><?= e($b['site_name'] ?? 'No site') ?> · <?= e($b['program_name'] ?? 'No program') ?></span>
-    </div>
-
-    <div class="notice danger">
-        <strong>Before you continue:</strong> this beneficiary has
-        <strong><?= $healthCount ?></strong> health measurement<?= $healthCount === 1 ? '' : 's' ?> and
-        <strong><?= $attendanceCount ?></strong> attendance record<?= $attendanceCount === 1 ? '' : 's' ?>.
-        Permanently deleting a beneficiary would also erase those records and change report totals.
+        <span><?= $b['beneficiary_code'] ? 'ID: ' . e($b['beneficiary_code']) . ' · ' : '' ?><?= e($b['site_name'] ?? 'No site') ?></span>
     </div>
 
     <form method="post" action="beneficiary_delete.php?id=<?= $id ?>">
@@ -136,41 +110,26 @@ require __DIR__ . '/partials/header.php';
         <input type="hidden" name="beneficiary_id" value="<?= $id ?>">
 
         <?php if ($hasHistory): ?>
-            <p>Because there is history on file, this profile can't be permanently deleted. It will be <strong>deactivated</strong> instead:</p>
-            <ul class="delete-facts">
-                <li>Status changes to <strong>Inactive</strong>.</li>
-                <li>They no longer appear on the daily attendance list.</li>
-                <li>Their profile, measurements, attendance history and past report figures are <strong>kept</strong>.</li>
-                <li>The Enrolled count on the dashboard goes down by one; the total stays the same.</li>
-                <li>You can reactivate them any time from Edit Profile (Status).</li>
-            </ul>
+            <?php /* History on file: a real DELETE would erase it, so this safely deactivates instead. */ ?>
             <input type="hidden" name="action" value="deactivate">
-            <div class="form-actions">
-                <a class="btn secondary cancel-button" href="<?= e($profileUrl) ?>">Cancel</a>
-                <?php if ($alreadyInactive): ?>
-                    <span class="muted">Already inactive.</span>
-                <?php else: ?>
-                    <button class="btn danger">Deactivate <?= e($b['first_name'] ?: 'Beneficiary') ?></button>
-                <?php endif; ?>
-            </div>
+            <p class="delete-msg">Are you sure you want to delete <strong><?= e($b['full_name']) ?></strong>?</p>
+            <p class="delete-sub">They will be removed from the attendance list. Their measurements and attendance history are kept, and you can bring them back anytime from Edit Profile (Status).</p>
         <?php else: ?>
-            <p>This profile has no measurements or attendance, so you can choose:</p>
-            <label class="delete-choice">
-                <input type="radio" name="action" value="deactivate" <?= $alreadyInactive ? 'disabled' : 'checked' ?>>
-                <strong>Deactivate</strong> (recommended) &mdash; status becomes Inactive and they leave the attendance list. Can be undone from Edit Profile.
-            </label>
-            <label class="delete-choice">
-                <input type="radio" name="action" value="delete" <?= $alreadyInactive ? 'checked' : '' ?>>
-                <strong>Delete permanently</strong> &mdash; removes the profile completely. This cannot be undone.
-            </label>
-            <label class="checkbox-label" style="margin:10px 0;">
-                <input type="checkbox" name="confirm_permanent" value="1"> I understand permanent deletion cannot be undone.
-            </label>
-            <div class="form-actions">
-                <a class="btn secondary cancel-button" href="<?= e($profileUrl) ?>">Cancel</a>
-                <button class="btn danger">Confirm</button>
-            </div>
+            <?php /* No records at all: safe to remove for real. */ ?>
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="confirm_permanent" value="1">
+            <p class="delete-msg">Are you sure you want to delete <strong><?= e($b['full_name']) ?></strong>?</p>
+            <p class="delete-sub">This profile has no records, so it will be permanently deleted. This can't be undone.</p>
         <?php endif; ?>
+
+        <div class="form-actions">
+            <a class="btn success" href="<?= e($profileUrl) ?>">Cancel</a>
+            <?php if ($hasHistory && $alreadyInactive): ?>
+                <span class="muted">Already removed from the attendance list.</span>
+            <?php else: ?>
+                <button class="btn danger">Delete</button>
+            <?php endif; ?>
+        </div>
     </form>
 </div>
 <?php require __DIR__ . '/partials/footer.php'; ?>
