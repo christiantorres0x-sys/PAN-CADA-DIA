@@ -1,5 +1,14 @@
 <?php
-
+/**
+ * Delete a beneficiary - permanently.
+ *
+ * Removes the beneficiary row AND everything that belongs to them
+ * (health measurements and attendance records), all in one transaction so
+ * it either fully succeeds or changes nothing. This cannot be undone.
+ *
+ * Only Admin accounts may delete (can_delete_beneficiaries()). Nothing
+ * happens on the profile's Delete button click - the user must confirm here.
+ */
 require_once __DIR__ . '/db.php';
 require_login();
 
@@ -47,53 +56,32 @@ function pcd_count(PDO $pdo, string $table, int $id): int {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
-    $action = $_POST['action'] ?? '';
     $label = $b['full_name'] . ($b['beneficiary_code'] ? ' (' . $b['beneficiary_code'] . ')' : '');
+    $healthCount = pcd_count($pdo, 'health_records', $id);
+    $attendanceCount = pcd_count($pdo, 'attendance_records', $id);
 
     try {
-        if ($action === 'deactivate') {
-            if ($b['program_status'] === 'INACTIVE') {
-                pcd_delete_reply(true, $label . ' is already inactive.', $profileUrl, $isAjax);
-            }
-            $upd = $pdo->prepare("UPDATE beneficiaries SET program_status='INACTIVE' WHERE beneficiary_id=? AND program_status<>'INACTIVE'");
-            $upd->execute([$id]);
-            log_action($pdo, 'DEACTIVATE_BENEFICIARY', 'beneficiaries', $id,
-                'Deactivated ' . $label . ' (was ' . $b['program_status'] . '); health and attendance history kept');
-            pcd_delete_reply(true, $label . ' was deactivated. Their records and history were kept.', $profileUrl, $isAjax);
-
-        } elseif ($action === 'delete') {
-            if (($_POST['confirm_permanent'] ?? '') !== '1') {
-                pcd_delete_reply(false, 'Please tick the box to confirm the permanent deletion.', $profileUrl, $isAjax);
-            }
-            // The "no records" rule lives in the statement itself, so it holds
-            // even if a record is added between opening this form and saving.
-            $del = $pdo->prepare("
-                DELETE FROM beneficiaries
-                WHERE beneficiary_id = ?
-                  AND NOT EXISTS (SELECT 1 FROM health_records WHERE beneficiary_id = ?)
-                  AND NOT EXISTS (SELECT 1 FROM attendance_records WHERE beneficiary_id = ?)
-            ");
-            $del->execute([$id, $id, $id]);
-            if ($del->rowCount() === 0) {
-                pcd_delete_reply(false, 'This beneficiary has health or attendance records, so it cannot be permanently deleted. Deactivate it instead.', $profileUrl, $isAjax);
-            }
-            log_action($pdo, 'DELETE_BENEFICIARY', 'beneficiaries', $id,
-                'Permanently deleted ' . $label . ' (no health or attendance records existed)');
-            pcd_delete_reply(true, $label . ' was permanently deleted.', 'beneficiaries.php', $isAjax);
-
-        } else {
-            pcd_delete_reply(false, 'Please choose what to do with this beneficiary.', $profileUrl, $isAjax);
+        $pdo->beginTransaction();
+        $pdo->prepare("DELETE FROM health_records WHERE beneficiary_id = ?")->execute([$id]);
+        $pdo->prepare("DELETE FROM attendance_records WHERE beneficiary_id = ?")->execute([$id]);
+        $del = $pdo->prepare("DELETE FROM beneficiaries WHERE beneficiary_id = ?");
+        $del->execute([$id]);
+        if ($del->rowCount() === 0) {
+            $pdo->rollBack();
+            pcd_delete_reply(false, 'That beneficiary no longer exists.', 'beneficiaries.php', $isAjax);
         }
+        log_action($pdo, 'DELETE_BENEFICIARY', 'beneficiaries', $id,
+            'Permanently deleted ' . $label . ' with ' . $healthCount . ' health record(s) and ' . $attendanceCount . ' attendance record(s)');
+        $pdo->commit();
+        pcd_delete_reply(true, $label . ' was deleted.', 'beneficiaries.php', $isAjax);
     } catch (PDOException $e) {
-        // Most likely a foreign-key rule refusing the delete: nothing was changed.
-        pcd_delete_reply(false, 'The database refused this change, so nothing was deleted. Deactivate the beneficiary instead.', $profileUrl, $isAjax);
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        pcd_delete_reply(false, 'Could not delete this beneficiary, so nothing was changed. Please try again.', $profileUrl, $isAjax);
     }
 }
 
 $healthCount = pcd_count($pdo, 'health_records', $id);
 $attendanceCount = pcd_count($pdo, 'attendance_records', $id);
-$hasHistory = ($healthCount + $attendanceCount) > 0;
-$alreadyInactive = $b['program_status'] === 'INACTIVE';
 
 $pageTitle = 'Delete Beneficiary';
 $pageEyebrowHtml = '<a class="back-link" href="' . e($profileUrl) . '">&larr; Back to Beneficiary Profile</a>';
@@ -109,26 +97,17 @@ require __DIR__ . '/partials/header.php';
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="beneficiary_id" value="<?= $id ?>">
 
-        <?php if ($hasHistory): ?>
-            <?php /* History on file: a real DELETE would erase it, so this safely deactivates instead. */ ?>
-            <input type="hidden" name="action" value="deactivate">
-            <p class="delete-msg">Are you sure you want to delete <strong><?= e($b['full_name']) ?></strong>?</p>
-            <p class="delete-sub">They will be removed from the attendance list. Their measurements and attendance history are kept, and you can bring them back anytime from Edit Profile (Status).</p>
-        <?php else: ?>
-            <?php /* No records at all: safe to remove for real. */ ?>
-            <input type="hidden" name="action" value="delete">
-            <input type="hidden" name="confirm_permanent" value="1">
-            <p class="delete-msg">Are you sure you want to delete <strong><?= e($b['full_name']) ?></strong>?</p>
-            <p class="delete-sub">This profile has no records, so it will be permanently deleted. This can't be undone.</p>
-        <?php endif; ?>
+        <p class="delete-msg">Are you sure you want to delete <strong><?= e($b['full_name']) ?></strong>?</p>
+        <p class="delete-sub">
+            This permanently deletes the profile<?php if ($healthCount + $attendanceCount > 0): ?>
+            along with <?= $healthCount ?> health record<?= $healthCount === 1 ? '' : 's' ?> and
+            <?= $attendanceCount ?> attendance record<?= $attendanceCount === 1 ? '' : 's' ?><?php endif; ?>.
+            This can't be undone.
+        </p>
 
         <div class="form-actions">
             <a class="btn success" href="<?= e($profileUrl) ?>">Cancel</a>
-            <?php if ($hasHistory && $alreadyInactive): ?>
-                <span class="muted">Already removed from the attendance list.</span>
-            <?php else: ?>
-                <button class="btn danger">Delete</button>
-            <?php endif; ?>
+            <button class="btn danger">Delete</button>
         </div>
     </form>
 </div>
