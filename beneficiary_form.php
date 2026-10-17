@@ -15,7 +15,6 @@ $beneficiary = [
     'sex' => 'Male',
     'grade_level' => '',
     'site_id' => '',
-    'program_id' => '',
     'program_status' => 'ENROLLED',
     'date_enlisted' => '',
     'remarks' => '',
@@ -50,7 +49,6 @@ if ($isEdit) {
 }
 
 $sites = $pdo->query("SELECT * FROM feeding_sites WHERE status='ACTIVE' ORDER BY site_name")->fetchAll();
-$programs = !$isEdit ? [] : $pdo->query("SELECT * FROM feeding_programs WHERE status <> 'INACTIVE' ORDER BY start_date DESC, program_name")->fetchAll();
 
 $duplicateMatch = null;
 
@@ -80,14 +78,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'sex' => $_POST['sex'] ?? 'Male',
         'grade_level' => $gradeValue,
         'site_id' => $_POST['site_id'] ?? '',
-        'program_id' => $isEdit ? ($_POST['program_id'] ?? '') : '',
         'program_status' => $_POST['program_status'] ?? 'ENROLLED',
         'date_enlisted' => $_POST['date_enlisted'] ?? '',
         'remarks' => capitalize_sentences(trim($_POST['remarks'] ?? '')),
     ]);
 
     $siteId = ($_POST['site_id'] ?? '') !== '' ? (int)$_POST['site_id'] : null;
-    $programId = $isEdit && ($_POST['program_id'] ?? '') !== '' ? (int)$_POST['program_id'] : null;
+    // Program is no longer picked in the form (PAN CADA DIA is the only program).
+    $programId = null;
     $dateEnlisted = ($_POST['date_enlisted'] ?? '') !== '' ? $_POST['date_enlisted'] : null;
 
     // Baseline measurement (add mode only; the edit form has none). A new
@@ -147,12 +145,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('danger', $msg);
             if (is_ajax_request()) json_response(['ok' => false, 'duplicate' => true, 'message' => $msg]);
         } elseif ($isEdit) {
-            $sql = "UPDATE beneficiaries SET full_name=?, first_name=?, middle_name=?, last_name=?, birth_date=?, sex=?, grade_level=?, site_id=?, program_id=?, program_status=?, date_enlisted=?, remarks=? WHERE beneficiary_id=?";
+            $sql = "UPDATE beneficiaries SET full_name=?, first_name=?, middle_name=?, last_name=?, birth_date=?, sex=?, grade_level=?, site_id=?, program_status=?, date_enlisted=?, remarks=? WHERE beneficiary_id=?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 $fullName, $firstName, $middleName, $lastName,
                 $beneficiary['birth_date'], $beneficiary['sex'], $beneficiary['grade_level'],
-                $siteId, $programId, $beneficiary['program_status'], $dateEnlisted, $beneficiary['remarks'], $id,
+                $siteId, $beneficiary['program_status'], $dateEnlisted, $beneficiary['remarks'], $id,
             ]);
             log_action($pdo, 'UPDATE_BENEFICIARY', 'beneficiaries', $id, 'Updated beneficiary profile');
             flash('success', 'Beneficiary updated.');
@@ -275,17 +273,6 @@ require __DIR__ . '/partials/header.php';
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <?php if ($isEdit): ?>
-                        <div>
-                            <label>Program</label>
-                            <select name="program_id">
-                                <option value="">Select program</option>
-                                <?php foreach ($programs as $p): ?>
-                                    <option value="<?= $p['program_id'] ?>" <?= (string)$beneficiary['program_id'] === (string)$p['program_id'] ? 'selected' : '' ?>><?= e($p['program_name']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <?php endif; ?>
                         <div>
                             <label>Date Enlisted</label>
                             <input type="date" name="date_enlisted" value="<?= e($beneficiary['date_enlisted']) ?>">
@@ -375,8 +362,8 @@ require __DIR__ . '/partials/header.php';
         </div>
 
         <div class="form-actions">
-            <a class="btn secondary cancel-button" href="<?= $isEdit ? 'beneficiary.php?id=' . $id : 'beneficiaries.php' ?>">Cancel</a>
-            <?php if (!$isEdit && !$duplicateMatch): ?><button class="btn secondary save-add-another" name="add_another" value="1">Save &amp; Add Another</button><?php endif; ?>
+            <a class="btn secondary" href="<?= $isEdit ? 'beneficiary.php?id=' . $id : 'beneficiaries.php' ?>">Cancel</a>
+            <?php if (!$isEdit && !$duplicateMatch): ?><button class="btn secondary" name="add_another" value="1">Save &amp; Add Another</button><?php endif; ?>
             <button class="btn primary"><?= $duplicateMatch ? 'Save Anyway' : ($isEdit ? 'Update Beneficiary' : 'Add Beneficiary') ?></button>
         </div>
     </form>
