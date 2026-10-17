@@ -1927,3 +1927,17 @@ table.history-table td {
   min-width: 96px;
   justify-content: center;
 }
+
+/* Beneficiary profile: remarks card (only rendered when remarks exist) */
+.bp-remarks h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.bp-remarks p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
