@@ -10,13 +10,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (($_POST['mark_all'] ?? '') === '1') {
         $bDate = $_POST['attendance_date'] ?? date('Y-m-d');
         $bSite = (int)($_POST['return_site_id'] ?? 0);
-        $bProg = (int)($_POST['return_program_id'] ?? 0);
         $bQ = trim($_POST['return_q'] ?? '');
 
         $bWhere = ["b.program_status='ENROLLED'", 'ar.attendance_id IS NULL'];
         $bParams = [$bDate, $_SESSION['user_id'], $bDate];
         if ($bSite > 0) { $bWhere[] = 'b.site_id=?'; $bParams[] = $bSite; }
-        if ($bProg > 0) { $bWhere[] = 'b.program_id=?'; $bParams[] = $bProg; }
         if ($bQ !== '') { $bEsc = addcslashes($bQ, '\\%_'); $bWhere[] = '(b.full_name LIKE ? OR b.full_name LIKE ?)'; $bParams[] = $bEsc . '%'; $bParams[] = '% ' . $bEsc . '%'; }
 
         $bulk = $pdo->prepare("
@@ -30,9 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         log_action($pdo, 'BULK_ATTENDANCE', 'attendance_records', null, $marked . ' marked present on ' . $bDate);
         flash('success', $marked . ' beneficiar' . ($marked === 1 ? 'y' : 'ies') . ' marked Present.');
 
-        $back = ['date' => $bDate];
+        $back = ['date' => $bDate, 'applied' => '1'];
         if ($bSite > 0) $back['site_id'] = $bSite;
-        if ($bProg > 0) $back['program_id'] = $bProg;
         if ($bQ !== '') $back['q'] = $bQ;
         header('Location: attendance.php?' . http_build_query($back));
         exit;
@@ -91,15 +88,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Return the user to the exact page/filters they were on, not just the date.
-    $returnParams = ['date' => $date];
+    $returnParams = ['date' => $date, 'applied' => '1'];
     if (!empty($_POST['return_page'])) {
         $returnParams['page'] = (int)$_POST['return_page'];
     }
     if (!empty($_POST['return_site_id'])) {
         $returnParams['site_id'] = (int)$_POST['return_site_id'];
-    }
-    if (!empty($_POST['return_program_id'])) {
-        $returnParams['program_id'] = (int)$_POST['return_program_id'];
     }
     if (!empty($_POST['return_q'])) {
         $returnParams['q'] = trim($_POST['return_q']);
@@ -108,23 +102,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$date = $_GET['date'] ?? date('Y-m-d');
+$today = date('Y-m-d');
+$date = $_GET['date'] ?? $today;
+if ($date > $today) {
+    $date = $today;
+}
 $siteId = (int)($_GET['site_id'] ?? 0);
-$programId = (int)($_GET['program_id'] ?? 0);
 $q = trim($_GET['q'] ?? '');
+$applied = ($_GET['applied'] ?? '') === '1';
 
 $sites = $pdo->query("SELECT * FROM feeding_sites WHERE status='ACTIVE' ORDER BY site_name")->fetchAll();
-$programs = $pdo->query("SELECT * FROM feeding_programs WHERE status<>'INACTIVE' ORDER BY program_name")->fetchAll();
-
 $where = ["b.program_status='ENROLLED'"];
 $params = [];
 if ($siteId > 0) {
     $where[] = 'b.site_id=?';
     $params[] = $siteId;
-}
-if ($programId > 0) {
-    $where[] = 'b.program_id=?';
-    $params[] = $programId;
 }
 if ($q !== '') {
     $esc = addcslashes($q, '\\%_');
@@ -163,11 +155,10 @@ if ($page > $totalPages) {
 $offset = ($page - 1) * $perPage;
 
 $stmt = $pdo->prepare("
-    SELECT b.beneficiary_id, b.full_name, b.beneficiary_code, b.grade_level, s.site_name, p.program_name,
+        SELECT b.beneficiary_id, b.full_name, b.beneficiary_code, b.grade_level, s.site_name,
            ar.attendance_status, ar.remarks
     FROM beneficiaries b
     LEFT JOIN feeding_sites s ON s.site_id = b.site_id
-    LEFT JOIN feeding_programs p ON p.program_id = b.program_id
     LEFT JOIN attendance_records ar ON ar.beneficiary_id = b.beneficiary_id AND ar.attendance_date = ?
     $ws
     ORDER BY b.full_name
@@ -178,18 +169,23 @@ $rows = $stmt->fetchAll();
 
 // Base query string (current filters, minus page) reused by every pagination link.
 $paginationBase = $_GET;
-unset($paginationBase['page']);
+unset($paginationBase['page'], $paginationBase['program_id']);
 
 $pageTitle = 'Attendance';
+$pageActionsHtml = $applied
+    ? '<a class="btn secondary" href="attendance.php?' . e(http_build_query(array_diff_key($_GET, ['applied' => '', 'page' => '', 'program_id' => '']))) . '">Change Filters</a>'
+    : null;
 $activeNav = 'attendance.php';
 require __DIR__ . '/partials/header.php';
 ?>
-<section class="panel">
-    <form method="get" data-autosubmit>
-        <div class="scope-row">
+<?php if (!$applied): ?>
+<section class="panel filters-panel attendance-filter-panel">
+    <span class="filter-label">Filter</span>
+    <form class="scope-row" method="get">
+        <input type="hidden" name="applied" value="1">
             <div class="field filter-field is-active">
                 <label for="att_date">Date</label>
-                <input id="att_date" type="date" name="date" value="<?= e($date) ?>">
+                <input id="att_date" type="date" name="date" value="<?= e($date) ?>" max="<?= e($today) ?>">
             </div>
             <div class="field filter-field <?= $siteId > 0 ? 'is-active' : '' ?>">
                 <label for="att_site">Feeding Site</label>
@@ -200,25 +196,12 @@ require __DIR__ . '/partials/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="field filter-field <?= $programId > 0 ? 'is-active' : '' ?>">
-                <label for="att_program">Program</label>
-                <select id="att_program" name="program_id">
-                    <option value="0">All programs</option>
-                    <?php foreach ($programs as $p): ?>
-                        <option value="<?= $p['program_id'] ?>" <?= $programId === $p['program_id'] ? 'selected' : '' ?>><?= e($p['program_name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
             <button class="btn primary">Apply</button>
-            <?php if ($siteId > 0 || $programId > 0 || $q !== ''): ?><a class="btn secondary" href="attendance.php?date=<?= e($date) ?>">Reset</a><?php endif; ?>
-        </div>
+            <?php if ($siteId > 0 || $q !== ''): ?><a class="btn secondary" href="attendance.php?date=<?= e($date) ?>">Reset</a><?php endif; ?>
     </form>
-    <?php if ($siteId > 0 || $programId > 0 || $q !== ''): ?>
+    <?php if ($siteId > 0 || $q !== ''): ?>
     <div class="active-filters">
         <span class="label">Active filters:</span>
-        <?php if ($programId > 0): $pn = ''; foreach ($programs as $p) { if ((int)$p['program_id'] === $programId) { $pn = $p['program_name']; break; } } ?>
-            <span class="filter-chip">Program: <?= e($pn) ?> <a href="attendance.php?<?= e(http_build_query(array_diff_key($_GET, ['program_id' => '']))) ?>" title="Remove this filter" aria-label="Remove filter: Program">&times;</a></span>
-        <?php endif; ?>
         <?php if ($siteId > 0): $sn = ''; foreach ($sites as $s) { if ((int)$s['site_id'] === $siteId) { $sn = $s['site_name']; break; } } ?>
             <span class="filter-chip">Site: <?= e($sn) ?> <a href="attendance.php?<?= e(http_build_query(array_diff_key($_GET, ['site_id' => '']))) ?>" title="Remove this filter" aria-label="Remove filter: Site">&times;</a></span>
         <?php endif; ?>
@@ -228,7 +211,7 @@ require __DIR__ . '/partials/header.php';
     </div>
     <?php endif; ?>
 </section>
-
+<?php else: ?>
 <div class="cards cards-3">
     <div class="stat green"><span>Present</span><strong><?= $counts['PRESENT'] ?></strong></div>
     <div class="stat red"><span>Absent</span><strong><?= $counts['ABSENT'] ?></strong></div>
@@ -244,7 +227,6 @@ require __DIR__ . '/partials/header.php';
             <input type="hidden" name="mark_all" value="1">
             <input type="hidden" name="attendance_date" value="<?= e($date) ?>">
             <input type="hidden" name="return_site_id" value="<?= $siteId ?>">
-            <input type="hidden" name="return_program_id" value="<?= $programId ?>">
             <input type="hidden" name="return_q" value="<?= e($q) ?>">
         </form>
         <?php endif; ?>
@@ -263,7 +245,6 @@ require __DIR__ . '/partials/header.php';
                         <input type="hidden" name="attendance_date" value="<?= e($date) ?>">
                         <input type="hidden" name="return_page" value="<?= $page ?>">
                         <input type="hidden" name="return_site_id" value="<?= $siteId ?>">
-                        <input type="hidden" name="return_program_id" value="<?= $programId ?>">
                         <input type="hidden" name="return_q" value="<?= e($q) ?>">
                     <td><?= $r['beneficiary_code'] ? '<span class="code-tag">' . e($r['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td><a href="beneficiary.php?id=<?= $r['beneficiary_id'] ?>"><?= e($r['full_name']) ?></a></td>
@@ -321,5 +302,6 @@ require __DIR__ . '/partials/header.php';
     </nav>
     <?php endif; ?>
 </section>
+<?php endif; ?>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>

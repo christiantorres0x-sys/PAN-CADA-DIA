@@ -7,6 +7,7 @@ $programId = (int)($_GET['program_id'] ?? 0);
 $status = trim($_GET['status'] ?? '');
 $from = trim($_GET['from'] ?? '');
 $to = trim($_GET['to'] ?? '');
+$generated = ($_GET['generated'] ?? '') === '1';
 
 $sites = $pdo->query("SELECT * FROM feeding_sites ORDER BY site_name")->fetchAll();
 $programs = $pdo->query("SELECT * FROM feeding_programs ORDER BY program_name")->fetchAll();
@@ -243,25 +244,28 @@ foreach ($milestoneBuckets as $key => $counts) {
 }
 
 $pageTitle = 'Reports & Analysis';
+$pageActionsHtml = $generated
+    ? '<a class="btn secondary" href="reports.php?' . e(http_build_query(array_diff_key($_GET, ['generated' => '', 'age' => '']))) . '">Change Filters</a>'
+    : null;
 $activeNav = 'reports.php';
 require __DIR__ . '/partials/header.php';
 ?>
 
-<section class="panel">
+<?php if (!$generated): ?>
+<section class="panel filters-panel reports-filter-panel">
     <span class="filter-label">Filter</span>
-    <form class="filter-grid" method="get" data-autosubmit>
-        <div class="filter-field <?= $siteId > 0 ? 'is-active' : '' ?>">
-            <label>Feeding Site</label>
-            <select name="site_id">
+    <form class="scope-row" method="get">
+        <input type="hidden" name="generated" value="1">
+        <div class="field filter-field <?= $siteId > 0 ? 'is-active' : '' ?>">
+            <label class="sr-only" for="report_site">Feeding Site</label>
+            <select id="report_site" name="site_id">
                 <option value="0">All sites</option>
                 <?php foreach ($sites as $s): ?>
                     <option value="<?= $s['site_id'] ?>" <?= $siteId === $s['site_id'] ? 'selected' : '' ?>><?= e($s['site_name']) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="filter-actions">
-            <button class="btn primary">Generate</button>
-        </div>
+        <button class="btn primary">Generate</button>
     </form>
     <?php if ($activeFilters): ?>
     <div class="active-filters">
@@ -272,6 +276,7 @@ require __DIR__ . '/partials/header.php';
     </div>
     <?php endif; ?>
 </section>
+<?php else: ?>
 
 <section class="panel" id="records">
     <h2>Health Monitoring Records</h2>
@@ -363,6 +368,7 @@ require __DIR__ . '/partials/header.php';
             <?php foreach (['site_id' => $siteId ?: '', 'program_id' => $programId ?: '', 'status' => $status, 'from' => $from, 'to' => $to] as $k => $v): if ($v !== '' && $v !== 0): ?>
                 <input type="hidden" name="<?= e($k) ?>" value="<?= e($v) ?>">
             <?php endif; endforeach; ?>
+            <input type="hidden" name="generated" value="1">
             <input id="age_filter" type="number" name="age" min="0" value="<?= e($ageFilter) ?>" placeholder="e.g. 7" onchange="this.form.submit()">
         </form>
     </div>
@@ -380,4 +386,5 @@ require __DIR__ . '/partials/header.php';
 <section class="notice">
     <strong>About weight status:</strong> For children, weight status comes from an age- and sex-specific growth reference, not adult BMI ranges. Records without one show as Pending or Not yet classified.
 </section>
+<?php endif; ?>
 <?php require __DIR__ . '/partials/footer.php'; ?>

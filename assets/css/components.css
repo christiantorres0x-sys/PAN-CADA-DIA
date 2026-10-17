@@ -338,6 +338,11 @@
   flex: none;
 }
 
+.attendance-filter-panel .scope-row > .btn.primary,
+.reports-filter-panel .scope-row > .btn.primary {
+  margin-right: 0;
+}
+
 .beneficiary-search-row {
   margin-bottom: 10px;
 }
@@ -353,7 +358,9 @@
   margin-bottom: 14px;
 }
 
-.beneficiaries-page .filter-label {
+.beneficiaries-page .filter-label,
+.attendance-filter-panel .filter-label,
+.reports-filter-panel .filter-label {
   margin: 4px 4px 10px 4px;
 }
 
@@ -896,6 +903,17 @@ th {
 
 td {
   font-size: 13px;
+}
+
+.attendance-table th,
+.attendance-table td,
+.attendance-table td.num {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.attendance-table .status-cell {
+  justify-content: center;
 }
 
 tbody tr:hover {
