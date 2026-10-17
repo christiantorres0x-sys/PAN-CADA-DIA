@@ -53,6 +53,13 @@ require __DIR__ . '/partials/header.php';
                 <div><dt>Date Enlisted</dt><dd><?= e($b['date_enlisted'] ?? '—') ?></dd></div>
             </dl>
         </div>
+
+        <?php if (trim((string)($b['remarks'] ?? '')) !== ''): ?>
+        <div class="bp-card bp-remarks">
+            <h2>Remarks</h2>
+            <p><?= e($b['remarks']) ?></p>
+        </div>
+        <?php endif; ?>
     </aside>
 
     <div class="bp-main">
