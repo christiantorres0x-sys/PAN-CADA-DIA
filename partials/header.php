@@ -75,7 +75,7 @@ $pcd_css = static fn(string $f): string => 'assets/css/' . $f . '?v=' . (@filemt
 <link rel="stylesheet" href="<?= $pcd_css('components.css') ?>">
 <link rel="stylesheet" href="<?= $pcd_css('forms.css') ?>">
 <link rel="stylesheet" href="<?= $pcd_css('responsive.css') ?>">
-<script defer src="assets/app.js"></script>
+<script defer src="assets/app.js?v=<?= @filemtime(__DIR__ . '/../assets/app.js') ?: 1 ?>"></script>
 </head><body>
 <a class="skip-link" href="#main">Skip to content</a>
 <div class="layout">

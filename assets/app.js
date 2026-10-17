@@ -434,6 +434,57 @@ function pcdWireAttendanceRows(root) {
   });
 }
 
+function pcdWireAttendanceDrafts(root) {
+  root.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-attendance-status]');
+    if (!button) return;
+
+    const row = button.closest('tr');
+    const statusInput = row?.querySelector('input[name^="attendance["]');
+    if (!statusInput) return;
+
+    const previousStatus = statusInput.value;
+    const previousCountStatus = previousStatus || statusInput.dataset.initialStatus || '';
+    const selectedStatus = button.dataset.attendanceStatus;
+    if (previousStatus !== selectedStatus) {
+      [previousCountStatus, selectedStatus].forEach((status, index) => {
+        if (!['PRESENT', 'ABSENT'].includes(status)) return;
+        const count = root.querySelector(`[data-attendance-count="${status}"]`);
+        if (count) count.textContent = String(Math.max(0, Number(count.textContent) + (index === 0 ? -1 : 1)));
+      });
+    }
+    statusInput.value = selectedStatus;
+    row.classList.toggle('attendance-pending-save', statusInput.value !== (statusInput.dataset.initialStatus || ''));
+    row.querySelectorAll('[data-attendance-status]').forEach((item) => {
+      const active = item === button;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  });
+
+  const saveForm = root.querySelector('#attendance-save-form');
+  if (saveForm) {
+    saveForm.addEventListener('submit', (e) => {
+      const missingInput = Array.from(root.querySelectorAll('input[name^="attendance["]'))
+        .find((input) => !['PRESENT', 'ABSENT'].includes(input.value));
+      if (missingInput) {
+        e.preventDefault();
+        const row = missingInput.closest('tr');
+        pcdToast('Choose Present or Absent for every beneficiary before saving.', true);
+        row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row?.querySelector('[data-attendance-status]')?.focus();
+        return;
+      }
+      root.querySelectorAll('.attendance-pending-save').forEach((row) => row.classList.remove('attendance-pending-save'));
+    });
+    window.addEventListener('beforeunload', (e) => {
+      if (!root.querySelector('.attendance-pending-save')) return;
+      e.preventDefault();
+      e.returnValue = '';
+    });
+  }
+}
+
 // ---------------------------------------------------------------------
 // Small non-blocking message (replaces browser alert() popups).
 // ---------------------------------------------------------------------
@@ -604,5 +655,6 @@ document.addEventListener('DOMContentLoaded', () => {
   pcdWireConfirmForms(document);
   pcdWireFormExtras(document);
   pcdWireAttendanceRows(document);
+  pcdWireAttendanceDrafts(document);
   pcdWireSlideoverTriggers();
 });

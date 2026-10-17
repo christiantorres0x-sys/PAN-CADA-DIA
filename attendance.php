@@ -5,6 +5,81 @@ require_login();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
 
+    if (($_POST['save_attendance'] ?? '') === '1') {
+        $saveDate = $_POST['attendance_date'] ?? date('Y-m-d');
+        $saveSite = (int)($_POST['return_site_id'] ?? 0);
+        $saveQ = trim($_POST['return_q'] ?? '');
+        $savePage = max(1, (int)($_POST['return_page'] ?? 1));
+        $attendance = is_array($_POST['attendance'] ?? null) ? $_POST['attendance'] : [];
+        $parsedSaveDate = DateTimeImmutable::createFromFormat('!Y-m-d', $saveDate);
+
+        if (!$parsedSaveDate || $parsedSaveDate->format('Y-m-d') !== $saveDate || $saveDate > date('Y-m-d')) {
+            flash('danger', 'Choose a valid attendance date that is not in the future.');
+            header('Location: attendance.php');
+            exit;
+        }
+
+        $eligibleWhere = ["program_status='ENROLLED'"];
+        $eligibleParams = [];
+        if ($saveSite > 0) {
+            $eligibleWhere[] = 'site_id=?';
+            $eligibleParams[] = $saveSite;
+        }
+        if ($saveQ !== '') {
+            $saveEsc = addcslashes($saveQ, '\\%_');
+            $eligibleWhere[] = '(full_name LIKE ? OR full_name LIKE ?)';
+            $eligibleParams[] = $saveEsc . '%';
+            $eligibleParams[] = '% ' . $saveEsc . '%';
+        }
+        $eligibleStmt = $pdo->prepare('SELECT beneficiary_id FROM beneficiaries WHERE ' . implode(' AND ', $eligibleWhere));
+        $eligibleStmt->execute($eligibleParams);
+        $eligibleIds = array_fill_keys(array_map('strval', $eligibleStmt->fetchAll(PDO::FETCH_COLUMN)), true);
+
+        $pageOffset = ($savePage - 1) * 20;
+        $pageStmt = $pdo->prepare('SELECT beneficiary_id FROM beneficiaries WHERE ' . implode(' AND ', $eligibleWhere) . ' ORDER BY full_name LIMIT 20 OFFSET ' . $pageOffset);
+        $pageStmt->execute($eligibleParams);
+        $pageIds = array_map('strval', $pageStmt->fetchAll(PDO::FETCH_COLUMN));
+        foreach ($pageIds as $beneficiaryId) {
+            if (!in_array($attendance[$beneficiaryId] ?? '', ['PRESENT', 'ABSENT'], true)) {
+                flash('danger', 'Choose Present or Absent for every beneficiary before saving.');
+                $returnParams = ['date' => $saveDate, 'site_id' => $saveSite, 'purpose' => 'mark', 'applied' => '1', 'page' => $savePage];
+                if ($saveQ !== '') $returnParams['q'] = $saveQ;
+                header('Location: attendance.php?' . http_build_query($returnParams));
+                exit;
+            }
+        }
+
+        $saveStmt = $pdo->prepare("
+            INSERT INTO attendance_records (beneficiary_id, attendance_date, attendance_status, remarks, recorded_by)
+            VALUES (?, ?, ?, '', ?)
+            ON DUPLICATE KEY UPDATE
+                attendance_status = VALUES(attendance_status),
+                recorded_by = VALUES(recorded_by),
+                updated_at = CURRENT_TIMESTAMP
+        ");
+        $savedCount = 0;
+        $pdo->beginTransaction();
+        try {
+            foreach ($pageIds as $beneficiaryId) {
+                $attendanceStatus = $attendance[$beneficiaryId];
+                if (!isset($eligibleIds[$beneficiaryId])) {
+                    continue;
+                }
+                $saveStmt->execute([(int)$beneficiaryId, $saveDate, $attendanceStatus, $_SESSION['user_id']]);
+                $savedCount++;
+            }
+            $pdo->commit();
+        } catch (Throwable $error) {
+            $pdo->rollBack();
+            throw $error;
+        }
+
+        log_action($pdo, 'SAVE_ATTENDANCE', 'attendance_records', null, $savedCount . ' records saved for ' . $saveDate);
+        flash('success', 'Attendance for ' . $saveDate . ' has been saved.');
+        header('Location: attendance.php');
+        exit;
+    }
+
     // Batch action: mark every still-unrecorded child in the current filter
     // as Present for the chosen date (children already marked are untouched).
     if (($_POST['mark_all'] ?? '') === '1') {
@@ -109,6 +184,7 @@ if ($date > $today) {
 }
 $siteId = (int)($_GET['site_id'] ?? 0);
 $q = trim($_GET['q'] ?? '');
+$purpose = ($_GET['purpose'] ?? 'mark') === 'history' ? 'history' : 'mark';
 $applied = ($_GET['applied'] ?? '') === '1';
 
 $sites = $pdo->query("SELECT * FROM feeding_sites WHERE status='ACTIVE' ORDER BY site_name")->fetchAll();
@@ -131,7 +207,7 @@ $ws = 'WHERE ' . implode(' AND ', $where);
 $countsStmt = $pdo->prepare("
     SELECT ar.attendance_status, COUNT(*) AS cnt
     FROM beneficiaries b
-    LEFT JOIN attendance_records ar ON ar.beneficiary_id = b.beneficiary_id AND ar.attendance_date = ?
+    " . ($purpose === 'history' ? 'JOIN' : 'LEFT JOIN') . " attendance_records ar ON ar.beneficiary_id = b.beneficiary_id AND ar.attendance_date = ?
     $ws
     GROUP BY ar.attendance_status
 ");
@@ -140,13 +216,15 @@ $counts = ['PRESENT' => 0, 'ABSENT' => 0, 'UNRECORDED' => 0];
 foreach ($countsStmt->fetchAll() as $row) {
     $counts[$row['attendance_status'] ?: 'UNRECORDED'] = (int)$row['cnt'];
 }
+$savedAttendanceCount = $counts['PRESENT'] + $counts['ABSENT'];
 
 // Pagination
 $perPage = 20;
 $page = max(1, (int)($_GET['page'] ?? 1));
 
-$totalStmt = $pdo->prepare("SELECT COUNT(*) FROM beneficiaries b $ws");
-$totalStmt->execute($params);
+$historyJoin = $purpose === 'history' ? 'JOIN attendance_records history_ar ON history_ar.beneficiary_id = b.beneficiary_id AND history_ar.attendance_date = ?' : '';
+$totalStmt = $pdo->prepare("SELECT COUNT(*) FROM beneficiaries b $historyJoin $ws");
+$totalStmt->execute($purpose === 'history' ? array_merge([$date], $params) : $params);
 $totalBeneficiaries = (int)$totalStmt->fetchColumn();
 $totalPages = max(1, (int)ceil($totalBeneficiaries / $perPage));
 if ($page > $totalPages) {
@@ -155,11 +233,11 @@ if ($page > $totalPages) {
 $offset = ($page - 1) * $perPage;
 
 $stmt = $pdo->prepare("
-        SELECT b.beneficiary_id, b.full_name, b.beneficiary_code, b.grade_level, s.site_name,
+            SELECT b.beneficiary_id, b.full_name, b.beneficiary_code, b.grade_level, s.site_name,
            ar.attendance_status, ar.remarks
     FROM beneficiaries b
     LEFT JOIN feeding_sites s ON s.site_id = b.site_id
-    LEFT JOIN attendance_records ar ON ar.beneficiary_id = b.beneficiary_id AND ar.attendance_date = ?
+            " . ($purpose === 'history' ? 'JOIN' : 'LEFT JOIN') . " attendance_records ar ON ar.beneficiary_id = b.beneficiary_id AND ar.attendance_date = ?
     $ws
     ORDER BY b.full_name
     LIMIT $perPage OFFSET $offset
@@ -173,7 +251,7 @@ unset($paginationBase['page'], $paginationBase['program_id']);
 
 $pageTitle = 'Attendance';
 $pageActionsHtml = $applied
-    ? '<a class="btn secondary" href="attendance.php?' . e(http_build_query(array_diff_key($_GET, ['applied' => '', 'page' => '', 'program_id' => '']))) . '">Change Filters</a>'
+    ? '<a class="btn secondary" href="attendance.php">Change Filters</a>'
     : null;
 $activeNav = 'attendance.php';
 require __DIR__ . '/partials/header.php';
@@ -183,95 +261,75 @@ require __DIR__ . '/partials/header.php';
     <span class="filter-label">Filter</span>
     <form class="scope-row" method="get">
         <input type="hidden" name="applied" value="1">
-            <div class="field filter-field is-active">
-                <label for="att_date">Date</label>
-                <input id="att_date" type="date" name="date" value="<?= e($date) ?>" max="<?= e($today) ?>">
+            <div class="field filter-field">
+                <label for="att_purpose">Purpose</label>
+                <select id="att_purpose" name="purpose">
+                    <option value="mark" <?= $purpose === 'mark' ? 'selected' : '' ?>>Mark attendance</option>
+                    <option value="history" <?= $purpose === 'history' ? 'selected' : '' ?>>View previous attendance</option>
+                </select>
             </div>
             <div class="field filter-field <?= $siteId > 0 ? 'is-active' : '' ?>">
                 <label for="att_site">Feeding Site</label>
                 <select id="att_site" name="site_id">
                     <option value="0">All sites</option>
                     <?php foreach ($sites as $s): ?>
-                        <option value="<?= $s['site_id'] ?>" <?= $siteId === $s['site_id'] ? 'selected' : '' ?>><?= e($s['site_name']) ?></option>
+                        <option value="<?= $s['site_id'] ?>" <?= $siteId === (int)$s['site_id'] ? 'selected' : '' ?>><?= e($s['site_name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
+            <div class="field filter-field is-active">
+                <label for="att_date">Date</label>
+                <input id="att_date" type="date" name="date" value="<?= e($date) ?>" max="<?= e($today) ?>">
+            </div>
             <button class="btn primary">Apply</button>
-            <?php if ($siteId > 0 || $q !== ''): ?><a class="btn secondary" href="attendance.php?date=<?= e($date) ?>">Reset</a><?php endif; ?>
     </form>
-    <?php if ($siteId > 0 || $q !== ''): ?>
-    <div class="active-filters">
-        <span class="label">Active filters:</span>
-        <?php if ($siteId > 0): $sn = ''; foreach ($sites as $s) { if ((int)$s['site_id'] === $siteId) { $sn = $s['site_name']; break; } } ?>
-            <span class="filter-chip">Site: <?= e($sn) ?> <a href="attendance.php?<?= e(http_build_query(array_diff_key($_GET, ['site_id' => '']))) ?>" title="Remove this filter" aria-label="Remove filter: Site">&times;</a></span>
-        <?php endif; ?>
-        <?php if ($q !== ''): ?>
-            <span class="filter-chip">Name: <?= e($q) ?> <a href="attendance.php?<?= e(http_build_query(array_diff_key($_GET, ['q' => '']))) ?>" title="Remove this filter" aria-label="Remove filter: Name">&times;</a></span>
-        <?php endif; ?>
-    </div>
-    <?php endif; ?>
 </section>
 <?php else: ?>
-<div class="cards cards-3">
-    <div class="stat green"><span>Present</span><strong><?= $counts['PRESENT'] ?></strong></div>
-    <div class="stat red"><span>Absent</span><strong><?= $counts['ABSENT'] ?></strong></div>
-    <div class="stat gray"><span>Not yet recorded</span><strong><?= $counts['UNRECORDED'] ?></strong></div>
+<?php if ($purpose === 'mark' && $savedAttendanceCount > 0): ?>
+<div class="alert success">Attendance for <?= e($date) ?> has already been marked. You are editing the saved attendance.</div>
+<?php endif; ?>
+<div class="cards cards-2">
+    <div class="stat green"><span>Present</span><strong data-attendance-count="PRESENT"><?= $counts['PRESENT'] ?></strong></div>
+    <div class="stat red"><span>Absent</span><strong data-attendance-count="ABSENT"><?= $counts['ABSENT'] ?></strong></div>
 </div>
 
 <section class="panel">
     <div class="panel-head">
-        <h2><?= e($date) ?> — Enrolled Beneficiaries</h2>
-        <?php if ($counts['UNRECORDED'] > 0): ?>
-        <form method="post" class="batch-form" data-confirm="Mark all <?= (int)$counts['UNRECORDED'] ?> unrecorded beneficiaries as Present for <?= e($date) ?>?">
-            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-            <input type="hidden" name="mark_all" value="1">
-            <input type="hidden" name="attendance_date" value="<?= e($date) ?>">
-            <input type="hidden" name="return_site_id" value="<?= $siteId ?>">
-            <input type="hidden" name="return_q" value="<?= e($q) ?>">
-        </form>
-        <?php endif; ?>
+        <h2><?= e($date) ?><?= $purpose === 'history' ? ' — Saved Attendance' : '' ?></h2>
     </div>
     <div class="table-wrap">
         <table class="attendance-table">
             <thead>
-                <tr><th>ID</th><th>Beneficiary</th><th>Status</th><th><span class="sr-only">Action</span></th></tr>
+                <tr><th>ID</th><th>Beneficiary</th><th><?= $purpose === 'history' ? 'Saved Status' : 'Mark Status' ?></th></tr>
             </thead>
             <tbody>
                 <?php foreach ($rows as $r): ?>
                 <tr>
-                    <form method="post" class="attendance-row-form">
-                        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-                        <input type="hidden" name="beneficiary_id" value="<?= $r['beneficiary_id'] ?>">
-                        <input type="hidden" name="attendance_date" value="<?= e($date) ?>">
-                        <input type="hidden" name="return_page" value="<?= $page ?>">
-                        <input type="hidden" name="return_site_id" value="<?= $siteId ?>">
-                        <input type="hidden" name="return_q" value="<?= e($q) ?>">
                     <td><?= $r['beneficiary_code'] ? '<span class="code-tag">' . e($r['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td><a href="beneficiary.php?id=<?= $r['beneficiary_id'] ?>"><?= e($r['full_name']) ?></a></td>
                     <?php
                         $curStatus = $r['attendance_status'] ?? '';
-                        $statusLabel = ['PRESENT' => 'Present', 'ABSENT' => 'Absent'][$curStatus] ?? 'Unrecorded';
-                        $statusBadgeClass = ['PRESENT' => 'green', 'ABSENT' => 'red'][$curStatus] ?? 'gray';
+                        $selectedStatus = $purpose === 'history' || $savedAttendanceCount > 0 ? $curStatus : '';
                     ?>
+                    <?php if ($purpose === 'history'): ?>
+                    <td><span class="badge <?= $curStatus === 'PRESENT' ? 'green' : 'red' ?>"><?= $curStatus === 'PRESENT' ? 'Present' : 'Absent' ?></span></td>
+                    <?php else: ?>
                     <td>
                         <div class="status-cell">
-
-                                <button type="submit" name="quick_status" value="PRESENT" class="status-btn present <?= $curStatus === 'PRESENT' ? 'active' : '' ?>" title="Mark Present" aria-label="Mark Present">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-                                </button>
-                                <button type="submit" name="quick_status" value="ABSENT" class="status-btn absent <?= $curStatus === 'ABSENT' ? 'active' : '' ?>" title="Mark Absent" aria-label="Mark Absent">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                                </button>
-                            </div>
-                            <input type="hidden" name="attendance_status" value="<?= e($curStatus ?: 'PRESENT') ?>">
+                            <button type="button" data-attendance-status="PRESENT" aria-pressed="<?= $selectedStatus === 'PRESENT' ? 'true' : 'false' ?>" class="status-btn present <?= $selectedStatus === 'PRESENT' ? 'active' : '' ?>" title="Mark Present" aria-label="Mark Present">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+                            </button>
+                            <button type="button" data-attendance-status="ABSENT" aria-pressed="<?= $selectedStatus === 'ABSENT' ? 'true' : 'false' ?>" class="status-btn absent <?= $selectedStatus === 'ABSENT' ? 'active' : '' ?>" title="Mark Absent" aria-label="Mark Absent">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            </button>
                         </div>
+                        <input type="hidden" form="attendance-save-form" name="attendance[<?= (int)$r['beneficiary_id'] ?>]" value="<?= e($selectedStatus) ?>" data-initial-status="<?= e($curStatus) ?>">
                     </td>
-            
-                    </form>
+                    <?php endif; ?>
                 </tr>
                 <?php endforeach; ?>
                 <?php if (!$rows): ?>
-                <tr><td colspan="6" class="empty">No enrolled beneficiaries match the selected filters.</td></tr>
+                <tr><td colspan="3" class="empty"><?= $purpose === 'history' ? 'No saved attendance matches the selected filters.' : 'No enrolled beneficiaries match the selected filters.' ?></td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -300,6 +358,19 @@ require __DIR__ . '/partials/header.php';
             <span class="page-nav disabled">Next &rarr;</span>
         <?php endif; ?>
     </nav>
+    <?php endif; ?>
+    <?php if ($purpose === 'mark'): ?>
+    <div class="attendance-save-actions">
+        <form method="post" id="attendance-save-form">
+            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="save_attendance" value="1">
+            <input type="hidden" name="attendance_date" value="<?= e($date) ?>">
+            <input type="hidden" name="return_site_id" value="<?= $siteId ?>">
+            <input type="hidden" name="return_q" value="<?= e($q) ?>">
+            <input type="hidden" name="return_page" value="<?= $page ?>">
+            <button class="btn primary" type="submit">Save Attendance</button>
+        </form>
+    </div>
     <?php endif; ?>
 </section>
 <?php endif; ?>

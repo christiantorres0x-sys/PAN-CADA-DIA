@@ -9,6 +9,10 @@
   grid-template-columns: repeat(3, 1fr);
 }
 
+.cards.cards-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 .stat,
 .panel {
   background: var(--card);
@@ -914,6 +918,16 @@ td {
 
 .attendance-table .status-cell {
   justify-content: center;
+}
+
+.attendance-save-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.attendance-save-actions form {
+  margin: 0;
 }
 
 tbody tr:hover {
