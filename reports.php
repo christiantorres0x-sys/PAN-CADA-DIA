@@ -245,7 +245,7 @@ foreach ($milestoneBuckets as $key => $counts) {
 
 $pageTitle = 'Reports & Analysis';
 $pageActionsHtml = $generated
-    ? '<a class="btn secondary" href="reports.php?' . e(http_build_query(array_diff_key($_GET, ['generated' => '', 'age' => '']))) . '">Change Filters</a>'
+    ? '<a class="btn secondary attendance-change-filters" href="reports.php?' . e(http_build_query(array_diff_key($_GET, ['generated' => '', 'age' => '']))) . '">Change Filters</a>'
     : null;
 $activeNav = 'reports.php';
 require __DIR__ . '/partials/header.php';

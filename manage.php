@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$sites = $pdo->query("SELECT * FROM feeding_sites ORDER BY site_name")->fetchAll();
+$sites = $pdo->query("SELECT s.*, (SELECT COUNT(*) FROM beneficiaries b WHERE b.site_id = s.site_id) AS beneficiary_count FROM feeding_sites s ORDER BY s.site_name")->fetchAll();
 $programs = $pdo->query("SELECT * FROM feeding_programs ORDER BY program_name")->fetchAll();
 
 $activeSiteCount = (int)$pdo->query("SELECT COUNT(*) FROM feeding_sites WHERE status='ACTIVE'")->fetchColumn();
@@ -90,16 +90,16 @@ $activeNav = 'manage.php';
 require __DIR__ . '/partials/header.php';
 ?>
 
-<section class="panel">
+<section class="panel program-setup-panel">
     <h2>Program Summary</h2>
-    <div class="cards" style="margin-top:8px; margin-bottom:0;">
-        <div class="stat green"><span>Total Beneficiaries</span><strong><?= $totalCount ?></strong><small class="muted"><?= $enrolledCount ?> enrolled</small></div>
-        <div class="stat red"><span>Total Feeding Sites</span><strong><?= count($sites) ?></strong><small class="muted"><?= $activeSiteCount ?> active</small></div>
+    <div class="cards program-summary-cards" style="margin-top:8px; margin-bottom:0;">
+        <div class="stat red"><span>Total Feeding Sites</span><strong><?= count($sites) ?></strong></div>
+        <div class="stat green"><span>Total Beneficiaries</span><strong><?= $totalCount ?></strong></div>
     </div>
 </section>
 
 <div>
-    <section class="panel">
+    <section class="panel program-setup-panel program-setup-add-panel">
         <details class="collapsible"><summary><h2>Add Feeding Site</h2></summary>
         <form method="post" id="program-form">
             <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
@@ -118,11 +118,12 @@ require __DIR__ . '/partials/header.php';
                     <input name="barangay">
                 </div>
                 <div>
-                    <label>Municipality / City</label>
+                    <label>City</label>
                     <input name="municipality">
                 </div>
             </div>
-            <h3 class="form-section-title" style="margin-top:14px;">Program Period (optional)</h3>
+            <hr class="program-period-divider">
+            <h3 class="form-section-title program-period-title">Program Period (optional)</h3>
             <div class="form-grid">
                 <div>
                     <label>Start Date</label>
@@ -133,9 +134,9 @@ require __DIR__ . '/partials/header.php';
                     <input type="date" name="end_date" id="program_end_date">
                 </div>
                 <div class="full-col">
-                    <label>Duration (days)</label>
+                    <label>Duration (Days)</label>
                     <input type="number" name="duration_days" id="program_duration_days" min="1" max="3650" step="1" inputmode="numeric">
-                    <span class="form-hint" id="program_duration_hint">Calculated from the dates (counting both days). You can edit it.</span>
+                    <span class="form-hint" id="program_duration_hint">Derived from start and end date. This is editable.</span>
                 </div>
             </div>
             <div class="form-actions"><button class="btn primary">Add Site</button></div>
@@ -145,12 +146,12 @@ require __DIR__ . '/partials/header.php';
 
 </div>
 
-<section class="panel">
+<section class="panel program-setup-panel">
     <h2>Configured Feeding Sites</h2>
     <div class="table-wrap">
         <table>
             <thead>
-                <tr><th>Name</th><th>Barangay</th><th>Municipality</th><th>Status</th></tr>
+                <tr><th>Name</th><th>Barangay</th><th>City</th><th>Beneficiary Count</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($sites as $s): ?>
@@ -158,7 +159,7 @@ require __DIR__ . '/partials/header.php';
                     <td><?= e($s['site_name']) ?></td>
                     <td><?= e($s['barangay']) ?></td>
                     <td><?= e($s['municipality']) ?></td>
-                    <td><?= pcd_badge($s['status']) ?></td>
+                    <td><?= (int)$s['beneficiary_count'] ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

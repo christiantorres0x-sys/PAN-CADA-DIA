@@ -166,6 +166,16 @@ textarea {
   color: var(--muted);
 }
 
+.program-period-title {
+  margin: 0 0 12px 2px;
+}
+
+.program-period-divider {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 28px 0;
+}
+
 .form-grid-3 {
   grid-template-columns: repeat(3, 1fr);
 }

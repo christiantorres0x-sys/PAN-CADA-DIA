@@ -14,13 +14,12 @@
 }
 
 .cards.cards-2.attendance-summary-cards {
-  grid-template-columns: repeat(2, 120px);
+  grid-template-columns: repeat(4, 1fr);
   justify-content: start;
   margin-left: 16px;
 }
 
 .attendance-summary-cards .stat {
-  aspect-ratio: 1;
   box-sizing: border-box;
   margin: 0;
   display: flex;
@@ -583,6 +582,42 @@ tbody tr.clickable-row {
   font-weight: 700;
 }
 
+.program-setup-panel h2 {
+  margin: 2px 0 12px 2px;
+}
+
+.program-summary-cards .stat strong {
+  font-size: 48px;
+}
+
+.program-summary-cards .stat:first-child span {
+  color: var(--green);
+}
+
+.program-summary-cards .stat:nth-child(2) span {
+  color: var(--gray-tone);
+}
+
+.program-summary-cards .stat {
+  margin: 0;
+}
+
+.program-summary-cards .stat:first-child {
+  margin-left: 2px;
+}
+
+.program-setup-add-panel:has(> details.collapsible:not([open])) {
+  background: var(--green-bg);
+}
+
+.program-setup-add-panel details.collapsible > summary h2 {
+  font-size: 16px;
+}
+
+.program-setup-add-panel:has(> details.collapsible[open]) {
+  background: var(--card);
+}
+
 .panel-head {
   display: flex;
   justify-content: space-between;
@@ -1001,7 +1036,7 @@ td {
 }
 
 tbody tr:hover {
-  background: #fafbfd;
+  background: #f1f3f7;
 }
 
 tbody tr:last-child td {

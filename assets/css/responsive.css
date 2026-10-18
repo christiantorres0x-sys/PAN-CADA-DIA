@@ -146,6 +146,10 @@
     grid-template-columns: 1fr;
   }
 
+  .cards.cards-2.attendance-summary-cards {
+    grid-template-columns: 1fr;
+  }
+
   /* full-width on phones: keep text at a sensible size */
   .pending-card {
     max-width: none;
