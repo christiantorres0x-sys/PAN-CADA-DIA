@@ -1650,6 +1650,11 @@ table.milestone-table {
   font-size: 12px;
 }
 
+.reports-health-records-wrap.is-scrollable {
+  max-height: 460px;
+  overflow: auto;
+}
+
 table.milestone-table th,
 table.milestone-table td {
   padding: 7px 5px;

@@ -89,6 +89,10 @@ foreach ($rows as $r) {
         $recordGroups[$bid]['other'][] = $r;
     }
 }
+$healthTableRowCount = 0;
+foreach ($recordGroups as $group) {
+    $healthTableRowCount += 1 + count($group['other']);
+}
 $dateFilterActive = ($from !== '' || $to !== '');
 
 // Renders one milestone's three compact cells for a beneficiary:
@@ -280,7 +284,7 @@ require __DIR__ . '/partials/header.php';
 
 <section class="panel" id="records">
     <h2>Health Monitoring Records</h2>
-    <div class="table-wrap">
+    <div class="table-wrap reports-health-records-wrap<?= $healthTableRowCount >= 10 ? ' is-scrollable' : '' ?>">
         <table class="milestone-table">
             <thead>
                 <tr>
