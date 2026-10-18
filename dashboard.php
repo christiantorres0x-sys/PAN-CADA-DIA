@@ -91,7 +91,7 @@ require __DIR__ . '/partials/header.php';
             </thead>
             <tbody>
                 <?php foreach ($latest as $r): ?>
-                <tr>
+                <tr class="clickable-row" data-href="beneficiary.php?id=<?= (int)$r['beneficiary_id'] ?>" onclick="window.location=this.dataset.href">
                     <td><?= $r['beneficiary_code'] ? '<span class="code-tag">' . e($r['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td><strong><?= e($r['full_name']) ?></strong></td>
                     <td><?= e($r['site_name'] ?? '—') ?></td>
