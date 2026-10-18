@@ -1,4 +1,3 @@
-
 CREATE TABLE IF NOT EXISTS users (
     user_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(150) NOT NULL,
@@ -135,3 +134,16 @@ WHERE NOT EXISTS (SELECT 1 FROM feeding_sites LIMIT 1);
 INSERT INTO feeding_programs (program_name, description, duration_days)
 SELECT 'PAN CADA DIA – Initial Program', 'Configure the actual CCES feeding period here.', NULL
 WHERE NOT EXISTS (SELECT 1 FROM feeding_programs LIMIT 1);
+
+
+-- Weight status uses the Asian (WHO Asia-Pacific) BMI cut-offs, set
+-- automatically by the app. This labels any existing records the same way.
+-- Safe to run again: it always gives the same result for the same BMI.
+UPDATE health_records
+SET nutritional_status = CASE
+    WHEN bmi < 16   THEN 'Severely Underweight'
+    WHEN bmi < 18.5 THEN 'Underweight'
+    WHEN bmi < 23   THEN 'Normal'
+    WHEN bmi < 25   THEN 'Overweight'
+    ELSE 'Obese'
+END;
