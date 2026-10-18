@@ -206,7 +206,7 @@ $pieGradient = $gradientParts ? implode(', ', $gradientParts) : '#eef1f6 0% 100%
 
 // BMI-category breakdown per growth milestone (Baseline / Midline / Endline).
 // Categories are whatever nutritional_status text was recorded at each visit —
-// this app does not invent its own BMI cutoffs (see the safeguard notice below).
+// set automatically from BMI with the Asian cut-offs in bmi_status.php.
 $milestoneLabels = ['BASELINE' => 'Baseline', 'MIDLINE' => 'Midline', 'ENDLINE' => 'Endline'];
 $categoryPalette = ['#e8b93f', '#e2665a', '#1fa896', '#7c3aed', '#64748b'];
 $milestoneBuckets = ['BASELINE' => [], 'MIDLINE' => [], 'ENDLINE' => []];
@@ -384,7 +384,7 @@ require __DIR__ . '/partials/header.php';
 </section>
 
 <section class="notice">
-    <strong>About weight status:</strong> For children, weight status comes from an age- and sex-specific growth reference, not adult BMI ranges. Records without one show as Pending or Not yet classified.
+    <strong>About weight status:</strong> Weight status is worked out automatically from BMI using the Asian (WHO Asia-Pacific) cut-offs: below 16 Severely Underweight, 16 to 18.4 Underweight, 18.5 to 22.9 Normal, 23 to 24.9 Overweight, 25 and above Obese. Older records without a status show as Pending or Not yet classified.
 </section>
 <?php endif; ?>
 <?php require __DIR__ . '/partials/footer.php'; ?>
