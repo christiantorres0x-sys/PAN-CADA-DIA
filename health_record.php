@@ -15,6 +15,7 @@
  * Opens as a slide-over popup (?panel=1, JSON replies) from the profile, or as a normal page.
  */
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/bmi_status.php';
 require_login();
 
 $beneficiaryId = (int)($_GET['beneficiary_id'] ?? $_POST['beneficiary_id'] ?? 0);
@@ -30,7 +31,6 @@ if (!$b) {
 
 $profileUrl = 'beneficiary.php?id=' . $beneficiaryId . '#health';
 $milestoneRecords = get_milestone_records($pdo, $beneficiaryId);
-$statusOptions = ['Severely Underweight', 'Underweight', 'Normal', 'Overweight', 'Obese'];
 
 // Which milestone is preselected: the one in the link, else the next one due.
 $requested = strtoupper(trim((string)($_GET['milestone'] ?? $_POST['milestone'] ?? '')));
@@ -45,8 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     [$height, $heightErr] = parse_height_cm($_POST);
     [$weight, $weightErr] = parse_weight_kg($_POST);
     $remarks = capitalize_sentences(trim($_POST['remarks'] ?? ''));
-    $status = trim($_POST['weight_status'] ?? '');
-    $status = in_array($status, $statusOptions, true) ? $status : null;
 
     $date = trim((string)($_POST['record_date'] ?? ''));
     $d = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
@@ -72,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($error === null) {
         $bmi = calculate_bmi($weight, $height);
+        $status = pcd_weight_status($bmi);   // Asian BMI cut-offs, set automatically
         try {
             $ins = $pdo->prepare("
                 INSERT INTO health_records
@@ -149,13 +148,8 @@ $keep = fn(string $k, string $default = '') => $_SERVER['REQUEST_METHOD'] === 'P
             </div>
             <div>
                 <label>Weight Status</label>
-                <select name="weight_status">
-                    <option value="">Pending</option>
-                    <?php foreach ($statusOptions as $o): ?>
-                        <option <?= $keep('weight_status') === $o ? 'selected' : '' ?>><?= e($o) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <span class="form-hint">Leave as Pending until the child growth reference is confirmed.</span>
+                <input id="status_preview" readonly placeholder="Calculated from BMI">
+                <span class="form-hint">Set automatically from BMI using the Asian BMI cut-offs.</span>
             </div>
             <div class="full-col">
                 <label>Remarks</label>
