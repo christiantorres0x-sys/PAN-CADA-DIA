@@ -101,7 +101,7 @@ $pcd_css = static fn(string $f): string => 'assets/css/' . $f . '?v=' . (@filemt
 </aside>
 <main class="content" id="main">
 <?php $flash = get_flash(); ?>
-<?php if ($flash): ?><div class="alert <?= e($flash['type']) ?>"><?= e($flash['message']) ?></div><?php endif; ?>
+<?php if ($flash): ?><div class="alert <?= e($flash['type']) ?><?= $activeNav === 'attendance.php' ? ' attendance-alert' : '' ?>"><?= e($flash['message']) ?></div><?php endif; ?>
 <?php if ($pageEyebrowHtml !== null): ?><?= $pageEyebrowHtml ?><?php endif; ?>
 <div class="page-title">
     <div><h1><?= e($pageTitle) ?></h1><?php if ($pageSubtitle !== null): ?><p class="muted"><?= e($pageSubtitle) ?></p><?php endif; ?></div>

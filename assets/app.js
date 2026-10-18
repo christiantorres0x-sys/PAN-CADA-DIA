@@ -479,7 +479,15 @@ function pcdWireAttendanceDrafts(root) {
       if (missingInput) {
         e.preventDefault();
         const row = missingInput.closest('tr');
-        pcdToast('Choose Present or Absent for every beneficiary before saving.', true);
+        let notice = document.querySelector('.attendance-save-alert');
+        if (!notice) {
+          notice = document.createElement('div');
+          notice.className = 'alert danger attendance-alert attendance-save-alert';
+          notice.setAttribute('role', 'alert');
+          const pageTitle = document.querySelector('.page-title');
+          pageTitle?.parentNode.insertBefore(notice, pageTitle);
+        }
+        notice.textContent = 'Choose Present or Absent for every beneficiary before saving.';
         row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         row?.querySelector('[data-attendance-status]')?.focus();
         return;

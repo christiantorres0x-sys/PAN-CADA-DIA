@@ -595,6 +595,19 @@ tbody tr.clickable-row {
   margin: 0;
 }
 
+.attendance-panel .panel-head {
+  margin-left: 0;
+}
+
+.attendance-panel .panel-head h2 {
+  margin: 2px 0 0 2px;
+}
+
+.attendance-panel > .table-wrap {
+  margin-top: 12px;
+  margin-left: 2px;
+}
+
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -909,6 +922,7 @@ tr.row-flag td:first-child {
 }
 
 .dashboard-recent-table {
+  margin-top: 12px;
   margin-left: 2px;
   margin-right: 2px;
   padding-top: 8px;
@@ -923,7 +937,7 @@ th,
 td {
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
-  text-align: left;
+  text-align: center;
   vertical-align: top;
 }
 
@@ -934,6 +948,10 @@ th {
   text-transform: uppercase;
   font-weight: 700;
   text-align: center;
+}
+
+thead tr:first-child th {
+  background: #eef1f6;
 }
 
 td {
@@ -952,10 +970,15 @@ td {
   justify-content: center;
 }
 
+.attendance-table tbody td a {
+  color: #000;
+}
+
 .attendance-save-actions {
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
+  margin-right: -2px;
 }
 
 .attendance-save-actions form {
@@ -1196,6 +1219,11 @@ tbody tr:last-child td {
   font-weight: 600;
 }
 
+.attendance-alert {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
 .alert.success {
   background: var(--green-bg);
   color: #0f7a37;
@@ -1204,6 +1232,11 @@ tbody tr:last-child td {
 .alert.danger {
   background: var(--red-bg);
   color: #a01e1e;
+}
+
+.attendance-save-alert {
+  background: var(--red);
+  color: #fff;
 }
 
 .notice {
@@ -1404,7 +1437,7 @@ section.notice {
 /* Numbers line up on the right so columns can be compared at a glance. */
 th.num,
 td.num {
-  text-align: right;
+  text-align: center;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -1706,7 +1739,7 @@ textarea.remarks-input {
   table.history-table td.num {
     border-bottom: 0;
     padding: 4px 0;
-    text-align: left;
+    text-align: center;
     white-space: normal;
     min-width: 0;
   }
@@ -1943,14 +1976,13 @@ textarea.remarks-input {
   }
 }
 
-/* Profile history tables: headers follow their column's alignment
-   (text left, numbers right) instead of the global centered <th>. */
+/* Keep profile history table headers centered like the other tables. */
 table.history-table th {
-  text-align: left;
+  text-align: center;
 }
 
 table.history-table th.num {
-  text-align: right;
+  text-align: center;
 }
 
 table.history-table td {

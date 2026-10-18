@@ -75,7 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         log_action($pdo, 'SAVE_ATTENDANCE', 'attendance_records', null, $savedCount . ' records saved for ' . $saveDate);
-        flash('success', 'Attendance for ' . $saveDate . ' has been saved.');
+        $savedSiteName = 'All Sites';
+        if ($saveSite > 0) {
+            $savedSiteStmt = $pdo->prepare('SELECT site_name FROM feeding_sites WHERE site_id = ?');
+            $savedSiteStmt->execute([$saveSite]);
+            $savedSiteName = $savedSiteStmt->fetchColumn() ?: 'Selected Site';
+        }
+        flash('success', 'Attendance for ' . $savedSiteName . ' on ' . $saveDate . ' has been saved.');
         header('Location: attendance.php');
         exit;
     }
@@ -188,6 +194,13 @@ $purpose = ($_GET['purpose'] ?? 'mark') === 'history' ? 'history' : 'mark';
 $applied = ($_GET['applied'] ?? '') === '1';
 
 $sites = $pdo->query("SELECT * FROM feeding_sites WHERE status='ACTIVE' ORDER BY site_name")->fetchAll();
+$attendanceSiteName = 'All Sites';
+foreach ($sites as $site) {
+    if ((int)$site['site_id'] === $siteId) {
+        $attendanceSiteName = $site['site_name'];
+        break;
+    }
+}
 $where = ["b.program_status='ENROLLED'"];
 $params = [];
 if ($siteId > 0) {
@@ -286,21 +299,21 @@ require __DIR__ . '/partials/header.php';
 </section>
 <?php else: ?>
 <?php if ($purpose === 'mark' && $savedAttendanceCount > 0): ?>
-<div class="alert success">Attendance for <?= e($date) ?> has already been marked. You are editing the saved attendance.</div>
+<div class="alert success attendance-alert">Attendance for <?= e($date) ?> has already been marked. You are editing the saved attendance.</div>
 <?php endif; ?>
 <div class="cards cards-2 attendance-summary-cards">
     <div class="stat green"><span>Present</span><strong data-attendance-count="PRESENT"><?= $counts['PRESENT'] ?></strong></div>
     <div class="stat red"><span>Absent</span><strong data-attendance-count="ABSENT"><?= $counts['ABSENT'] ?></strong></div>
 </div>
 
-<section class="panel">
+<section class="panel attendance-panel">
     <div class="panel-head">
-        <h2><?= e($date) ?><?= $purpose === 'history' ? ' — Saved Attendance' : '' ?></h2>
+        <h2><?= e($attendanceSiteName) ?> - <?= e($date) ?></h2>
     </div>
     <div class="table-wrap">
         <table class="attendance-table">
             <thead>
-                <tr><th>ID</th><th>Beneficiary</th><th><?= $purpose === 'history' ? 'Saved Status' : 'Mark Status' ?></th></tr>
+                <tr><th>ID</th><th>Beneficiary</th><th>Attendance Status</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($rows as $r): ?>
