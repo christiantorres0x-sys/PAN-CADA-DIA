@@ -342,6 +342,7 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 
+<div class="chart-pair">
 <section class="panel" id="attendance">
     <div class="panel-head">
         <h2>Attendance Participation</h2>
@@ -382,9 +383,7 @@ require __DIR__ . '/partials/header.php';
         </div>
     </div>
 </section>
+</div>
 
-<section class="notice">
-    <strong>About weight status:</strong> Weight status is worked out automatically from BMI using the Asian (WHO Asia-Pacific) cut-offs: below 16 Severely Underweight, 16 to 18.4 Underweight, 18.5 to 22.9 Normal, 23 to 24.9 Overweight, 25 and above Obese. Older records without a status show as Pending or Not yet classified.
-</section>
 <?php endif; ?>
 <?php require __DIR__ . '/partials/footer.php'; ?>
