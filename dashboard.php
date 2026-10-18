@@ -77,14 +77,14 @@ require __DIR__ . '/partials/header.php';
     <div class="panel-head">
         <div>
             <h2 style="font-size:16px; margin: 2px 0 2px 2px">Recently Added Beneficiaries</h2>
-            <span class="muted" style="font-size:12.5px; margin: 2px 0 2px 2px;">Latest beneficiaries across all sites</span>
+            <span class="muted" style="font-size:12.5px; margin: 4px 0 4px 2px;">Latest beneficiaries across all sites</span>
         </div>
         <a href="beneficiaries.php" style="font-size:12.5px; margin: 2px 2px 0 0; font-weight:800; text-transform:uppercase;">View All Beneficiaries</a>
     </div>
     <?php if (!$latest): ?>
         <p class="empty"><?= $q !== '' ? 'No records found for names starting with &ldquo;' . e($q) . '&rdquo;.' : 'No beneficiaries added yet.' ?></p>
     <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap dashboard-recent-table">
         <table>
             <thead>
                 <tr><th>ID</th><th>Name</th><th>Site</th><th>Grade Level</th><th>Birth Date</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>

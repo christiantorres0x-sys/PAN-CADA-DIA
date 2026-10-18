@@ -251,7 +251,7 @@ unset($paginationBase['page'], $paginationBase['program_id']);
 
 $pageTitle = 'Attendance';
 $pageActionsHtml = $applied
-    ? '<a class="btn secondary" href="attendance.php">Change Filters</a>'
+    ? '<a class="btn secondary attendance-change-filters" href="attendance.php">Change Filters</a>'
     : null;
 $activeNav = 'attendance.php';
 require __DIR__ . '/partials/header.php';
@@ -288,7 +288,7 @@ require __DIR__ . '/partials/header.php';
 <?php if ($purpose === 'mark' && $savedAttendanceCount > 0): ?>
 <div class="alert success">Attendance for <?= e($date) ?> has already been marked. You are editing the saved attendance.</div>
 <?php endif; ?>
-<div class="cards cards-2">
+<div class="cards cards-2 attendance-summary-cards">
     <div class="stat green"><span>Present</span><strong data-attendance-count="PRESENT"><?= $counts['PRESENT'] ?></strong></div>
     <div class="stat red"><span>Absent</span><strong data-attendance-count="ABSENT"><?= $counts['ABSENT'] ?></strong></div>
 </div>

@@ -13,6 +13,31 @@
   grid-template-columns: repeat(2, 1fr);
 }
 
+.cards.cards-2.attendance-summary-cards {
+  grid-template-columns: repeat(2, 120px);
+  justify-content: start;
+  margin-left: 16px;
+}
+
+.attendance-summary-cards .stat {
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.attendance-summary-cards .stat span {
+  font-size: 12px;
+}
+
+.attendance-summary-cards .stat strong {
+  font-size: 48px;
+}
+
 .stat,
 .panel {
   background: var(--card);
@@ -563,7 +588,7 @@ tbody tr.clickable-row {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
+  margin: 2px 0 4px 2px;
 }
 
 .panel-head h2 {
@@ -883,6 +908,12 @@ tr.row-flag td:first-child {
   margin: -2px;
 }
 
+.dashboard-recent-table {
+  margin-left: 2px;
+  margin-right: 2px;
+  padding-top: 8px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -914,6 +945,7 @@ td {
 .attendance-table td.num {
   text-align: center;
   vertical-align: middle;
+  margin: 2px 0 4px 2px;
 }
 
 .attendance-table .status-cell {
@@ -928,6 +960,21 @@ td {
 
 .attendance-save-actions form {
   margin: 0;
+}
+
+.btn.attendance-change-filters {
+  background: #e7f8ee;
+  border-color: #b7e3c8;
+  color: #176b3a;
+  margin-right: 16px;
+}
+
+.btn.attendance-change-filters:hover,
+.btn.attendance-change-filters:focus-visible {
+  background: #d5f1df;
+  border-color: #9ed6b2;
+  color: #12572f;
+  text-decoration: none;
 }
 
 tbody tr:hover {
