@@ -18,6 +18,7 @@
  * Works as a slide-over (?panel=1, JSON replies) or as a normal page.
  */
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/bmi_status.php';
 require_login();
 
 $recordId = (int)($_GET['id'] ?? $_POST['record_id'] ?? 0);
@@ -49,7 +50,6 @@ if (!can_edit_health_records()) {
     exit;
 }
 $canDate = can_change_measurement_date();
-$statusOptions = ['Severely Underweight', 'Underweight', 'Normal', 'Overweight', 'Obese'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -58,11 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     [$height, $heightErr] = parse_height_cm($_POST);
     [$weight, $weightErr] = parse_weight_kg($_POST);
     $remarks = capitalize_sentences(trim($_POST['remarks'] ?? ''));
-    $status = trim($_POST['weight_status'] ?? '');
-    $status = ($status === '') ? null : $status;
-    if ($status !== null && !in_array($status, $statusOptions, true) && $status !== $rec['nutritional_status']) {
-        $status = $rec['nutritional_status'];   // ignore unknown values
-    }
 
     // Date: keep the original unless this user may change it.
     $newDate = $rec['record_date'];
@@ -96,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($isAjax) json_response(['ok' => false, 'message' => $error]);
     } else {
         $bmi = calculate_bmi($weight, $height);
+        $status = pcd_weight_status($bmi);   // Asian BMI cut-offs, recalculated on every save
         $changed = [];
         if ($newDate !== $rec['record_date']) $changed[] = 'date ' . $rec['record_date'] . ' -> ' . $newDate;
         if ((float)$rec['height_cm'] !== $height) $changed[] = 'height ' . $rec['height_cm'] . ' -> ' . $height . ' cm';
@@ -158,15 +154,7 @@ require __DIR__ . '/partials/header.php';
             </div>
             <div>
                 <label>Weight Status</label>
-                <select name="weight_status">
-                    <option value="">Pending</option>
-                    <?php
-                    $opts = $statusOptions;
-                    if ($rec['nutritional_status'] && !in_array($rec['nutritional_status'], $opts, true)) $opts[] = $rec['nutritional_status'];
-                    foreach ($opts as $o): ?>
-                        <option <?= $rec['nutritional_status'] === $o ? 'selected' : '' ?>><?= e($o) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <input id="status_preview" readonly value="<?= e(pcd_weight_status((float)$rec['bmi'])) ?>">
             </div>
             <div class="full-col">
                 <label>Remarks</label>
@@ -174,7 +162,7 @@ require __DIR__ . '/partials/header.php';
             </div>
         </div>
         <div class="notice">
-            Saving recalculates BMI from the new height and weight. The weight status is not recalculated automatically, so review it if the weight changed a lot. Other measurements for this child are not affected.
+            Saving recalculates BMI and the weight status (Asian BMI cut-offs) from the new height and weight. Other measurements for this child are not affected.
         </div>
         <div class="form-actions">
             <a class="btn secondary cancel-button" href="beneficiary.php?id=<?= $beneficiaryId ?>#health">Cancel</a>
