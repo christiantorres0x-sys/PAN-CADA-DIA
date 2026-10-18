@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/bmi_status.php';
 require_login();
 
 $id = (int)($_GET['id'] ?? 0);
@@ -192,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     (beneficiary_id, record_date, milestone, height_cm, weight_kg, bmi, nutritional_status, remarks, recorded_by)
                     VALUES (?, ?, 'BASELINE', ?, ?, ?, ?, ?, ?)
                 ");
-                $stmt->execute([$newId, $baselineDate, $baselineHeight, $baselineWeight, $bmi, null, $baselineRemarks, $_SESSION['user_id']]);
+                $stmt->execute([$newId, $baselineDate, $baselineHeight, $baselineWeight, $bmi, pcd_weight_status($bmi), $baselineRemarks, $_SESSION['user_id']]);
                 log_action($pdo, 'CREATE_HEALTH_RECORD', 'health_records', (int)$pdo->lastInsertId(), 'Baseline captured during enrollment; BMI ' . $bmi);
 
                 $pdo->commit();
