@@ -57,9 +57,18 @@ function pcdWireFormExtras(root) {
       if (cm && kg) {
         const m = Math.round(cm * 100) / 10000;       // same 2-decimal cm the server stores
         const k = Math.round(kg * 100) / 100;         // same 2-decimal kg the server stores
-        out.value = (k / (m * m)).toFixed(2);
+        const bmi = k / (m * m);
+        out.value = bmi.toFixed(2);
+        // Asian BMI cut-offs - keep in sync with bmi_status.php
+        const st = document.getElementById('status_preview');
+        if (st) {
+          const r = Math.round(bmi * 100) / 100;
+          st.value = r < 16 ? 'Severely Underweight' : r < 18.5 ? 'Underweight' : r < 23 ? 'Normal' : r < 25 ? 'Overweight' : 'Obese';
+        }
       } else {
         out.value = '';
+        const st = document.getElementById('status_preview');
+        if (st) st.value = '';
       }
     }
 
