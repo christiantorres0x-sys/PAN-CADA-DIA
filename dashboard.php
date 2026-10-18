@@ -11,6 +11,27 @@ $records = (int)$pdo->query("SELECT COUNT(*) FROM health_records")->fetchColumn(
 $baselineDone = (int)$pdo->query("SELECT COUNT(*) FROM health_records WHERE milestone='BASELINE'")->fetchColumn();
 $pendingEnrollment = max(0, $total - $enrolled);
 
+// Search box: only names where a word starts with what was typed
+// (typing "k" shows Kyle / Anna Kim, not "Mika"). Case-insensitive.
+$searchSql = '';
+$searchParams = [];
+if ($q !== '') {
+    $esc = addcslashes($q, '\\%_');
+    $searchSql = 'WHERE (b.full_name LIKE ? OR b.full_name LIKE ?)';
+    $searchParams = [$esc . '%', '% ' . $esc . '%'];
+}
+$latestStmt = $pdo->prepare("
+    SELECT hr.*, b.full_name, b.beneficiary_code, b.birth_date, b.sex, b.grade_level, b.program_status, s.site_name
+    FROM health_records hr
+    JOIN beneficiaries b ON b.beneficiary_id = hr.beneficiary_id
+    LEFT JOIN feeding_sites s ON s.site_id = b.site_id
+    $searchSql
+    ORDER BY hr.record_date DESC, hr.record_id DESC
+    LIMIT 8
+");
+$latestStmt->execute($searchParams);
+$latest = $latestStmt->fetchAll();
+
 $pageTitle = 'Dashboard';
 $activeNav = 'dashboard.php';
 require __DIR__ . '/partials/header.php';
@@ -38,7 +59,7 @@ require __DIR__ . '/partials/header.php';
         </section>
     </div>
 
-    <form class="scope-row beneficiary-search-row" method="get" action="beneficiaries.php">
+    <form class="scope-row beneficiary-search-row" method="get">
         <input type="hidden" name="site_id" value="<?= $siteId ?>">
         <div class="field">
             <label class="sr-only" for="beneficiary-search">Search beneficiaries by name</label>
@@ -60,5 +81,33 @@ require __DIR__ . '/partials/header.php';
         </div>
         <a href="beneficiaries.php" style="font-size:12.5px; margin: 2px 2px 0 0; font-weight:800; text-transform:uppercase;">View All Beneficiaries</a>
     </div>
+    <?php if (!$latest): ?>
+        <p class="empty"><?= $q !== '' ? 'No records found for names starting with &ldquo;' . e($q) . '&rdquo;.' : 'No beneficiaries added yet.' ?></p>
+    <?php else: ?>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Name</th><th>Site</th><th>Grade Level</th><th>Birth Date</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                <?php foreach ($latest as $r): ?>
+                <tr>
+                    <td><?= $r['beneficiary_code'] ? '<span class="code-tag">' . e($r['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
+                    <td><strong><?= e($r['full_name']) ?></strong></td>
+                    <td><?= e($r['site_name'] ?? '—') ?></td>
+                    <td><?= e($r['grade_level'] ?: '—') ?></td>
+                    <td><?= e($r['birth_date']) ?></td>
+                    <td><?= e($r['sex']) ?></td>
+                    <td class="num"><?= e($r['height_cm']) ?> cm</td>
+                    <td class="num"><?= e($r['weight_kg']) ?> kg</td>
+                    <td class="num"><?= e($r['bmi']) ?> kg/m<sup>2</sup></td>
+                    <td><?= $r['nutritional_status'] ? pcd_badge($r['nutritional_status']) : '<span class="muted">Pending</span>' ?></td>
+                    <td><?= pcd_badge($r['program_status']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
 </section>
 <?php require __DIR__ . '/partials/footer.php'; ?>
