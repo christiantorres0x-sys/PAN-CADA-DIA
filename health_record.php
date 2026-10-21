@@ -76,19 +76,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->beginTransaction();
             $ins = $pdo->prepare("
                 INSERT INTO health_records
-                (beneficiary_id, record_date, milestone, height_cm, weight_kg, bmi, nutritional_status, remarks, recorded_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (beneficiary_id, record_date, milestone, height_cm, weight_kg, bmi, nutritional_status, record_status, remarks, recorded_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $ins->execute([$beneficiaryId, $date, $milestone, $height, $weight, $bmi, $status, $remarks, $_SESSION['user_id'] ?? null]);
+            $ins->execute([$beneficiaryId, $date, $milestone, $height, $weight, $bmi, $status, $newStatus, $remarks, $_SESSION['user_id'] ?? null]);
             $newId = (int)$pdo->lastInsertId();
             log_action($pdo, 'CREATE_HEALTH_RECORD', 'health_records', $newId,
                 ($milestone ? milestone_label($milestone) . ' ' : '') . 'measurement recorded for beneficiary ID ' . $beneficiaryId
                 . ': ' . $height . ' cm, ' . $weight . ' kg, BMI ' . $bmi);
-            // The Status field is the beneficiary's overall (Enrollment Info) status.
+            // Status is stored on this milestone; the overall status follows the latest one.
+            sync_beneficiary_status($pdo, $beneficiaryId);
             if ($newStatus !== $b['program_status']) {
-                $pdo->prepare("UPDATE beneficiaries SET program_status = ? WHERE beneficiary_id = ?")->execute([$newStatus, $beneficiaryId]);
                 log_action($pdo, 'UPDATE_BENEFICIARY_STATUS', 'beneficiaries', $beneficiaryId,
-                    'Status ' . $b['program_status'] . ' -> ' . $newStatus . ' (changed while recording ' . ($milestone ? milestone_label($milestone) : 'a measurement') . ')');
+                    'Status ' . $b['program_status'] . ' -> ' . $newStatus . ' (set while recording ' . ($milestone ? milestone_label($milestone) : 'a measurement') . ', dated ' . $date . ')');
             }
             $pdo->commit();
             $label = $milestone ? milestone_label($milestone) : 'Measurement';
