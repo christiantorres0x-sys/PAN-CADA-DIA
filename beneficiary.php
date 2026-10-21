@@ -49,6 +49,9 @@ require __DIR__ . '/partials/header.php';
                 <div><dt>Sex</dt><dd><?= e($b['sex']) ?></dd></div>
                 <div><dt>Grade Level</dt><dd><?= e($b['grade_level']) ?></dd></div>
                 <div><dt>Status</dt><dd><?= pcd_badge($b['program_status']) ?></dd></div>
+                <?php if ($b['program_status'] === 'INACTIVE' && !empty($b['inactive_since'])): ?>
+                <div><dt>Inactive Since</dt><dd><?= e($b['inactive_since']) ?></dd></div>
+                <?php endif; ?>
                 <div><dt>Feeding Site</dt><dd><?= e($b['site_name'] ?? '—') ?></dd></div>
                 <div><dt>Date Enlisted</dt><dd><?= e($b['date_enlisted'] ?? '—') ?></dd></div>
             </dl>
@@ -102,7 +105,8 @@ require __DIR__ . '/partials/header.php';
             <tbody>
                 <?php foreach ($records as $r): ?>
                 <tr>
-                    <td data-label="Status"><span class="status-text <?= $b['program_status'] === 'ACTIVE' ? 'green' : 'red' ?>"><?= e(beneficiary_status_label($b['program_status'])) ?></span></td>
+                    <?php $rowStatus = $r['record_status'] ?: 'ACTIVE'; ?>
+                    <td data-label="Status"><span class="status-text <?= $rowStatus === 'ACTIVE' ? 'green' : 'red' ?>"><?= e(beneficiary_status_label($rowStatus)) ?></span></td>
                     <td data-label="Date"><?= e($r['record_date']) ?></td>
                     <td data-label="Milestone"><?= $r['milestone'] ? '<span class="pill green">' . e(milestone_label($r['milestone'])) . '</span>' : '<span class="pill gray">—</span>' ?></td>
                     <td class="num" data-label="Height"><?= e($r['height_cm']) ?> cm</td>
