@@ -151,9 +151,8 @@ WHERE NOT EXISTS (SELECT 1 FROM feeding_programs LIMIT 1);
 -- Safe to run again: it always gives the same result for the same BMI.
 UPDATE health_records
 SET nutritional_status = CASE
-    WHEN bmi < 15   THEN 'Severely Wasted'
     WHEN bmi < 16   THEN 'Severely Underweight'
-    WHEN bmi < 18.5 THEN 'Moderately Underweight'
+    WHEN bmi < 18.5 THEN 'Underweight'
     WHEN bmi < 23   THEN 'Normal'
     WHEN bmi < 25   THEN 'Overweight'
     ELSE 'Obese'
