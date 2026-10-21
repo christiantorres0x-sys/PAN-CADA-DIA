@@ -58,7 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     [$height, $heightErr] = parse_height_cm($_POST);
     [$weight, $weightErr] = parse_weight_kg($_POST);
     $remarks = capitalize_sentences(trim($_POST['remarks'] ?? ''));
-    $newStatus = normalize_beneficiary_status($_POST['program_status'] ?? '', $rec['program_status']);
+    // Status AT THIS MILESTONE (stored on the record, so other milestones keep theirs).
+    $oldRecStatus = $rec['record_status'] ?: $rec['program_status'];
+    $newStatus = normalize_beneficiary_status($_POST['program_status'] ?? '', $oldRecStatus);
 
     // Date: keep the original unless this user may change it.
     $newDate = $rec['record_date'];
@@ -101,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ((string)$rec['nutritional_status'] !== (string)$status) $changed[] = 'weight status ' . ($rec['nutritional_status'] ?? 'Pending') . ' -> ' . ($status ?? 'Pending');
         if ((string)$rec['remarks'] !== $remarks) $changed[] = 'remarks edited';
 
-        $statusChanged = $newStatus !== $rec['program_status'];
+        $statusChanged = $newStatus !== $oldRecStatus;
         if (!$changed && !$statusChanged) {
             flash('success', 'No changes to save.');
         } else {
@@ -109,14 +111,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // One row only: this record, and only if it still belongs to this child.
                 $upd = $pdo->prepare("UPDATE health_records SET record_date=?, height_cm=?, weight_kg=?, bmi=?, nutritional_status=?, remarks=? WHERE record_id=? AND beneficiary_id=?");
                 $upd->execute([$newDate, $height, $weight, $bmi, $status, $remarks, $recordId, $beneficiaryId]);
+                if ($newDate !== $rec['record_date']) sync_beneficiary_status($pdo, $beneficiaryId);
                 log_action($pdo, 'UPDATE_HEALTH_RECORD', 'health_records', $recordId,
                     ($rec['milestone'] ? milestone_label($rec['milestone']) . ' ' : '') . 'record edited for beneficiary ID ' . $beneficiaryId . ': ' . implode('; ', $changed));
             }
-            // The Status field is the beneficiary's overall (Enrollment Info) status.
+            // The Status field belongs to THIS milestone only. The child's overall
+            // status then follows the most recent milestone, and the date they
+            // became inactive is tracked (beneficiaries.inactive_since).
             if ($statusChanged) {
-                $pdo->prepare("UPDATE beneficiaries SET program_status = ? WHERE beneficiary_id = ?")->execute([$newStatus, $beneficiaryId]);
-                log_action($pdo, 'UPDATE_BENEFICIARY_STATUS', 'beneficiaries', $beneficiaryId,
-                    'Status ' . $rec['program_status'] . ' -> ' . $newStatus . ' (changed while editing a milestone)');
+                $pdo->prepare("UPDATE health_records SET record_status = ? WHERE record_id = ? AND beneficiary_id = ?")->execute([$newStatus, $recordId, $beneficiaryId]);
+                sync_beneficiary_status($pdo, $beneficiaryId);
+                log_action($pdo, 'UPDATE_BENEFICIARY_STATUS', 'health_records', $recordId,
+                    ($rec['milestone'] ? milestone_label($rec['milestone']) . ' ' : '') . 'status ' . $oldRecStatus . ' -> ' . $newStatus . ' for beneficiary ID ' . $beneficiaryId . ' (measurement dated ' . $newDate . ')');
             }
             flash('success', $changed
                 ? 'Measurement updated. Weight ' . $weight . ' kg, height ' . $height . ' cm, BMI ' . $bmi . '.' . ($statusChanged ? ' Status is now ' . beneficiary_status_label($newStatus) . '.' : '')
@@ -172,10 +178,10 @@ require __DIR__ . '/partials/header.php';
                 <label for="beneficiary_status">Status</label>
                 <select name="program_status" id="beneficiary_status">
                     <?php foreach (BENEFICIARY_STATUSES as $st): ?>
-                        <option value="<?= $st ?>" <?= $rec['program_status'] === $st ? 'selected' : '' ?>><?= e(beneficiary_status_label($st)) ?></option>
+                        <option value="<?= $st ?>" <?= ($rec['record_status'] ?: $rec['program_status']) === $st ? 'selected' : '' ?>><?= e(beneficiary_status_label($st)) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <span class="form-hint">Overall status of this beneficiary.</span>
+                <span class="form-hint">Status at this milestone. Other milestones keep their own status; the date a child became inactive is tracked.</span>
             </div>
             <div class="full-col">
                 <label>Remarks</label>
