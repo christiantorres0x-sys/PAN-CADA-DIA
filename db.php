@@ -18,6 +18,9 @@ try {
 }
 
 // One-time upgrade for existing databases: beneficiary status becomes Active / Inactive only.
+if (empty($_SESSION['status_tracking_ok']) && status_tracking_ensure($pdo)) {
+    $_SESSION['status_tracking_ok'] = true;
+}
 if (empty($_SESSION['ben_status_ok']) && beneficiaries_ensure_active_inactive($pdo)) {
     $_SESSION['ben_status_ok'] = true;
 }
