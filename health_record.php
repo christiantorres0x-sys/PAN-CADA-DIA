@@ -145,7 +145,7 @@ $keep = fn(string $k, string $default = '') => $_SERVER['REQUEST_METHOD'] === 'P
                 </select>
             </div>
             <div>
-                <label>Date of Measurement *</label>
+                <label>Date Measured *</label>
                 <input type="date" name="record_date" value="<?= e($keep('record_date', date('Y-m-d'))) ?>" min="<?= e($b['birth_date']) ?>" max="<?= date('Y-m-d') ?>" required>
             </div>
             <div class="full-col">

@@ -11,6 +11,8 @@ $beneficiary = [
     'first_name' => '',
     'middle_name' => '',
     'last_name' => '',
+    'parent_guardian_name' => '',
+    'parent_contact_number' => '',
     'beneficiary_code' => '',
     'birth_date' => '',
     'sex' => 'Male',
@@ -60,6 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $middleName = capitalize_words(trim($_POST['middle_name'] ?? ''));
     $lastName = capitalize_words(trim($_POST['last_name'] ?? ''));
     $fullName = trim($firstName . ' ' . $lastName);
+    $parentGuardianName = capitalize_words(trim($_POST['parent_guardian_name'] ?? ''));
+    $parentContactNumber = trim($_POST['parent_contact_number'] ?? '');
 
     // Grade level: either one of the listed options, or "Other" + typed text.
     $gradeChoice = trim($_POST['grade_level'] ?? '');
@@ -74,6 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'first_name' => $firstName,
         'middle_name' => $middleName,
         'last_name' => $lastName,
+        'parent_guardian_name' => $parentGuardianName,
+        'parent_contact_number' => $parentContactNumber,
         'full_name' => $fullName,
         'birth_date' => $_POST['birth_date'] ?? '',
         'sex' => $_POST['sex'] ?? 'Male',
@@ -124,8 +130,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if ($fullName === '' || $beneficiary['birth_date'] === '') {
-        $msg = 'First name, last name, and birthdate are required.';
+    if ($fullName === '' || $beneficiary['birth_date'] === '' || $parentGuardianName === '' || $parentContactNumber === '') {
+        $msg = 'First name, last name, birthdate, parent/guardian full name, and contact number are required.';
         flash('danger', $msg);
         if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
     } elseif ($baselineError !== null) {
@@ -148,10 +154,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (is_ajax_request()) json_response(['ok' => false, 'duplicate' => true, 'message' => $msg]);
         } elseif ($isEdit) {
             $prevStatus = (string)$pdo->query("SELECT program_status FROM beneficiaries WHERE beneficiary_id=" . (int)$id)->fetchColumn();
-            $sql = "UPDATE beneficiaries SET full_name=?, first_name=?, middle_name=?, last_name=?, birth_date=?, sex=?, grade_level=?, site_id=?, program_status=?, date_enlisted=?, remarks=? WHERE beneficiary_id=?";
+            $sql = "UPDATE beneficiaries SET full_name=?, first_name=?, middle_name=?, last_name=?, parent_guardian_name=?, parent_contact_number=?, birth_date=?, sex=?, grade_level=?, site_id=?, program_status=?, date_enlisted=?, remarks=? WHERE beneficiary_id=?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                $fullName, $firstName, $middleName, $lastName,
+                $fullName, $firstName, $middleName, $lastName, $parentGuardianName, $parentContactNumber,
                 $beneficiary['birth_date'], $beneficiary['sex'], $beneficiary['grade_level'],
                 $siteId, $beneficiary['program_status'], $dateEnlisted, $beneficiary['remarks'], $id,
             ]);
@@ -173,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->beginTransaction();
             try {
-                $sql = "INSERT INTO beneficiaries (full_name, first_name, middle_name, last_name, beneficiary_code, birth_date, sex, grade_level, site_id, program_id, program_status, date_enlisted, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                $sql = "INSERT INTO beneficiaries (full_name, first_name, middle_name, last_name, parent_guardian_name, parent_contact_number, beneficiary_code, birth_date, sex, grade_level, site_id, program_id, program_status, date_enlisted, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmt = $pdo->prepare($sql);
                 // The ID (year + running order, e.g. 260001) is generated here. If two
                 // officers save at the same instant the unique key rejects the
@@ -182,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $code = next_beneficiary_code($pdo);
                     try {
                         $stmt->execute([
-                            $fullName, $firstName, $middleName, $lastName, $code,
+                            $fullName, $firstName, $middleName, $lastName, $parentGuardianName, $parentContactNumber, $code,
                             $beneficiary['birth_date'], $beneficiary['sex'], $beneficiary['grade_level'],
                             $siteId, $programId, $beneficiary['program_status'], $dateEnlisted, $beneficiary['remarks'],
                         ]);
@@ -297,8 +303,22 @@ require __DIR__ . '/partials/header.php';
                 </div>
 
                 <div class="form-section">
+                    <h3 class="form-section-title">Parent/Guardian Info</h3>
+                    <div class="form-grid form-grid-3">
+                        <div>
+                            <label>Full Name *</label>
+                            <input name="parent_guardian_name" value="<?= e($beneficiary['parent_guardian_name']) ?>" maxlength="180" required>
+                        </div>
+                        <div>
+                            <label>Contact Number *</label>
+                            <input type="tel" name="parent_contact_number" value="<?= e($beneficiary['parent_contact_number']) ?>" maxlength="30" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
                     <div class="form-section-title-row">
-                        <h3 class="form-section-title">Personal Info</h3>
+                        <h3 class="form-section-title">Beneficiary Info</h3>
                         <?php if ($beneficiary['beneficiary_code']): ?><span class="code-tag" title="Generated beneficiary ID">ID: <?= e($beneficiary['beneficiary_code']) ?></span><?php endif; ?>
                     </div>
                     <div class="form-grid form-grid-3">
@@ -350,7 +370,7 @@ require __DIR__ . '/partials/header.php';
                     <h3 class="form-section-title">Baseline Measurement <span class="muted" style="font-weight:600; text-transform:none; letter-spacing:0;">(required)</span></h3>
                     <div class="form-grid" id="baseline_fields" style="margin-top:8px;">
                         <div>
-                            <label>Date of Measurement *</label>
+                            <label>Date Measured *</label>
                             <input type="date" name="baseline_date" value="<?= e($_POST['baseline_date'] ?? date('Y-m-d')) ?>" max="<?= date('Y-m-d') ?>" required>
                         </div>
                         <?php $mPrefix = 'baseline_'; $mRequired = true; require __DIR__ . '/partials/measurement_fields.php'; ?>
@@ -360,8 +380,7 @@ require __DIR__ . '/partials/header.php';
                         </div>
                         <div class="full-col">
                             <label>Weight Status</label>
-                            <input class="auto-field" value="Pending" readonly tabindex="-1" aria-readonly="true">
-                            <span class="form-hint">Calculated automatically once the child growth reference is confirmed.</span>
+                            <input id="status_preview" class="auto-field" readonly tabindex="-1" aria-readonly="true" placeholder="Enter height and weight">
                         </div>
                         <div class="full-col">
                             <label>Baseline Remarks</label>
