@@ -7,6 +7,14 @@ $programId = (int)($_GET['program_id'] ?? 0);
 $status = trim($_GET['status'] ?? '');
 $from = trim($_GET['from'] ?? '');
 $to = trim($_GET['to'] ?? '');
+// Date filter: ignore anything that isn't a real Y-m-d date, and put a reversed range in order.
+$isRealDate = function (string $d): bool {
+    $x = DateTimeImmutable::createFromFormat('!Y-m-d', $d);
+    return $x && $x->format('Y-m-d') === $d;
+};
+if ($from !== '' && !$isRealDate($from)) $from = '';
+if ($to !== '' && !$isRealDate($to)) $to = '';
+if ($from !== '' && $to !== '' && $from > $to) [$from, $to] = [$to, $from];
 $generated = ($_GET['generated'] ?? '') === '1';
 
 $sites = $pdo->query("SELECT * FROM feeding_sites ORDER BY site_name")->fetchAll();
@@ -260,14 +268,22 @@ require __DIR__ . '/partials/header.php';
     <span class="filter-label">Filter</span>
     <form class="scope-row" method="get">
         <input type="hidden" name="generated" value="1">
-        <div class="field filter-field <?= $siteId > 0 ? 'is-active' : '' ?>">
-            <label class="sr-only" for="report_site">Feeding Site</label>
+        <div class="field filter-field reports-site-field <?= $siteId > 0 ? 'is-active' : '' ?>">
+            <label for="report_site">Feeding Site</label>
             <select id="report_site" name="site_id">
                 <option value="0">All sites</option>
                 <?php foreach ($sites as $s): ?>
-                    <option value="<?= $s['site_id'] ?>" <?= $siteId === $s['site_id'] ? 'selected' : '' ?>><?= e($s['site_name']) ?></option>
+                    <option value="<?= $s['site_id'] ?>" <?= $siteId === (int)$s['site_id'] ? 'selected' : '' ?>><?= e($s['site_name']) ?></option>
                 <?php endforeach; ?>
             </select>
+        </div>
+        <div class="field filter-field <?= $from !== '' ? 'is-active' : '' ?>">
+            <label for="report_from">From</label>
+            <input id="report_from" type="date" name="from" value="<?= e($from) ?>" max="<?= date('Y-m-d') ?>">
+        </div>
+        <div class="field filter-field <?= $to !== '' ? 'is-active' : '' ?>">
+            <label for="report_to">To</label>
+            <input id="report_to" type="date" name="to" value="<?= e($to) ?>" max="<?= date('Y-m-d') ?>">
         </div>
         <button class="btn primary">Generate</button>
     </form>
@@ -309,7 +325,7 @@ require __DIR__ . '/partials/header.php';
                     <td rowspan="<?= $span ?>" class="ms-start"><?= e($info['grade_level'] ?: '—') ?></td>
                     <td rowspan="<?= $span ?>"><?= e($fmtDate($info['birth_date'])) ?></td>
                     <td rowspan="<?= $span ?>"><?= e($info['sex']) ?></td>
-                    <td rowspan="<?= $span ?>"><?= pcd_badge($info['program_status'] ?? 'ENROLLED') ?></td>
+                    <td rowspan="<?= $span ?>"><?= pcd_badge($info['program_status'] ?? 'ACTIVE') ?></td>
                 </tr>
                 <?php foreach ($g['other'] as $r): ?>
                 <tr class="unlabeled-row">

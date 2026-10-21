@@ -74,7 +74,7 @@ $programs = $pdo->query("SELECT * FROM feeding_programs ORDER BY program_name")-
 
 $activeSiteCount = (int)$pdo->query("SELECT COUNT(*) FROM feeding_sites WHERE status='ACTIVE'")->fetchColumn();
 $activeProgramCount = (int)$pdo->query("SELECT COUNT(*) FROM feeding_programs WHERE status='ACTIVE'")->fetchColumn();
-$enrolledCount = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries WHERE program_status='ENROLLED'")->fetchColumn();
+$enrolledCount = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries WHERE program_status='ACTIVE'")->fetchColumn();
 $totalCount = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries")->fetchColumn();
 
 $durations = array_filter(array_column($programs, 'duration_days'));

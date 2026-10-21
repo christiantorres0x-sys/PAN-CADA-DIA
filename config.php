@@ -99,8 +99,6 @@ function get_flash(): ?array {
 /** Maps a stored status/enum value to a plain colored status label (no pill/background). */
 function pcd_badge(string $raw): string {
     $map = [
-        'ENROLLED'  => ['ENROLLED',  'dark'],
-        'COMPLETED' => ['COMPLETED', 'dark'],
         'INACTIVE'  => ['INACTIVE',  'gray'],
         'PRESENT'   => ['PRESENT',   'green'],
         'ABSENT'    => ['ABSENT',    'red'],
@@ -315,6 +313,40 @@ function log_action(PDO $pdo, string $action, ?string $entity = null, ?int $enti
 // ---------------------------------------------------------------------
 
 const MILESTONES = ['BASELINE', 'MIDLINE', 'ENDLINE'];
+
+// A beneficiary's overall status (Enrollment Info): Active or Inactive.
+const BENEFICIARY_STATUSES = ['ACTIVE', 'INACTIVE'];
+
+function beneficiary_status_label(string $status): string {
+    return $status === 'INACTIVE' ? 'Inactive' : 'Active';
+}
+
+/** A posted status if it is Active / Inactive, otherwise the fallback (usually the current value). */
+function normalize_beneficiary_status($raw, string $fallback): string {
+    $v = strtoupper(trim((string)$raw));
+    return in_array($v, BENEFICIARY_STATUSES, true) ? $v : $fallback;
+}
+
+/**
+ * Converts beneficiaries.program_status from the old Enrolled / Completed / Inactive
+ * values to Active / Inactive only (Enrolled -> Active, Completed -> Inactive).
+ * Safe to run repeatedly; returns true once the column is already Active / Inactive.
+ */
+function beneficiaries_ensure_active_inactive(PDO $pdo): bool {
+    try {
+        $type = (string)$pdo->query("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'beneficiaries' AND COLUMN_NAME = 'program_status'")->fetchColumn();
+        if ($type === '') return false;                       // table not created yet
+        if (stripos($type, 'ENROLLED') === false && stripos($type, 'COMPLETED') === false) return true;
+        // Widen first so both old and new values are legal, move the rows, then narrow.
+        $pdo->exec("ALTER TABLE beneficiaries MODIFY program_status ENUM('ENROLLED','COMPLETED','ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE'");
+        $pdo->exec("UPDATE beneficiaries SET program_status = 'ACTIVE' WHERE program_status = 'ENROLLED'");
+        $pdo->exec("UPDATE beneficiaries SET program_status = 'INACTIVE' WHERE program_status = 'COMPLETED'");
+        $pdo->exec("ALTER TABLE beneficiaries MODIFY program_status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE'");
+        return true;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
 
 function milestone_label(string $milestone): string {
     $map = ['BASELINE' => 'Baseline', 'MIDLINE' => 'Midline', 'ENDLINE' => 'Endline'];

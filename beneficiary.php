@@ -72,14 +72,13 @@ require __DIR__ . '/partials/header.php';
     <div class="table-wrap">
         <table class="history-table">
             <thead>
-                <tr><th>Date</th><th>Status</th><th>Remarks</th></tr>
+                <tr><th>Date</th><th>Status</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($attendance as $a): ?>
                 <tr>
                     <td data-label="Date"><?= e($a['attendance_date']) ?></td>
                     <td data-label="Status"><?= pcd_badge($a['attendance_status']) ?></td>
-                    <td data-label="Remarks" class="remarks-cell"><?= e($a['remarks']) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -98,18 +97,19 @@ require __DIR__ . '/partials/header.php';
     <div class="table-wrap">
         <table class="history-table">
             <thead>
-                <tr><th>Date</th><th>Milestone</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Remarks</th><?php if (can_edit_health_records()): ?><th>Action</th><?php endif; ?></tr>
+                <tr><th>Status</th><th>Date</th><th>Milestone</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Remarks</th><?php if (can_edit_health_records()): ?><th>Action</th><?php endif; ?></tr>
             </thead>
             <tbody>
                 <?php foreach ($records as $r): ?>
                 <tr>
+                    <td data-label="Status"><span class="status-text <?= $b['program_status'] === 'ACTIVE' ? 'green' : 'red' ?>"><?= e(beneficiary_status_label($b['program_status'])) ?></span></td>
                     <td data-label="Date"><?= e($r['record_date']) ?></td>
                     <td data-label="Milestone"><?= $r['milestone'] ? '<span class="pill green">' . e(milestone_label($r['milestone'])) . '</span>' : '<span class="pill gray">—</span>' ?></td>
                     <td class="num" data-label="Height"><?= e($r['height_cm']) ?> cm</td>
                     <td class="num" data-label="Weight"><?= e($r['weight_kg']) ?> kg</td>
                     <td class="num" data-label="BMI"><strong><?= e($r['bmi']) ?></strong> kg/m<sup>2</sup></td>
                     <td data-label="Weight Status"><?= $r['nutritional_status'] ? pcd_badge($r['nutritional_status']) : '<span class="muted">Pending</span>' ?></td>
-                    <td data-label="Remarks" class="remarks-cell"><?= e($r['remarks']) ?></td>
+                    <td data-label="Remarks" class="remarks-cell"><?php if (trim((string)$r['remarks']) !== ''): ?><span class="remark-text" data-remark-toggle><?= e($r['remarks']) ?></span><?php endif; ?></td>
                     <?php if (can_edit_health_records()): ?>
                     <td data-label="Action"><a class="btn secondary sm" href="health_record_edit.php?id=<?= (int)$r['record_id'] ?>" data-slideover="health_record_edit.php?panel=1&id=<?= (int)$r['record_id'] ?>" data-slideover-title="Edit <?= e($r['milestone'] ? milestone_label($r['milestone']) : 'Measurement') ?>" aria-label="Edit measurement of <?= e($r['record_date']) ?>">Edit</a></td>
                     <?php endif; ?>

@@ -371,6 +371,17 @@
   margin-right: 0;
 }
 
+/* Reports filter: site dropdown stays compact so the From / To date fields fit beside it. */
+.reports-filter-panel .scope-row .field {
+  flex: 0 1 180px;
+  min-width: 150px;
+}
+
+.reports-filter-panel .scope-row .field.reports-site-field {
+  flex: 0 1 260px;
+  min-width: 200px;
+}
+
 .beneficiary-search-row {
   margin-bottom: 10px;
 }
@@ -1746,6 +1757,36 @@ td.remarks-cell {
   line-height: 1.5;
 }
 
+/* Milestone remarks: clipped to two lines; a long one is clickable to read it all. */
+.remark-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  max-width: 280px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.remark-text.is-truncatable {
+  cursor: pointer;
+}
+
+.remark-text.is-truncatable:hover,
+.remark-text.is-truncatable:focus-visible {
+  color: var(--primary);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.remark-text.is-open {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
 textarea.remarks-input {
   overflow: hidden;               /* grows with its content (see pcdWireAutogrow) */
   resize: vertical;
@@ -1796,6 +1837,10 @@ textarea.remarks-input {
 
   table.history-table td.remarks-cell {
     white-space: pre-wrap;
+  }
+
+  .remark-text {
+    max-width: none;
   }
 
   table.history-table td:empty {

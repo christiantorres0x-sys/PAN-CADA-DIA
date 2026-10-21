@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $eligibleWhere = ["program_status='ENROLLED'"];
+        $eligibleWhere = ["program_status='ACTIVE'"];
         $eligibleParams = [];
         if ($saveSite > 0) {
             $eligibleWhere[] = 'site_id=?';
@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bSite = (int)($_POST['return_site_id'] ?? 0);
         $bQ = trim($_POST['return_q'] ?? '');
 
-        $bWhere = ["b.program_status='ENROLLED'", 'ar.attendance_id IS NULL'];
+        $bWhere = ["b.program_status='ACTIVE'", 'ar.attendance_id IS NULL'];
         $bParams = [$bDate, $_SESSION['user_id'], $bDate];
         if ($bSite > 0) { $bWhere[] = 'b.site_id=?'; $bParams[] = $bSite; }
         if ($bQ !== '') { $bEsc = addcslashes($bQ, '\\%_'); $bWhere[] = '(b.full_name LIKE ? OR b.full_name LIKE ?)'; $bParams[] = $bEsc . '%'; $bParams[] = '% ' . $bEsc . '%'; }
@@ -201,7 +201,7 @@ foreach ($sites as $site) {
         break;
     }
 }
-$where = ["b.program_status='ENROLLED'"];
+$where = ["b.program_status='ACTIVE'"];
 $params = [];
 if ($siteId > 0) {
     $where[] = 'b.site_id=?';
@@ -342,7 +342,7 @@ require __DIR__ . '/partials/header.php';
                 </tr>
                 <?php endforeach; ?>
                 <?php if (!$rows): ?>
-                <tr><td colspan="3" class="empty"><?= $purpose === 'history' ? 'No saved attendance matches the selected filters.' : 'No enrolled beneficiaries match the selected filters.' ?></td></tr>
+                <tr><td colspan="3" class="empty"><?= $purpose === 'history' ? 'No saved attendance matches the selected filters.' : 'No active beneficiaries match the selected filters.' ?></td></tr>
                 <?php endif; ?>
             </tbody>
         </table>

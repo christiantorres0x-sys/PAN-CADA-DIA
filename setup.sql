@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS beneficiaries (
     birth_date DATE NOT NULL,
     sex ENUM('Male','Female') NOT NULL,
     grade_level VARCHAR(80) NULL,
-    program_status ENUM('ENROLLED','COMPLETED','INACTIVE') NOT NULL DEFAULT 'ENROLLED',
+    program_status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
     date_enlisted DATE NULL,
     remarks TEXT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -109,6 +109,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
         FOREIGN KEY (user_id) REFERENCES users(user_id)
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+
+-- Beneficiary status is Active / Inactive only. The app converts older databases
+-- automatically (Enrolled -> Active, Completed -> Inactive; see
+-- beneficiaries_ensure_active_inactive() in config.php). To do it by hand instead:
+--   ALTER TABLE beneficiaries MODIFY program_status ENUM('ENROLLED','COMPLETED','ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE';
+--   UPDATE beneficiaries SET program_status='ACTIVE'   WHERE program_status='ENROLLED';
+--   UPDATE beneficiaries SET program_status='INACTIVE' WHERE program_status='COMPLETED';
+--   ALTER TABLE beneficiaries MODIFY program_status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE';
 
 -- Failed-login counters used to temporarily lock a username / IP after repeated
 -- wrong passwords (see LOGIN_* settings in config.php). The app also creates

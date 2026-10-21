@@ -5,7 +5,7 @@ require_login();
 $q = trim($_GET['q'] ?? '');
 $siteId = (int)($_GET['site_id'] ?? 0);
 $total = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries")->fetchColumn();
-$enrolled = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries WHERE program_status='ENROLLED'")->fetchColumn();
+$enrolled = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries WHERE program_status='ACTIVE'")->fetchColumn();
 $sites = (int)$pdo->query("SELECT COUNT(*) FROM feeding_sites WHERE status='ACTIVE'")->fetchColumn();
 $records = (int)$pdo->query("SELECT COUNT(*) FROM health_records")->fetchColumn();
 $baselineDone = (int)$pdo->query("SELECT COUNT(*) FROM health_records WHERE milestone='BASELINE'")->fetchColumn();

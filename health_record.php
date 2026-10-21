@@ -21,7 +21,7 @@ require_login();
 $beneficiaryId = (int)($_GET['beneficiary_id'] ?? $_POST['beneficiary_id'] ?? 0);
 $isAjax = is_ajax_request();
 
-$stmt = $pdo->prepare("SELECT beneficiary_id, full_name, birth_date FROM beneficiaries WHERE beneficiary_id = ?");
+$stmt = $pdo->prepare("SELECT beneficiary_id, full_name, birth_date, program_status FROM beneficiaries WHERE beneficiary_id = ?");
 $stmt->execute([$beneficiaryId]);
 $b = $stmt->fetch();
 if (!$b) {
@@ -45,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     [$height, $heightErr] = parse_height_cm($_POST);
     [$weight, $weightErr] = parse_weight_kg($_POST);
     $remarks = capitalize_sentences(trim($_POST['remarks'] ?? ''));
+    $newStatus = normalize_beneficiary_status($_POST['program_status'] ?? '', $b['program_status']);
 
     $date = trim((string)($_POST['record_date'] ?? ''));
     $d = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
@@ -72,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bmi = calculate_bmi($weight, $height);
         $status = pcd_weight_status($bmi);   // Asian BMI cut-offs, set automatically
         try {
+            $pdo->beginTransaction();
             $ins = $pdo->prepare("
                 INSERT INTO health_records
                 (beneficiary_id, record_date, milestone, height_cm, weight_kg, bmi, nutritional_status, remarks, recorded_by)
@@ -82,12 +84,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_action($pdo, 'CREATE_HEALTH_RECORD', 'health_records', $newId,
                 ($milestone ? milestone_label($milestone) . ' ' : '') . 'measurement recorded for beneficiary ID ' . $beneficiaryId
                 . ': ' . $height . ' cm, ' . $weight . ' kg, BMI ' . $bmi);
+            // The Status field is the beneficiary's overall (Enrollment Info) status.
+            if ($newStatus !== $b['program_status']) {
+                $pdo->prepare("UPDATE beneficiaries SET program_status = ? WHERE beneficiary_id = ?")->execute([$newStatus, $beneficiaryId]);
+                log_action($pdo, 'UPDATE_BENEFICIARY_STATUS', 'beneficiaries', $beneficiaryId,
+                    'Status ' . $b['program_status'] . ' -> ' . $newStatus . ' (changed while recording ' . ($milestone ? milestone_label($milestone) : 'a measurement') . ')');
+            }
+            $pdo->commit();
             $label = $milestone ? milestone_label($milestone) : 'Measurement';
             flash('success', $label . ' recorded. Weight ' . $weight . ' kg, height ' . $height . ' cm, BMI ' . $bmi . '.');
             if ($isAjax) json_response(['ok' => true, 'redirect' => 'beneficiary.php?id=' . $beneficiaryId]);
             header('Location: ' . $profileUrl);
             exit;
         } catch (PDOException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
             // 23000 = duplicate (beneficiary, milestone), e.g. two people saving at once.
             $error = $e->getCode() === '23000'
                 ? 'That milestone was just recorded by someone else. Reload the profile to see it.'
@@ -150,6 +160,16 @@ $keep = fn(string $k, string $default = '') => $_SERVER['REQUEST_METHOD'] === 'P
                 <label>Weight Status</label>
                 <input id="status_preview" readonly placeholder="Calculated from BMI">
                 <span class="form-hint">Set automatically from BMI using the Asian BMI cut-offs.</span>
+            </div>
+            <div>
+                <label for="beneficiary_status">Status</label>
+                <?php $curStatus = normalize_beneficiary_status($keep('program_status', $b['program_status']), $b['program_status']); ?>
+                <select name="program_status" id="beneficiary_status">
+                    <?php foreach (BENEFICIARY_STATUSES as $st): ?>
+                        <option value="<?= $st ?>" <?= $curStatus === $st ? 'selected' : '' ?>><?= e(beneficiary_status_label($st)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <span class="form-hint">Overall status of this beneficiary.</span>
             </div>
             <div class="full-col">
                 <label>Remarks</label>

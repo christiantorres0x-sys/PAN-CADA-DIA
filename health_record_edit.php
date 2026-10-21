@@ -31,7 +31,7 @@ function pcd_edit_fail(string $message, ?string $redirect, bool $isAjax): void {
 }
 
 $load = $pdo->prepare("
-    SELECT hr.*, b.full_name, b.birth_date
+    SELECT hr.*, b.full_name, b.birth_date, b.program_status
     FROM health_records hr
     JOIN beneficiaries b ON b.beneficiary_id = hr.beneficiary_id
     WHERE hr.record_id = ?
@@ -58,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     [$height, $heightErr] = parse_height_cm($_POST);
     [$weight, $weightErr] = parse_weight_kg($_POST);
     $remarks = capitalize_sentences(trim($_POST['remarks'] ?? ''));
+    $newStatus = normalize_beneficiary_status($_POST['program_status'] ?? '', $rec['program_status']);
 
     // Date: keep the original unless this user may change it.
     $newDate = $rec['record_date'];
@@ -100,15 +101,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ((string)$rec['nutritional_status'] !== (string)$status) $changed[] = 'weight status ' . ($rec['nutritional_status'] ?? 'Pending') . ' -> ' . ($status ?? 'Pending');
         if ((string)$rec['remarks'] !== $remarks) $changed[] = 'remarks edited';
 
-        if (!$changed) {
+        $statusChanged = $newStatus !== $rec['program_status'];
+        if (!$changed && !$statusChanged) {
             flash('success', 'No changes to save.');
         } else {
-            // One row only: this record, and only if it still belongs to this child.
-            $upd = $pdo->prepare("UPDATE health_records SET record_date=?, height_cm=?, weight_kg=?, bmi=?, nutritional_status=?, remarks=? WHERE record_id=? AND beneficiary_id=?");
-            $upd->execute([$newDate, $height, $weight, $bmi, $status, $remarks, $recordId, $beneficiaryId]);
-            log_action($pdo, 'UPDATE_HEALTH_RECORD', 'health_records', $recordId,
-                ($rec['milestone'] ? milestone_label($rec['milestone']) . ' ' : '') . 'record edited for beneficiary ID ' . $beneficiaryId . ': ' . implode('; ', $changed));
-            flash('success', 'Measurement updated. Weight ' . $weight . ' kg, height ' . $height . ' cm, BMI ' . $bmi . '.');
+            if ($changed) {
+                // One row only: this record, and only if it still belongs to this child.
+                $upd = $pdo->prepare("UPDATE health_records SET record_date=?, height_cm=?, weight_kg=?, bmi=?, nutritional_status=?, remarks=? WHERE record_id=? AND beneficiary_id=?");
+                $upd->execute([$newDate, $height, $weight, $bmi, $status, $remarks, $recordId, $beneficiaryId]);
+                log_action($pdo, 'UPDATE_HEALTH_RECORD', 'health_records', $recordId,
+                    ($rec['milestone'] ? milestone_label($rec['milestone']) . ' ' : '') . 'record edited for beneficiary ID ' . $beneficiaryId . ': ' . implode('; ', $changed));
+            }
+            // The Status field is the beneficiary's overall (Enrollment Info) status.
+            if ($statusChanged) {
+                $pdo->prepare("UPDATE beneficiaries SET program_status = ? WHERE beneficiary_id = ?")->execute([$newStatus, $beneficiaryId]);
+                log_action($pdo, 'UPDATE_BENEFICIARY_STATUS', 'beneficiaries', $beneficiaryId,
+                    'Status ' . $rec['program_status'] . ' -> ' . $newStatus . ' (changed while editing a milestone)');
+            }
+            flash('success', $changed
+                ? 'Measurement updated. Weight ' . $weight . ' kg, height ' . $height . ' cm, BMI ' . $bmi . '.' . ($statusChanged ? ' Status is now ' . beneficiary_status_label($newStatus) . '.' : '')
+                : 'Status updated to ' . beneficiary_status_label($newStatus) . '.');
         }
         if ($isAjax) json_response(['ok' => true, 'redirect' => 'beneficiary.php?id=' . $beneficiaryId]);
         header('Location: ' . $profileUrl);
@@ -155,6 +167,15 @@ require __DIR__ . '/partials/header.php';
             <div>
                 <label>Weight Status</label>
                 <input id="status_preview" readonly value="<?= e(pcd_weight_status((float)$rec['bmi'])) ?>">
+            </div>
+            <div>
+                <label for="beneficiary_status">Status</label>
+                <select name="program_status" id="beneficiary_status">
+                    <?php foreach (BENEFICIARY_STATUSES as $st): ?>
+                        <option value="<?= $st ?>" <?= $rec['program_status'] === $st ? 'selected' : '' ?>><?= e(beneficiary_status_label($st)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <span class="form-hint">Overall status of this beneficiary.</span>
             </div>
             <div class="full-col">
                 <label>Remarks</label>

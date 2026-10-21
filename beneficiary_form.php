@@ -16,7 +16,7 @@ $beneficiary = [
     'sex' => 'Male',
     'grade_level' => '',
     'site_id' => '',
-    'program_status' => 'ENROLLED',
+    'program_status' => 'ACTIVE',
     'date_enlisted' => '',
     'remarks' => '',
 ];
@@ -79,7 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'sex' => $_POST['sex'] ?? 'Male',
         'grade_level' => $gradeValue,
         'site_id' => $_POST['site_id'] ?? '',
-        'program_status' => $_POST['program_status'] ?? 'ENROLLED',
+        // New beneficiaries are always Active; only an edit can switch to Inactive.
+        'program_status' => ($isEdit && strtoupper(trim((string)($_POST['program_status'] ?? ''))) === 'INACTIVE') ? 'INACTIVE' : 'ACTIVE',
         'date_enlisted' => $_POST['date_enlisted'] ?? '',
         'remarks' => capitalize_sentences(trim($_POST['remarks'] ?? '')),
     ]);
@@ -259,11 +260,15 @@ require __DIR__ . '/partials/header.php';
                     <div class="form-grid">
                         <div>
                             <label>Status *</label>
+                            <?php if ($isEdit): ?>
                             <select name="program_status">
-                                <option value="ENROLLED" <?= $beneficiary['program_status'] === 'ENROLLED' ? 'selected' : '' ?>>Enrolled</option>
-                                <option value="COMPLETED" <?= $beneficiary['program_status'] === 'COMPLETED' ? 'selected' : '' ?>>Completed</option>
+                                <option value="ACTIVE" <?= $beneficiary['program_status'] === 'ACTIVE' ? 'selected' : '' ?>>Active</option>
                                 <option value="INACTIVE" <?= $beneficiary['program_status'] === 'INACTIVE' ? 'selected' : '' ?>>Inactive</option>
                             </select>
+                            <?php else: ?>
+                            <input class="auto-field" value="Active" readonly>
+                            <span class="form-hint">New beneficiaries are set to Active automatically.</span>
+                            <?php endif; ?>
                         </div>
                         <div>
                             <label>Feeding Site *</label>

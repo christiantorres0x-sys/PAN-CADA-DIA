@@ -662,7 +662,49 @@ function pcdWireProgramDates(root) {
   });
 }
 
+// Long milestone remarks are clipped to two lines; click one to show the full text
+// (click again to collapse). Only remarks that are really clipped become clickable.
+function pcdWireRemarkToggles(root) {
+  const items = root.querySelectorAll('[data-remark-toggle]');
+  const measure = () => {
+    items.forEach((el) => {
+      if (el.classList.contains('is-open')) return;
+      const clipped = el.scrollHeight > el.clientHeight + 1;
+      el.classList.toggle('is-truncatable', clipped);
+      if (clipped) {
+        el.setAttribute('role', 'button');
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('aria-expanded', 'false');
+        el.title = 'Click to show the full remarks';
+      } else {
+        el.removeAttribute('role');
+        el.removeAttribute('tabindex');
+        el.removeAttribute('aria-expanded');
+        el.removeAttribute('title');
+      }
+    });
+  };
+  const toggle = (el) => {
+    if (!el.classList.contains('is-truncatable')) return;
+    const open = el.classList.toggle('is-open');
+    el.setAttribute('aria-expanded', open ? 'true' : 'false');
+    el.title = open ? 'Click to collapse' : 'Click to show the full remarks';
+  };
+  items.forEach((el) => {
+    if (el.dataset.pcdWired) return;
+    el.dataset.pcdWired = '1';
+    el.addEventListener('click', () => toggle(el));
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(el); }
+    });
+  });
+  measure();
+  window.addEventListener('load', measure);
+  window.addEventListener('resize', measure);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  pcdWireRemarkToggles(document);
   pcdWireProgramDates(document);
   pcdLinkLabels(document);
   pcdWireInlineValidation(document);

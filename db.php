@@ -16,3 +16,8 @@ try {
     http_response_code(500);
     exit('Database connection failed. Check config.php and make sure MySQL is running.');
 }
+
+// One-time upgrade for existing databases: beneficiary status becomes Active / Inactive only.
+if (empty($_SESSION['ben_status_ok']) && beneficiaries_ensure_active_inactive($pdo)) {
+    $_SESSION['ben_status_ok'] = true;
+}
