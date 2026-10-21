@@ -147,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('danger', $msg);
             if (is_ajax_request()) json_response(['ok' => false, 'duplicate' => true, 'message' => $msg]);
         } elseif ($isEdit) {
+            $prevStatus = (string)$pdo->query("SELECT program_status FROM beneficiaries WHERE beneficiary_id=" . (int)$id)->fetchColumn();
             $sql = "UPDATE beneficiaries SET full_name=?, first_name=?, middle_name=?, last_name=?, birth_date=?, sex=?, grade_level=?, site_id=?, program_status=?, date_enlisted=?, remarks=? WHERE beneficiary_id=?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
@@ -154,6 +155,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $beneficiary['birth_date'], $beneficiary['sex'], $beneficiary['grade_level'],
                 $siteId, $beneficiary['program_status'], $dateEnlisted, $beneficiary['remarks'], $id,
             ]);
+            if ($prevStatus !== $beneficiary['program_status']) {
+                // Track when the child became inactive (cleared again when reactivated).
+                $pdo->prepare("UPDATE beneficiaries SET inactive_since = " . ($beneficiary['program_status'] === 'INACTIVE' ? 'CURDATE()' : 'NULL') . " WHERE beneficiary_id = ?")->execute([$id]);
+                log_action($pdo, 'UPDATE_BENEFICIARY_STATUS', 'beneficiaries', $id, 'Status ' . $prevStatus . ' -> ' . $beneficiary['program_status'] . ' (profile edit)');
+            }
             log_action($pdo, 'UPDATE_BENEFICIARY', 'beneficiaries', $id, 'Updated beneficiary profile');
             flash('success', 'Beneficiary updated.');
             if (is_ajax_request()) json_response(['ok' => true, 'redirect' => 'beneficiary.php?id=' . $id]);
