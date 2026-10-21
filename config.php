@@ -363,6 +363,16 @@ function status_tracking_ensure(PDO $pdo): bool {
         };
         $tableOk = (int)$pdo->query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('health_records','beneficiaries')")->fetchColumn();
         if ($tableOk < 2) return false;                       // tables not created yet
+        // Weight-status wording: six fixed labels. Relabel older records from their BMI
+        // (only rows that still carry an old/different label are touched).
+        $pdo->exec("UPDATE health_records SET nutritional_status = CASE
+                WHEN bmi < 15 THEN 'Severely Wasted' WHEN bmi < 16 THEN 'Severely Underweight'
+                WHEN bmi < 18.5 THEN 'Moderately Underweight' WHEN bmi < 23 THEN 'Normal'
+                WHEN bmi < 25 THEN 'Overweight' ELSE 'Obese' END
+            WHERE nutritional_status IS NOT NULL AND nutritional_status <> CASE
+                WHEN bmi < 15 THEN 'Severely Wasted' WHEN bmi < 16 THEN 'Severely Underweight'
+                WHEN bmi < 18.5 THEN 'Moderately Underweight' WHEN bmi < 23 THEN 'Normal'
+                WHEN bmi < 25 THEN 'Overweight' ELSE 'Obese' END");
         if (!$has('beneficiaries', 'inactive_since')) {
             $pdo->exec("ALTER TABLE beneficiaries ADD COLUMN inactive_since DATE NULL AFTER program_status");
         }
@@ -644,3 +654,4 @@ function grade_level_known_values(): array {
     return array_merge(...array_values(grade_level_groups()));
 }
  
+
