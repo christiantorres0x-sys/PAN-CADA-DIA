@@ -63,7 +63,7 @@ function pcdWireFormExtras(root) {
         const st = document.getElementById('status_preview');
         if (st) {
           const r = Math.round(bmi * 100) / 100;
-          st.value = r < 16 ? 'Severely Underweight' : r < 18.5 ? 'Underweight' : r < 23 ? 'Normal' : r < 25 ? 'Overweight' : 'Obese';
+          st.value = r < 15 ? 'Severely Wasted' : r < 16 ? 'Severely Underweight' : r < 18.5 ? 'Moderately Underweight' : r < 23 ? 'Normal' : r < 25 ? 'Overweight' : 'Obese';
         }
       } else {
         out.value = '';
