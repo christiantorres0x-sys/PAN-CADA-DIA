@@ -24,3 +24,6 @@ if (empty($_SESSION['status_tracking_ok']) && status_tracking_ensure($pdo)) {
 if (empty($_SESSION['ben_status_ok']) && beneficiaries_ensure_active_inactive($pdo)) {
     $_SESSION['ben_status_ok'] = true;
 }
+if (empty($_SESSION['beneficiary_parent_info_ok']) && beneficiary_parent_info_ensure($pdo)) {
+    $_SESSION['beneficiary_parent_info_ok'] = true;
+}

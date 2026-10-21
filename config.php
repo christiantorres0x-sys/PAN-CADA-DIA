@@ -348,6 +348,24 @@ function beneficiaries_ensure_active_inactive(PDO $pdo): bool {
     }
 }
 
+/** Adds parent/guardian fields to existing beneficiary tables. Safe to run repeatedly. */
+function beneficiary_parent_info_ensure(PDO $pdo): bool {
+    try {
+        $hasColumn = $pdo->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'beneficiaries' AND COLUMN_NAME = ?");
+        $hasColumn->execute(['parent_guardian_name']);
+        if ((int)$hasColumn->fetchColumn() === 0) {
+            $pdo->exec("ALTER TABLE beneficiaries ADD COLUMN parent_guardian_name VARCHAR(180) NULL AFTER last_name");
+        }
+        $hasColumn->execute(['parent_contact_number']);
+        if ((int)$hasColumn->fetchColumn() === 0) {
+            $pdo->exec("ALTER TABLE beneficiaries ADD COLUMN parent_contact_number VARCHAR(30) NULL AFTER parent_guardian_name");
+        }
+        return true;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
 /**
  * Status tracking per measurement. Each health record keeps the status the
  * child had at that milestone (record_status), and the beneficiary keeps the

@@ -41,10 +41,12 @@ require __DIR__ . '/partials/header.php';
 <section class="panel bp">
     <aside class="bp-side">
         <div class="bp-card bp-info">
-            <h2>Beneficiary information</h2>
+            <h2>Beneficiary Information</h2>
             <dl>
                 <div><dt>Beneficiary ID</dt><dd><?= $b['beneficiary_code'] ? '<span class="code-tag">' . e($b['beneficiary_code']) . '</span>' : '—' ?></dd></div>
                 <div><dt>Name</dt><dd><?= e($b['full_name']) ?></dd></div>
+                <div><dt>Parent/Guardian</dt><dd><?= e($b['parent_guardian_name'] ?? '—') ?></dd></div>
+                <div><dt>Parent/Guardian Contact</dt><dd><?= e($b['parent_contact_number'] ?? '—') ?></dd></div>
                 <div><dt>Birthdate</dt><dd><?= e($b['birth_date']) ?></dd></div>
                 <div><dt>Sex</dt><dd><?= e($b['sex']) ?></dd></div>
                 <div><dt>Grade Level</dt><dd><?= e($b['grade_level']) ?></dd></div>

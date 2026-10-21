@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS beneficiaries (
     first_name VARCHAR(80) NULL,
     middle_name VARCHAR(80) NULL,
     last_name VARCHAR(100) NULL,
+    parent_guardian_name VARCHAR(180) NULL,
+    parent_contact_number VARCHAR(30) NULL,
     beneficiary_code VARCHAR(10) NULL,
     birth_date DATE NOT NULL,
     sex ENUM('Male','Female') NOT NULL,
