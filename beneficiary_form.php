@@ -374,7 +374,7 @@ require __DIR__ . '/partials/header.php';
         </div>
 
         <div class="form-actions">
-            <a class="btn secondary" href="<?= $isEdit ? 'beneficiary.php?id=' . $id : 'beneficiaries.php' ?>">Cancel</a>
+            <a class="btn secondary cancel-button" href="<?= $isEdit ? 'beneficiary.php?id=' . $id : 'beneficiaries.php' ?>">Cancel</a>
             <?php if (!$isEdit && !$duplicateMatch): ?><button class="btn secondary" name="add_another" value="1">Save &amp; Add Another</button><?php endif; ?>
             <button class="btn primary"><?= $duplicateMatch ? 'Save Anyway' : ($isEdit ? 'Update Beneficiary' : 'Add Beneficiary') ?></button>
         </div>
@@ -385,7 +385,6 @@ require __DIR__ . '/partials/header.php';
 <section class="panel bmi-snapshot">
     <div class="panel-head">
         <h2>BMI / Health Snapshot</h2>
-        <a class="btn secondary sm" href="beneficiary.php?id=<?= $id ?>#health">View Full Health History</a>
     </div>
     <?php if ($latestRecord): ?>
     <div class="bmi-snapshot-grid">

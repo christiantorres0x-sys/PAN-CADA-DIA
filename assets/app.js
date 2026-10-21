@@ -63,7 +63,7 @@ function pcdWireFormExtras(root) {
         const st = document.getElementById('status_preview');
         if (st) {
           const r = Math.round(bmi * 100) / 100;
-          st.value = r < 16 ? 'Severely Underweight' : r < 18.5 ? 'Underweight' : r < 23 ? 'Normal' : r < 25 ? 'Overweight' : 'Obese';
+          st.value = r < 14 ? 'Severely Wasted' : r < 16 ? 'Severely Underweight' : r < 18.5 ? 'Moderately Underweight' : r < 23 ? 'Normal' : r < 25 ? 'Overweight' : 'Obese';
         }
       } else {
         out.value = '';
@@ -387,6 +387,14 @@ function pcdShowSlideoverError(root, form, message, duplicate) {
 
 function pcdWireSlideoverTriggers() {
   document.addEventListener('click', (e) => {
+    // Cancel inside a slide-over just closes it. Its href points at the page
+    // that is already open behind the panel, so following it does nothing.
+    const cancel = e.target.closest('.slideover-panel .cancel-button');
+    if (cancel) {
+      e.preventDefault();
+      pcdCloseSlideover();
+      return;
+    }
     const trigger = e.target.closest('[data-slideover]');
     if (!trigger) return;
     e.preventDefault();

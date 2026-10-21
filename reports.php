@@ -220,7 +220,7 @@ $pieGradient = $gradientParts ? implode(', ', $gradientParts) : '#eef1f6 0% 100%
 // Categories are whatever nutritional_status text was recorded at each visit —
 // set automatically from BMI with the Asian cut-offs in bmi_status.php.
 $milestoneLabels = ['BASELINE' => 'Baseline', 'MIDLINE' => 'Midline', 'ENDLINE' => 'Endline'];
-$categoryPalette = ['#e8b93f', '#e2665a', '#1fa896', '#7c3aed', '#64748b'];
+$categoryPalette = ['#e8b93f', '#e2665a', '#1fa896', '#7c3aed', '#64748b', '#2f6fdb', '#b4457a'];
 $milestoneBuckets = ['BASELINE' => [], 'MIDLINE' => [], 'ENDLINE' => []];
 foreach ($rows as $r) {
     $m = strtoupper($r['milestone'] ?? '');

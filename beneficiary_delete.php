@@ -106,7 +106,7 @@ require __DIR__ . '/partials/header.php';
         </p>
 
         <div class="form-actions">
-            <a class="btn success" href="<?= e($profileUrl) ?>">Cancel</a>
+            <a class="btn success cancel-button" href="<?= e($profileUrl) ?>">Cancel</a>
             <button class="btn danger">Delete</button>
         </div>
     </form>
