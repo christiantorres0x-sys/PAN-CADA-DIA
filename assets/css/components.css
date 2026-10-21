@@ -2124,3 +2124,49 @@ table.history-table td {
     grid-template-columns: 1fr;
   }
 }
+
+/* Reports: one big container (.report-shell) holding profile-style cards. */
+.report-shell {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.report-shell-head {
+  margin: 0 0 14px 2px;
+}
+
+.report-shell-head .active-filters {
+  margin: 0;
+}
+
+.report-shell > .bp-card,
+.report-shell > .chart-pair {
+  margin: 0 0 16px;
+}
+
+.report-shell-foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.report-shell .bp-card {
+  margin: 0;
+}
+
+.report-shell > .bp-card {
+  margin-bottom: 16px;
+}
+
+.report-shell .chart-pair {
+  gap: 16px;
+}
+
+.report-shell .panel-head h2 {
+  font-size: 16px;
+}
+
+@media (max-width: 900px) {
+  .report-shell {
+    padding: 16px;
+  }
+}
