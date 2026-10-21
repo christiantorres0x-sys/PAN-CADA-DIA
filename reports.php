@@ -46,7 +46,7 @@ $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $stmt = $pdo->prepare("
     SELECT hr.record_id, hr.record_date, hr.milestone, b.beneficiary_id, b.full_name, b.beneficiary_code, b.birth_date, b.sex, b.grade_level,
-           b.program_status, s.site_name, p.program_name, hr.height_cm, hr.weight_kg, hr.bmi,
+           b.program_status, b.inactive_since, s.site_name, p.program_name, hr.height_cm, hr.weight_kg, hr.bmi,
            COALESCE(hr.nutritional_status, 'Pending child reference') nutritional_status
     FROM health_records hr
     JOIN beneficiaries b ON b.beneficiary_id = hr.beneficiary_id
@@ -342,7 +342,7 @@ require __DIR__ . '/partials/header.php';
                     <td rowspan="<?= $span ?>" class="ms-start"><?= e($info['grade_level'] ?: '—') ?></td>
                     <td rowspan="<?= $span ?>"><?= e($fmtDate($info['birth_date'])) ?></td>
                     <td rowspan="<?= $span ?>"><?= e($info['sex']) ?></td>
-                    <td rowspan="<?= $span ?>"><?= pcd_badge($info['program_status'] ?? 'ACTIVE') ?></td>
+                    <td rowspan="<?= $span ?>"><?= pcd_badge($info['program_status'] ?? 'ACTIVE') ?><?php if (($info['program_status'] ?? '') === 'INACTIVE' && !empty($info['inactive_since'])): ?><br><small class="muted">since <?= e($fmtDate($info['inactive_since'])) ?></small><?php endif; ?></td>
                 </tr>
                 <?php foreach ($g['other'] as $r): ?>
                 <tr class="unlabeled-row">
