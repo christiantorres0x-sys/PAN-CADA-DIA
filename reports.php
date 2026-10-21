@@ -255,9 +255,16 @@ foreach ($milestoneBuckets as $key => $counts) {
     ];
 }
 
+// Printable formal report (long bond paper) — same filtered data, own template.
+if ($generated && ($_GET['print'] ?? '') === '1') {
+    require __DIR__ . '/report_print.php';
+    exit;
+}
+
 $pageTitle = 'Reports & Analysis';
+$printUrl = 'reports.php?' . http_build_query(array_merge($_GET, ['generated' => '1', 'print' => '1']));
 $pageActionsHtml = $generated
-    ? '<a class="btn secondary attendance-change-filters" href="reports.php?' . e(http_build_query(array_diff_key($_GET, ['generated' => '', 'age' => '']))) . '">Change Filters</a>'
+    ? '<a class="btn secondary attendance-change-filters" href="reports.php?' . e(http_build_query(array_diff_key($_GET, ['generated' => '', 'age' => '', 'print' => '']))) . '">Change Filters</a>'
     : null;
 $activeNav = 'reports.php';
 require __DIR__ . '/partials/header.php';
@@ -298,7 +305,17 @@ require __DIR__ . '/partials/header.php';
 </section>
 <?php else: ?>
 
-<section class="panel" id="records">
+<section class="panel report-shell" id="report">
+<?php if ($activeFilters): ?>
+<div class="report-shell-head">
+    <div class="active-filters">
+        <span class="label">Filters:</span>
+        <?php foreach ($activeFilters as $af): ?><span class="filter-chip"><?= e($af['label']) ?></span><?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<section class="panel bp-card" id="records">
     <h2>Health Monitoring Records</h2>
     <div class="table-wrap reports-health-records-wrap<?= $healthTableRowCount >= 10 ? ' is-scrollable' : '' ?>">
         <table class="milestone-table">
@@ -341,7 +358,7 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 
-<section class="panel" id="bmi-charts">
+<section class="panel bp-card" id="bmi-charts">
     <div class="panel-head">
         <h2>Report Analysis</h2>
         <span class="filter-label" style="margin:0;">BMI categories by growth milestone</span>
@@ -363,7 +380,7 @@ require __DIR__ . '/partials/header.php';
 </section>
 
 <div class="chart-pair">
-<section class="panel" id="attendance">
+<section class="panel bp-card" id="attendance">
     <div class="panel-head">
         <h2>Attendance Participation</h2>
         <span class="filter-label" style="margin:0;">Same filters as above</span>
@@ -379,11 +396,11 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 
-<section class="panel" id="age">
+<section class="panel bp-card" id="age">
     <div class="panel-head">
         <h2>Age Distribution</h2>
     </div>
-    <div style="max-width:220px; margin-bottom:10px;">
+    <div style="margin-bottom:10px;">
         <label for="age_filter">Filter by Age</label>
         <form method="get">
             <?php foreach (['site_id' => $siteId ?: '', 'program_id' => $programId ?: '', 'status' => $status, 'from' => $from, 'to' => $to] as $k => $v): if ($v !== '' && $v !== 0): ?>
@@ -404,6 +421,12 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 </div>
+
+<div class="report-shell-foot">
+    <a class="btn primary" target="_blank" rel="noopener" href="<?= e($printUrl) ?>"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg><span>Download Report</span></a>
+</div>
+
+</section><!-- /.report-shell -->
 
 <?php endif; ?>
 <?php require __DIR__ . '/partials/footer.php'; ?>
