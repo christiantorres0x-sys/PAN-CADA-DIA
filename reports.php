@@ -358,8 +358,8 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 
-<section class="panel bp-card" id="bmi-charts">
-    <div class="panel-head">
+<section class="panel bp-card report-analysis-card" id="bmi-charts">
+    <div class="panel-head report-analysis-head">
         <h2>Report Analysis</h2>
         <span class="filter-label" style="margin:0;">BMI categories by growth milestone</span>
     </div>
@@ -377,7 +377,6 @@ require __DIR__ . '/partials/header.php';
         </div>
         <?php endforeach; ?>
     </div>
-</section>
 
 <div class="chart-pair">
 <section class="panel bp-card" id="attendance">
@@ -421,6 +420,7 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 </div>
+</section><!-- /#bmi-charts (Report Analysis) -->
 
 <div class="report-shell-foot">
     <a class="btn primary" target="_blank" rel="noopener" href="<?= e($printUrl) ?>"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg><span>Download Report</span></a>
