@@ -2165,6 +2165,34 @@ table.history-table td {
   font-size: 16px;
 }
 
+/* Report Analysis: single card, title enlarged, subtitle on the left beside it */
+.report-shell .report-analysis-head {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.report-shell .report-analysis-head h2 {
+  font-size: 24px;
+}
+
+/* Attendance + Age live inside the one Report Analysis card: no cards of their own */
+.report-shell .report-analysis-card .chart-pair {
+  margin: 20px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.report-shell .report-analysis-card .chart-pair > .bp-card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
 @media (max-width: 900px) {
   .report-shell {
     padding: 16px;
