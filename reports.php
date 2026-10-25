@@ -5,20 +5,31 @@ require_login();
 $siteId = (int)($_GET['site_id'] ?? 0);
 $programId = (int)($_GET['program_id'] ?? 0);
 $status = trim($_GET['status'] ?? '');
-$from = trim($_GET['from'] ?? '');
-$to = trim($_GET['to'] ?? '');
-// Date filter: ignore anything that isn't a real Y-m-d date, and put a reversed range in order.
-$isRealDate = function (string $d): bool {
-    $x = DateTimeImmutable::createFromFormat('!Y-m-d', $d);
-    return $x && $x->format('Y-m-d') === $d;
-};
-if ($from !== '' && !$isRealDate($from)) $from = '';
-if ($to !== '' && !$isRealDate($to)) $to = '';
-if ($from !== '' && $to !== '' && $from > $to) [$from, $to] = [$to, $from];
+$month = trim($_GET['month'] ?? '');
+$year = trim($_GET['year'] ?? '');
+if ($month !== '' && (!ctype_digit($month) || (int)$month < 1 || (int)$month > 12)) $month = '';
+if ($year !== '' && (!ctype_digit($year) || (int)$year < 1900 || (int)$year > (int)date('Y'))) $year = '';
+$month = $month === '' ? '' : (string)(int)$month;
+$year = $year === '' ? '' : (string)(int)$year;
+$from = '';
+$to = '';
+if ($year !== '') {
+    $from = $year . ($month !== '' ? '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01' : '-01-01');
+    $to = $month !== ''
+        ? (new DateTimeImmutable($from))->modify('last day of this month')->format('Y-m-d')
+        : $year . '-12-31';
+}
+$monthName = $month !== '' ? date('F', mktime(0, 0, 0, (int)$month, 1)) : '';
+$implementationPeriod = $monthName !== '' && $year !== ''
+    ? $monthName . ' ' . $year
+    : ($monthName !== '' ? $monthName . ', All Years' : ($year !== '' ? 'All Months ' . $year : 'All Dates'));
 $generated = ($_GET['generated'] ?? '') === '1';
 
 $sites = $pdo->query("SELECT * FROM feeding_sites ORDER BY site_name")->fetchAll();
 $programs = $pdo->query("SELECT * FROM feeding_programs ORDER BY program_name")->fetchAll();
+$reportYears = array_map('intval', $pdo->query("SELECT year_value FROM (SELECT YEAR(record_date) AS year_value FROM health_records UNION SELECT YEAR(attendance_date) AS year_value FROM attendance_records) report_years WHERE year_value IS NOT NULL ORDER BY year_value DESC")->fetchAll(PDO::FETCH_COLUMN));
+if (!in_array((int)date('Y'), $reportYears, true)) $reportYears[] = (int)date('Y');
+rsort($reportYears);
 
 $where = [];
 $params = [];
@@ -33,6 +44,10 @@ if ($programId > 0) {
 if ($status !== '') {
     $where[] = "b.program_status=?";
     $params[] = $status;
+}
+if ($month !== '' && $year === '') {
+    $where[] = "MONTH(hr.record_date)=?";
+    $params[] = (int)$month;
 }
 if ($from !== '') {
     $where[] = "hr.record_date>=?";
@@ -101,7 +116,7 @@ $healthTableRowCount = 0;
 foreach ($recordGroups as $group) {
     $healthTableRowCount += 1 + count($group['other']);
 }
-$dateFilterActive = ($from !== '' || $to !== '');
+$dateFilterActive = ($month !== '' || $year !== '');
 
 // Renders one milestone's three compact cells for a beneficiary:
 //   Date | Height + Weight (stacked) | BMI + Weight Status (stacked)
@@ -139,12 +154,8 @@ if ($programId > 0) {
 if ($status !== '') {
     $activeFilters[] = ['label' => 'Status: ' . $status, 'clear' => array_diff_key($_GET, ['status' => ''])];
 }
-if ($from !== '') {
-    $activeFilters[] = ['label' => 'From: ' . $from, 'clear' => array_diff_key($_GET, ['from' => ''])];
-}
-if ($to !== '') {
-    $activeFilters[] = ['label' => 'To: ' . $to, 'clear' => array_diff_key($_GET, ['to' => ''])];
-}
+if ($month !== '') $activeFilters[] = ['label' => 'Month: ' . $monthName, 'clear' => array_diff_key($_GET, ['month' => ''])];
+if ($year !== '') $activeFilters[] = ['label' => 'Year: ' . $year, 'clear' => array_diff_key($_GET, ['year' => ''])];
 
 // Attendance participation, scoped by the same site/program/status/date
 // filters as the tables above (using attendance_date for the date range
@@ -155,6 +166,7 @@ $attParams = [];
 if ($siteId > 0) { $attWhere[] = 'b.site_id=?'; $attParams[] = $siteId; }
 if ($programId > 0) { $attWhere[] = 'b.program_id=?'; $attParams[] = $programId; }
 if ($status !== '') { $attWhere[] = 'b.program_status=?'; $attParams[] = $status; }
+if ($month !== '' && $year === '') { $attWhere[] = 'MONTH(ar.attendance_date)=?'; $attParams[] = (int)$month; }
 if ($from !== '') { $attWhere[] = 'ar.attendance_date>=?'; $attParams[] = $from; }
 if ($to !== '') { $attWhere[] = 'ar.attendance_date<=?'; $attParams[] = $to; }
 $attWhereSql = $attWhere ? 'WHERE ' . implode(' AND ', $attWhere) : '';
@@ -170,6 +182,51 @@ $attCounts = ['PRESENT' => 0, 'ABSENT' => 0];
 foreach ($attStmt->fetchAll() as $row) {
     $attCounts[$row['attendance_status']] = (int)$row['c'];
 }
+
+$attendanceScope = [];
+$attendanceScopeParams = [];
+if ($siteId > 0) { $attendanceScope[] = 'b.site_id=?'; $attendanceScopeParams[] = $siteId; }
+if ($programId > 0) { $attendanceScope[] = 'b.program_id=?'; $attendanceScopeParams[] = $programId; }
+if ($status !== '') { $attendanceScope[] = 'b.program_status=?'; $attendanceScopeParams[] = $status; }
+$attendanceScopeSql = $attendanceScope ? 'WHERE ' . implode(' AND ', $attendanceScope) : '';
+
+$attendanceDateWhere = $attendanceScope;
+$attendanceDateParams = $attendanceScopeParams;
+if ($from !== '') { $attendanceDateWhere[] = 'ar.attendance_date>=?'; $attendanceDateParams[] = $from; }
+if ($to !== '') { $attendanceDateWhere[] = 'ar.attendance_date<=?'; $attendanceDateParams[] = $to; }
+if ($month !== '' && $year === '') { $attendanceDateWhere[] = 'MONTH(ar.attendance_date)=?'; $attendanceDateParams[] = (int)$month; }
+$attendanceDateSql = $attendanceDateWhere ? 'WHERE ' . implode(' AND ', $attendanceDateWhere) : '';
+if ($from !== '' && $to !== '') {
+    $attendanceDates = [];
+    $dateCursor = new DateTimeImmutable($from);
+    $dateEnd = new DateTimeImmutable($to);
+    while ($dateCursor <= $dateEnd) {
+        $attendanceDates[] = $dateCursor->format('Y-m-d');
+        $dateCursor = $dateCursor->modify('+1 day');
+    }
+} else {
+    $attendanceDateStmt = $pdo->prepare("SELECT DISTINCT ar.attendance_date FROM attendance_records ar JOIN beneficiaries b ON b.beneficiary_id = ar.beneficiary_id $attendanceDateSql ORDER BY ar.attendance_date");
+    $attendanceDateStmt->execute($attendanceDateParams);
+    $attendanceDates = $attendanceDateStmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
+$attendanceBeneficiaryStmt = $pdo->prepare("SELECT b.beneficiary_id, b.beneficiary_code, b.full_name FROM beneficiaries b $attendanceScopeSql ORDER BY b.full_name");
+$attendanceBeneficiaryStmt->execute($attendanceScopeParams);
+$attendanceBeneficiaries = $attendanceBeneficiaryStmt->fetchAll();
+
+$attendanceMatrix = [];
+$attendanceRowsWhere = $attendanceScope;
+$attendanceRowsParams = $attendanceScopeParams;
+if ($from !== '') { $attendanceRowsWhere[] = 'ar.attendance_date>=?'; $attendanceRowsParams[] = $from; }
+if ($to !== '') { $attendanceRowsWhere[] = 'ar.attendance_date<=?'; $attendanceRowsParams[] = $to; }
+if ($month !== '' && $year === '') { $attendanceRowsWhere[] = 'MONTH(ar.attendance_date)=?'; $attendanceRowsParams[] = (int)$month; }
+$attendanceRowsSql = $attendanceRowsWhere ? 'WHERE ' . implode(' AND ', $attendanceRowsWhere) : '';
+$attendanceRowsStmt = $pdo->prepare("SELECT ar.beneficiary_id, ar.attendance_date, ar.attendance_status FROM attendance_records ar JOIN beneficiaries b ON b.beneficiary_id = ar.beneficiary_id $attendanceRowsSql");
+$attendanceRowsStmt->execute($attendanceRowsParams);
+foreach ($attendanceRowsStmt->fetchAll() as $attendanceRow) {
+    $attendanceMatrix[(int)$attendanceRow['beneficiary_id']][$attendanceRow['attendance_date']] = $attendanceRow['attendance_status'];
+}
+
 $attTotal = array_sum($attCounts);
 $attColors = ['PRESENT' => '#1a9c53', 'ABSENT' => '#e53e3e'];
 $attLabels = ['PRESENT' => 'Present', 'ABSENT' => 'Absent'];
@@ -284,13 +341,23 @@ require __DIR__ . '/partials/header.php';
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="field filter-field <?= $from !== '' ? 'is-active' : '' ?>">
-            <label for="report_from">From</label>
-            <input id="report_from" type="date" name="from" value="<?= e($from) ?>" max="<?= date('Y-m-d') ?>">
+        <div class="field filter-field <?= $month !== '' ? 'is-active' : '' ?>">
+            <label for="report_month">Month</label>
+            <select id="report_month" name="month">
+                <option value="">All months</option>
+                <?php for ($monthOption = 1; $monthOption <= 12; $monthOption++): ?>
+                    <option value="<?= $monthOption ?>" <?= (int)$month === $monthOption ? 'selected' : '' ?>><?= e(date('F', mktime(0, 0, 0, $monthOption, 1))) ?></option>
+                <?php endfor; ?>
+            </select>
         </div>
-        <div class="field filter-field <?= $to !== '' ? 'is-active' : '' ?>">
-            <label for="report_to">To</label>
-            <input id="report_to" type="date" name="to" value="<?= e($to) ?>" max="<?= date('Y-m-d') ?>">
+        <div class="field filter-field <?= $year !== '' ? 'is-active' : '' ?>">
+            <label for="report_year">Year</label>
+            <select id="report_year" name="year">
+                <option value="">All years</option>
+                <?php foreach ($reportYears as $yearOption): ?>
+                    <option value="<?= $yearOption ?>" <?= (int)$year === $yearOption ? 'selected' : '' ?>><?= $yearOption ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
         <button class="btn primary">Generate</button>
     </form>
@@ -361,7 +428,6 @@ require __DIR__ . '/partials/header.php';
 <section class="panel bp-card report-analysis-card" id="bmi-charts">
     <div class="panel-head report-analysis-head">
         <h2>Report Analysis</h2>
-        <span class="filter-label" style="margin:0;">BMI categories by growth milestone</span>
     </div>
     <div class="grid-3">
         <?php foreach ($milestoneCharts as $chart): ?>
@@ -382,9 +448,8 @@ require __DIR__ . '/partials/header.php';
 <section class="panel bp-card" id="attendance">
     <div class="panel-head">
         <h2>Attendance Participation</h2>
-        <span class="filter-label" style="margin:0;">Same filters as above</span>
     </div>
-    <div class="pie-wrap">
+    <div class="pie-wrap attendance-pie-wrap">
         <div class="pie-chart" role="img" aria-label="<?= e('Attendance: ' . implode(', ', array_map(fn($k, $n) => $attLabels[$k] . ' ' . $n, array_keys($attCounts), $attCounts))) ?>" style="background: conic-gradient(<?= $attGradient ?>);"></div>
         <div class="pie-legend">
             <?php foreach ($attCounts as $key => $count): ?>
@@ -402,7 +467,7 @@ require __DIR__ . '/partials/header.php';
     <div style="margin-bottom:10px;">
         <label for="age_filter">Filter by Age</label>
         <form method="get">
-            <?php foreach (['site_id' => $siteId ?: '', 'program_id' => $programId ?: '', 'status' => $status, 'from' => $from, 'to' => $to] as $k => $v): if ($v !== '' && $v !== 0): ?>
+            <?php foreach (['site_id' => $siteId ?: '', 'program_id' => $programId ?: '', 'status' => $status, 'month' => $month, 'year' => $year] as $k => $v): if ($v !== '' && $v !== 0): ?>
                 <input type="hidden" name="<?= e($k) ?>" value="<?= e($v) ?>">
             <?php endif; endforeach; ?>
             <input type="hidden" name="generated" value="1">
@@ -421,6 +486,56 @@ require __DIR__ . '/partials/header.php';
 </section>
 </div>
 </section><!-- /#bmi-charts (Report Analysis) -->
+
+<section class="panel bp-card report-attendance-register" id="attendance-register">
+    <div class="panel-head">
+        <h2>Attendance</h2>
+    </div>
+    <?php if (!$attendanceDates): ?>
+        <p class="empty">No attendance days match the selected filters.</p>
+    <?php elseif (!$attendanceBeneficiaries): ?>
+        <p class="empty">No beneficiaries match the selected filters.</p>
+    <?php else: ?>
+    <div class="table-wrap reports-attendance-wrap">
+        <table class="reports-attendance-table">
+            <thead>
+                <tr>
+                    <th rowspan="2">ID</th>
+                    <th rowspan="2">Beneficiary</th>
+                    <th colspan="<?= count($attendanceDates) ?>" class="attendance-days-heading">Implementation Date (<?= e($implementationPeriod) ?>)</th>
+                </tr>
+                <tr>
+                    <?php foreach ($attendanceDates as $attendanceDate): ?>
+                    <th class="attendance-day-column" title="<?= e($fmtDate($attendanceDate)) ?>">
+                        <?= (int)date('j', strtotime($attendanceDate)) ?>
+                    </th>
+                    <?php endforeach; ?>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($attendanceBeneficiaries as $attendanceBeneficiary): ?>
+                <tr>
+                    <td><?= $attendanceBeneficiary['beneficiary_code'] ? '<span class="code-tag">' . e($attendanceBeneficiary['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
+                    <td><a href="beneficiary.php?id=<?= (int)$attendanceBeneficiary['beneficiary_id'] ?>"><?= e($attendanceBeneficiary['full_name']) ?></a></td>
+                    <?php foreach ($attendanceDates as $attendanceDate): ?>
+                        <?php $dayStatus = $attendanceMatrix[(int)$attendanceBeneficiary['beneficiary_id']][$attendanceDate] ?? ''; ?>
+                        <td class="attendance-day-cell">
+                            <?php if ($dayStatus === 'PRESENT'): ?>
+                                <span class="attendance-mark present" aria-label="Present" title="Present">&#10003;</span>
+                            <?php elseif ($dayStatus === 'ABSENT'): ?>
+                                <span class="attendance-mark absent" aria-label="Absent" title="Absent">&times;</span>
+                            <?php else: ?>
+                                <span class="muted" aria-label="Not marked">—</span>
+                            <?php endif; ?>
+                        </td>
+                    <?php endforeach; ?>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+</section>
 
 <div class="report-shell-foot">
     <a class="btn primary" target="_blank" rel="noopener" href="<?= e($printUrl) ?>"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg><span>Download Report</span></a>

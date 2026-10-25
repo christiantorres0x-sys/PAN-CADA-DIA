@@ -1666,6 +1666,54 @@ table.milestone-table {
   overflow: auto;
 }
 
+.reports-attendance-wrap {
+  max-height: 520px;
+  overflow: auto;
+}
+
+.reports-attendance-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+}
+
+.reports-attendance-table th:first-child,
+.reports-attendance-table td:first-child,
+.reports-attendance-table th:nth-child(2),
+.reports-attendance-table td:nth-child(2) {
+  width: max-content;
+  white-space: nowrap;
+}
+
+.reports-attendance-table .attendance-days-heading {
+  text-align: center;
+}
+
+.reports-attendance-table .attendance-day-column,
+.reports-attendance-table .attendance-day-cell {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.reports-attendance-table .attendance-mark {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.reports-attendance-table .attendance-mark.present {
+  color: var(--green);
+}
+
+.reports-attendance-table .attendance-mark.absent {
+  color: var(--red);
+}
+
 table.milestone-table th,
 table.milestone-table td {
   padding: 7px 5px;
@@ -2165,17 +2213,11 @@ table.history-table td {
   font-size: 16px;
 }
 
-/* Report Analysis: single card, title enlarged, subtitle on the left beside it */
+/* Report Analysis heading matches other report card headings. */
 .report-shell .report-analysis-head {
-  flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-
-.report-shell .report-analysis-head h2 {
-  font-size: 24px;
+  margin-bottom: 4px;
 }
 
 /* Attendance + Age live inside the one Report Analysis card: no cards of their own */
@@ -2193,8 +2235,16 @@ table.history-table td {
   border-radius: 0;
 }
 
+.report-shell #attendance .attendance-pie-wrap {
+  margin-top: 66px;
+}
+
 @media (max-width: 900px) {
   .report-shell {
     padding: 16px;
+  }
+
+  .report-shell #attendance .attendance-pie-wrap {
+    margin-top: 0;
   }
 }

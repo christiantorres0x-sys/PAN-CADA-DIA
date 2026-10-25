@@ -103,6 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $baselineMode = '';
     $baselineHeight = null; $baselineWeight = null; $baselineError = null;
     $baselineDate = null;
+    $ineligibleNormalBmi = false;
     if (!$isEdit) {
         $baselineMode = 'record'; // baseline is always required when adding a beneficiary
         if ($baselineMode === 'record') {
@@ -127,6 +128,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($beneficiary['birth_date'] !== '' && $baselineDate < $beneficiary['birth_date']) {
                 $baselineError = 'The baseline measurement date cannot be before the birthdate.';
             }
+            if ($baselineError === null && $baselineHeight !== null && $baselineWeight !== null) {
+                $baselineBmi = calculate_bmi($baselineWeight, $baselineHeight);
+                $isNormalBmi = pcd_weight_status($baselineBmi) === 'Normal';
+                $withinCutoffAllowance = ($baselineBmi >= 18.5 && $baselineBmi <= 18.6)
+                    || ($baselineBmi >= 22.9 && $baselineBmi < 23.0);
+                $ineligibleNormalBmi = $isNormalBmi && !$withinCutoffAllowance;
+            }
         }
     }
 
@@ -136,6 +144,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
     } elseif ($baselineError !== null) {
         $msg = preg_match('/^(Baseline|The baseline|Please)/', $baselineError) ? $baselineError : 'Baseline measurement: ' . $baselineError;
+        flash('danger', $msg);
+        if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
+    } elseif ($ineligibleNormalBmi) {
+        $msg = 'This beneficiary is not eligible for the program because their BMI is within the Normal range and outside the 0.1 cutoff allowance.';
         flash('danger', $msg);
         if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
     } elseif ($gradeChoice === GRADE_LEVEL_OTHER && $gradeOtherText === '') {
@@ -381,6 +393,7 @@ require __DIR__ . '/partials/header.php';
                         <div class="full-col">
                             <label>Weight Status</label>
                             <input id="status_preview" class="auto-field" readonly tabindex="-1" aria-readonly="true" placeholder="Enter height and weight">
+                            <div id="eligibility_warning" class="alert danger" role="alert" hidden>This beneficiary is not eligible for the program because their BMI is within the Normal range and outside the 0.1 cutoff allowance.</div>
                         </div>
                         <div class="full-col">
                             <label>Baseline Remarks</label>

@@ -22,8 +22,14 @@ if ($q !== '') {
 }
 $latestStmt = $pdo->prepare("
     SELECT hr.*, b.full_name, b.beneficiary_code, b.birth_date, b.sex, b.grade_level, b.program_status, s.site_name
-    FROM health_records hr
-    JOIN beneficiaries b ON b.beneficiary_id = hr.beneficiary_id
+    FROM beneficiaries b
+    JOIN health_records hr ON hr.record_id = (
+        SELECT latest.record_id
+        FROM health_records latest
+        WHERE latest.beneficiary_id = b.beneficiary_id
+        ORDER BY latest.record_date DESC, latest.record_id DESC
+        LIMIT 1
+    )
     LEFT JOIN feeding_sites s ON s.site_id = b.site_id
     $searchSql
     ORDER BY hr.record_date DESC, hr.record_id DESC

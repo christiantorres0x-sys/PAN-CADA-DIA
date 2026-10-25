@@ -10,10 +10,7 @@ foreach ($sites as $s) { if ((int)$s['site_id'] === $siteId) { $scopeSite = $s['
 $scopeProgram = 'All programs';
 foreach ($programs as $p) { if ((int)$p['program_id'] === $programId) { $scopeProgram = $p['program_name']; break; } }
 $fmtD = fn(string $d): string => ($ts = strtotime($d)) ? date('F j, Y', $ts) : $d;
-if ($from !== '' && $to !== '') $period = $fmtD($from) . ' to ' . $fmtD($to);
-elseif ($from !== '') $period = 'From ' . $fmtD($from);
-elseif ($to !== '') $period = 'Up to ' . $fmtD($to);
-else $period = 'All recorded dates';
+$period = $implementationPeriod;
 $statusScope = $status !== '' ? beneficiary_status_label($status) : 'All statuses';
 $preparedBy = $_SESSION['user_name'] ?? '';
 $n2 = fn($n): string => rtrim(rtrim(number_format((float)$n, 2, '.', ''), '0'), '.');

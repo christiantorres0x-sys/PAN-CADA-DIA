@@ -9,6 +9,8 @@ function pcdWireFormExtras(root) {
   // the real conversion to cm / kg from the unit that is selected on submit
   // (parse_height_cm / parse_weight_kg in config.php).
   const out = root.querySelector('#bmi_preview');
+  const statusPreview = root.querySelector('#status_preview');
+  const eligibilityWarning = root.querySelector('#eligibility_warning');
   const CM_PER_IN = 2.54;
   const KG_PER_LB = 0.45359237;
   const hBox = root.querySelector('[data-measure="height"]');
@@ -26,6 +28,17 @@ function pcdWireFormExtras(root) {
     const required = cmIn.required;
     const round1 = (n) => Math.round(n * 10) / 10;
     const round2 = (n) => Math.round(n * 100) / 100;
+    const form = root.querySelector('#baseline_fields')?.closest('form');
+    const submitButtons = form ? Array.from(form.querySelectorAll('button[type="submit"], button:not([type])')) : [];
+
+    function updateEligibility(bmi, status) {
+      if (!eligibilityWarning) return;
+      const value = round2(bmi);
+      const nearCutoff = (value >= 18.5 && value <= 18.6) || (value >= 22.9 && value < 23);
+      const ineligible = status === 'Normal' && !nearCutoff;
+      eligibilityWarning.hidden = !ineligible;
+      submitButtons.forEach((button) => { button.disabled = ineligible; });
+    }
 
     // Canonical values (cm / kg) of what the user last typed. Switching units
     // re-displays these instead of converting the displayed, rounded number
@@ -60,15 +73,17 @@ function pcdWireFormExtras(root) {
         const bmi = k / (m * m);
         out.value = bmi.toFixed(2);
         // Asian BMI cut-offs - keep in sync with bmi_status.php
-        const st = document.getElementById('status_preview');
+        const st = statusPreview;
         if (st) {
           const r = Math.round(bmi * 100) / 100;
           st.value = r < 14 ? 'Severely Wasted' : r < 16 ? 'Severely Underweight' : r < 18.5 ? 'Moderately Underweight' : r < 23 ? 'Normal' : r < 25 ? 'Overweight' : 'Obese';
+          updateEligibility(r, st.value);
         }
       } else {
         out.value = '';
-        const st = document.getElementById('status_preview');
+        const st = statusPreview;
         if (st) st.value = '';
+        updateEligibility(0, '');
       }
     }
 
@@ -129,6 +144,15 @@ function pcdWireFormExtras(root) {
       el.addEventListener('invalid', () => { if (el.validity.valueMissing) el.setCustomValidity(msg); });
       el.addEventListener('input', () => el.setCustomValidity(''));
     });
+    const baselineForm = fields.closest('form');
+    if (baselineForm && eligibilityWarning) {
+      baselineForm.addEventListener('submit', (event) => {
+        if (!eligibilityWarning.hidden) {
+          event.preventDefault();
+          eligibilityWarning.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    }
   }
 
   // Grade level "Other (please specify)": reveal the text box only when needed,
