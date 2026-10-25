@@ -1,107 +1,176 @@
 <?php
-/**
- * Delete a feeding site (Admin only).
- *
- * A site that still has beneficiaries CAN be deleted, but the confirmation
- * shows a warning first. Those beneficiaries are kept and simply end up with
- * no site assigned (foreign key ON DELETE SET NULL).
- * The site's auto-created "<Site Name> Program" is removed too, but only if
- * no beneficiary is using it. This cannot be undone.
- */
 require_once __DIR__ . '/db.php';
 require_login();
 
-$id = (int)($_GET['id'] ?? $_POST['site_id'] ?? 0);
-$isAjax = is_ajax_request();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
+    $type = $_POST['type'] ?? '';
 
-function pcd_site_del_reply(bool $ok, string $message, string $redirect, bool $isAjax): void {
-    flash($ok ? 'success' : 'danger', $message);
-    if ($isAjax) json_response(['ok' => $ok, 'message' => $message, 'redirect' => $redirect]);
-    header('Location: ' . $redirect);
+    if ($type === 'site') {
+        $name = capitalize_words(trim($_POST['site_name'] ?? ''));
+        $startRaw = trim($_POST['start_date'] ?? '');
+        $endRaw = trim($_POST['end_date'] ?? '');
+        $durRaw = trim($_POST['duration_days'] ?? '');
+        $hasProgram = ($startRaw !== '' || $endRaw !== '' || $durRaw !== '');
+        $error = null;
+
+        $parseDate = function (string $v): ?DateTimeImmutable {
+            $d = DateTimeImmutable::createFromFormat('!Y-m-d', $v);
+            return ($d && $d->format('Y-m-d') === $v) ? $d : null;
+        };
+        $start = $startRaw !== '' ? $parseDate($startRaw) : null;
+        $end = $endRaw !== '' ? $parseDate($endRaw) : null;
+        $duration = null;
+
+        if ($name === '') {
+            $error = 'Site name is required.';
+        } elseif (($startRaw !== '' && !$start) || ($endRaw !== '' && !$end)) {
+            $error = 'Please enter valid dates.';
+        } elseif ($start && $end && $end < $start) {
+            $error = 'End Date cannot be earlier than Start Date.';
+        } elseif ($durRaw !== '' && (!ctype_digit($durRaw) || (int)$durRaw < 1 || (int)$durRaw > 3650)) {
+            $error = 'Duration must be a whole number of days between 1 and 3650.';
+        } elseif ($durRaw !== '') {
+            $duration = (int)$durRaw;   // user-entered (or user-edited) value is kept as is
+        } elseif ($start && $end) {
+            $duration = (int)$start->diff($end)->days + 1;   // inclusive of both dates
+        }
+
+        if ($error !== null) {
+            flash('danger', $error);
+        } else {
+            $s = $pdo->prepare("INSERT INTO feeding_sites (site_name, address, barangay, municipality) VALUES (?, ?, ?, ?)");
+            $s->execute([
+                $name,
+                capitalize_words(trim($_POST['address'] ?? '')),
+                capitalize_words(trim($_POST['barangay'] ?? '')),
+                capitalize_words(trim($_POST['municipality'] ?? '')),
+            ]);
+            log_action($pdo, 'CREATE_SITE', 'feeding_sites', (int)$pdo->lastInsertId(), 'Created feeding site');
+
+            if ($hasProgram) {
+                $s = $pdo->prepare("INSERT INTO feeding_programs (program_name, description, duration_days, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, 'ACTIVE')");
+                $s->execute([
+                    $name . ' Program',   // named after the site
+                    capitalize_sentences(trim($_POST['description'] ?? '')),
+                    $duration,
+                    $start ? $start->format('Y-m-d') : null,
+                    $end ? $end->format('Y-m-d') : null,
+                ]);
+                log_action($pdo, 'CREATE_PROGRAM', 'feeding_programs', (int)$pdo->lastInsertId(), 'Created feeding program');
+                flash('success', 'Feeding site and program added.');
+            } else {
+                flash('success', 'Feeding site added.');
+            }
+        }
+    }
+
+    header('Location: manage.php');
     exit;
 }
 
-$load = $pdo->prepare("
-    SELECT s.*, (SELECT COUNT(*) FROM beneficiaries b WHERE b.site_id = s.site_id) AS beneficiary_count
-    FROM feeding_sites s WHERE s.site_id = ?
-");
-$load->execute([$id]);
-$site = $load->fetch();
-if (!$site) {
-    if ($isAjax && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        pcd_site_del_reply(false, 'That site no longer exists.', 'manage.php', true);
-    }
-    exit('Feeding site not found.');
+$sites = $pdo->query("SELECT s.*, (SELECT COUNT(*) FROM beneficiaries b WHERE b.site_id = s.site_id) AS beneficiary_count FROM feeding_sites s ORDER BY s.site_name")->fetchAll();
+$programs = $pdo->query("SELECT * FROM feeding_programs ORDER BY program_name")->fetchAll();
+
+$activeSiteCount = (int)$pdo->query("SELECT COUNT(*) FROM feeding_sites WHERE status='ACTIVE'")->fetchColumn();
+$activeProgramCount = (int)$pdo->query("SELECT COUNT(*) FROM feeding_programs WHERE status='ACTIVE'")->fetchColumn();
+$enrolledCount = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries WHERE program_status='ACTIVE'")->fetchColumn();
+$totalCount = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries")->fetchColumn();
+
+$durations = array_filter(array_column($programs, 'duration_days'));
+$avgDuration = $durations ? (int)round(array_sum($durations) / count($durations)) : null;
+
+$milestoneCounts = ['BASELINE' => 0, 'MIDLINE' => 0, 'ENDLINE' => 0];
+foreach ($pdo->query("SELECT milestone, COUNT(DISTINCT beneficiary_id) c FROM health_records WHERE milestone IS NOT NULL GROUP BY milestone")->fetchAll() as $row) {
+    $milestoneCounts[$row['milestone']] = (int)$row['c'];
 }
 
-if (!can_delete_beneficiaries()) {
-    http_response_code(403);
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') exit('Only an administrator can delete a feeding site.');
-    pcd_site_del_reply(false, 'Only an administrator can delete a feeding site.', 'manage.php', $isAjax);
-}
-
-$count = (int)$site['beneficiary_count'];
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verify_csrf();
-    try {
-        $pdo->beginTransaction();
-        $del = $pdo->prepare("DELETE FROM feeding_sites WHERE site_id = ?");
-        $del->execute([$id]);
-        if ($del->rowCount() === 0) {
-            $pdo->rollBack();
-            pcd_site_del_reply(false, 'That site no longer exists.', 'manage.php', $isAjax);
-        }
-        // Remove the auto-created program only when nobody is enrolled in it.
-        $pdo->prepare("
-            DELETE FROM feeding_programs
-            WHERE program_name = ?
-              AND NOT EXISTS (SELECT 1 FROM beneficiaries b WHERE b.program_id = feeding_programs.program_id)
-        ")->execute([$site['site_name'] . ' Program']);
-        log_action($pdo, 'DELETE_SITE', 'feeding_sites', $id, 'Deleted feeding site "' . $site['site_name'] . '"' . ($count > 0 ? ' (' . $count . ' beneficiar' . ($count === 1 ? 'y' : 'ies') . ' left without a site)' : ''));
-        $pdo->commit();
-        pcd_site_del_reply(true, $site['site_name'] . ' was deleted.', 'manage.php', $isAjax);
-    } catch (PDOException $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
-        pcd_site_del_reply(false, 'Could not delete this site, so nothing was changed. Please try again.', 'manage.php', $isAjax);
-    }
-}
-
-$pageTitle = 'Delete Feeding Site';
-$pageEyebrowHtml = '<a class="back-link" href="manage.php">&larr; Back to Program Setup</a>';
+$pageTitle = 'Program Setup';
+$activeNav = 'manage.php';
 require __DIR__ . '/partials/header.php';
 ?>
-<div class="form-panel">
-    <div class="person-banner">
-        <strong><?= e($site['site_name']) ?></strong>
-        <span><?= e(trim(($site['barangay'] ?? '') . ', ' . ($site['municipality'] ?? ''), ', ')) ?></span>
+
+<section class="panel program-setup-panel">
+    <h2>Program Summary</h2>
+    <div class="cards program-summary-cards" style="margin-top:8px; margin-bottom:0;">
+        <div class="stat red"><span>Total Feeding Sites</span><strong><?= count($sites) ?></strong></div>
+        <div class="stat green"><span>Total Beneficiaries</span><strong><?= $totalCount ?></strong></div>
     </div>
+</section>
 
-    <form method="post" action="site_delete.php?id=<?= $id ?>">
-        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-        <input type="hidden" name="site_id" value="<?= $id ?>">
+<div>
+    <section class="panel program-setup-panel program-setup-add-panel">
+        <details class="collapsible"><summary><h2>Add Feeding Site</h2></summary>
+        <form method="post" id="program-form">
+            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="type" value="site">
+            <div class="form-grid">
+                <div class="full-col">
+                    <label>Site Name *</label>
+                    <input name="site_name" required>
+                </div>
+                <div class="full-col">
+                    <label>Address</label>
+                    <input name="address">
+                </div>
+                <div>
+                    <label>Barangay</label>
+                    <input name="barangay">
+                </div>
+                <div>
+                    <label>City</label>
+                    <input name="municipality">
+                </div>
+            </div>
+            <hr class="program-period-divider">
+            <h3 class="form-section-title program-period-title">Program Period (optional)</h3>
+            <div class="form-grid">
+                <div>
+                    <label>Start Date</label>
+                    <input type="date" name="start_date" id="program_start_date">
+                </div>
+                <div>
+                    <label>End Date</label>
+                    <input type="date" name="end_date" id="program_end_date">
+                </div>
+                <div class="full-col">
+                    <label>Duration (Days)</label>
+                    <input type="number" name="duration_days" id="program_duration_days" min="1" max="3650" step="1" inputmode="numeric">
+                    <span class="form-hint" id="program_duration_hint">Derived from start and end date. This is editable.</span>
+                </div>
+            </div>
+            <div class="form-actions"><button class="btn primary">Add Site</button></div>
+        </form>
+        </details>
+    </section>
 
-        <?php if ($count > 0): ?>
-            <div class="alert danger">
-                <strong>Warning:</strong> <?= e($site['site_name']) ?> still has
-                <strong><?= $count ?> beneficiar<?= $count === 1 ? 'y' : 'ies' ?></strong>.
-                If you delete this site, <?= $count === 1 ? 'that beneficiary' : 'those beneficiaries' ?>
-                will stay in the system but will have <strong>no feeding site</strong> until you assign a new one.
-            </div>
-            <p class="delete-msg">Are you sure you want to delete <strong><?= e($site['site_name']) ?></strong> anyway?</p>
-            <p class="delete-sub">This can't be undone. If this is just a typo, use Edit instead.</p>
-            <div class="form-actions">
-                <a class="btn success cancel-button" href="manage.php">Cancel</a>
-                <button class="btn danger">Delete Anyway</button>
-            </div>
-        <?php else: ?>
-            <p class="delete-msg">Are you sure you want to delete <strong><?= e($site['site_name']) ?></strong>?</p>
-            <p class="delete-sub">This permanently removes the site. This can't be undone.</p>
-            <div class="form-actions">
-                <a class="btn success cancel-button" href="manage.php">Cancel</a>
-                <button class="btn danger">Delete</button>
-            </div>
-        <?php endif; ?>
-    </form>
 </div>
+
+<section class="panel program-setup-panel">
+    <h2>Configured Feeding Sites</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Barangay</th><th>City</th><th>Beneficiary Count</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                <?php foreach ($sites as $s): ?>
+                <tr>
+                    <td><?= e($s['site_name']) ?></td>
+                    <td><?= e($s['barangay']) ?></td>
+                    <td><?= e($s['municipality']) ?></td>
+                    <td><?= (int)$s['beneficiary_count'] ?></td>
+                    <td>
+                        <a class="btn secondary sm" href="site_edit.php?id=<?= (int)$s['site_id'] ?>" data-slideover="site_edit.php?panel=1&id=<?= (int)$s['site_id'] ?>" data-slideover-title="Edit Feeding Site">Edit</a>
+                        <?php if (can_delete_beneficiaries()): ?>
+                        <a class="btn secondary sm danger-outline" href="site_delete.php?id=<?= (int)$s['site_id'] ?>" data-slideover="site_delete.php?panel=1&id=<?= (int)$s['site_id'] ?>" data-slideover-title="Delete Feeding Site">Delete</a>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</section>
+
 <?php require __DIR__ . '/partials/footer.php'; ?>
