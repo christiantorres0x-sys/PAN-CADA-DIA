@@ -240,8 +240,6 @@ foreach ($attCounts as $key => $count) {
 }
 $attGradient = $attGradientParts ? implode(', ', $attGradientParts) : '#eef1f6 0% 100%';
 
-$ageFilter = trim($_GET['age'] ?? '');
-
 // Age-bracket distribution for the pie chart, respecting the same site/
 // program/status scope as the tables above but independent of whether a
 // health record exists yet.
@@ -256,7 +254,6 @@ $ageStmt->execute($ageParams);
 $ageBuckets = ['Under 6' => 0, '6–12' => 0, '13+' => 0];
 foreach ($ageStmt->fetchAll(PDO::FETCH_COLUMN) as $bd) {
     $age = age_in_years($bd);
-    if ($ageFilter !== '' && (string)$age !== $ageFilter) continue;
     if ($age < 6) $ageBuckets['Under 6']++;
     elseif ($age <= 12) $ageBuckets['6–12']++;
     else $ageBuckets['13+']++;
@@ -463,16 +460,6 @@ require __DIR__ . '/partials/header.php';
 <section class="panel bp-card" id="age">
     <div class="panel-head">
         <h2>Age Distribution</h2>
-    </div>
-    <div style="margin-bottom:10px;">
-        <label for="age_filter">Filter by Age</label>
-        <form method="get">
-            <?php foreach (['site_id' => $siteId ?: '', 'program_id' => $programId ?: '', 'status' => $status, 'month' => $month, 'year' => $year] as $k => $v): if ($v !== '' && $v !== 0): ?>
-                <input type="hidden" name="<?= e($k) ?>" value="<?= e($v) ?>">
-            <?php endif; endforeach; ?>
-            <input type="hidden" name="generated" value="1">
-            <input id="age_filter" type="number" name="age" min="0" value="<?= e($ageFilter) ?>" placeholder="e.g. 7" onchange="this.form.submit()">
-        </form>
     </div>
     <div class="pie-wrap">
         <div class="pie-chart" role="img" aria-label="<?= e('Age distribution: ' . implode(', ', array_map(fn($l, $n) => $l . ' years ' . $n, array_keys($ageBuckets), $ageBuckets))) ?>" style="background: conic-gradient(<?= $pieGradient ?>);"></div>
