@@ -2235,16 +2235,8 @@ table.history-table td {
   border-radius: 0;
 }
 
-.report-shell #attendance .attendance-pie-wrap {
-  margin-top: 66px;
-}
-
 @media (max-width: 900px) {
   .report-shell {
     padding: 16px;
-  }
-
-  .report-shell #attendance .attendance-pie-wrap {
-    margin-top: 0;
   }
 }
