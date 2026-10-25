@@ -270,6 +270,27 @@ foreach ($ageBuckets as $label => $count) {
 }
 $pieGradient = $gradientParts ? implode(', ', $gradientParts) : '#eef1f6 0% 100%';
 
+// Gender (sex) distribution of beneficiaries, scoped by the same site/
+// program/status filters as the age chart and likewise independent of
+// whether a health record exists yet. Reads beneficiaries.sex (Male/Female).
+$sexStmt = $pdo->prepare("SELECT sex, COUNT(*) c FROM beneficiaries $ageWhereSql GROUP BY sex");
+$sexStmt->execute($ageParams);
+$sexCounts = ['Male' => 0, 'Female' => 0];
+foreach ($sexStmt->fetchAll() as $row) {
+    if (isset($sexCounts[$row['sex']])) $sexCounts[$row['sex']] = (int)$row['c'];
+}
+$sexTotal = array_sum($sexCounts);
+$sexColors = ['Male' => '#2f6fdb', 'Female' => '#b4457a'];
+$sexGradientParts = [];
+$sexCursor = 0;
+foreach ($sexCounts as $label => $count) {
+    if ($sexTotal === 0) break;
+    $pct = $count / $sexTotal * 100;
+    $sexGradientParts[] = $sexColors[$label] . ' ' . round($sexCursor, 2) . '% ' . round($sexCursor + $pct, 2) . '%';
+    $sexCursor += $pct;
+}
+$sexGradient = $sexGradientParts ? implode(', ', $sexGradientParts) : '#eef1f6 0% 100%';
+
 // BMI-category breakdown per growth milestone (Baseline / Midline / Endline).
 // Categories are whatever nutritional_status text was recorded at each visit —
 // set automatically from BMI with the Asian cut-offs in bmi_status.php.
@@ -441,7 +462,7 @@ require __DIR__ . '/partials/header.php';
         <?php endforeach; ?>
     </div>
 
-<div class="chart-pair">
+<div class="chart-pair chart-trio">
 <section class="panel bp-card" id="attendance">
     <div class="panel-head">
         <h2>Attendance Participation</h2>
@@ -468,6 +489,21 @@ require __DIR__ . '/partials/header.php';
             <div class="pie-legend-item"><span class="swatch" style="background:<?= $ageColors[$label] ?>;"></span><?= e($label) ?> years <strong><?= $count ?></strong></div>
             <?php endforeach; ?>
             <?php if ($ageTotal === 0): ?><p class="muted" style="margin:4px 0 0;">No beneficiaries match this scope.</p><?php endif; ?>
+        </div>
+    </div>
+</section>
+
+<section class="panel bp-card" id="gender">
+    <div class="panel-head">
+        <h2>Gender Distribution</h2>
+    </div>
+    <div class="pie-wrap">
+        <div class="pie-chart" role="img" aria-label="<?= e('Gender distribution: ' . implode(', ', array_map(fn($l, $n) => $l . ' ' . $n, array_keys($sexCounts), $sexCounts))) ?>" style="background: conic-gradient(<?= $sexGradient ?>);"></div>
+        <div class="pie-legend">
+            <?php foreach ($sexCounts as $label => $count): ?>
+            <div class="pie-legend-item"><span class="swatch" style="background:<?= $sexColors[$label] ?>;"></span><?= e($label) ?> <strong><?= $count ?></strong></div>
+            <?php endforeach; ?>
+            <?php if ($sexTotal === 0): ?><p class="muted" style="margin:4px 0 0;">No beneficiaries match this scope.</p><?php endif; ?>
         </div>
     </div>
 </section>

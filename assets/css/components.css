@@ -2173,6 +2173,17 @@ table.history-table td {
   }
 }
 
+/* Reports: Attendance, Age and Gender side by side (3 across, stacked on narrower screens) */
+.chart-pair.chart-trio {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  .chart-pair.chart-trio {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Reports: one big container (.report-shell) holding profile-style cards. */
 .report-shell {
   padding: 24px;
