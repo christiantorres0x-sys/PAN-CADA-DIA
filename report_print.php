@@ -206,7 +206,7 @@ $rowNo = 0;
     <div class="chart">
       <div class="pie" style="background: conic-gradient(<?= $pieGradient ?>);"></div>
       <div class="legend">
-        <strong>Age Distribution<?= $ageFilter !== '' ? ' (age ' . e($ageFilter) . ')' : '' ?></strong>
+        <strong>Age Distribution</strong>
         <?php foreach ($ageBuckets as $label => $count): ?>
         <div><span class="sw" style="background:<?= $ageColors[$label] ?>;"></span><?= e($label) ?> yrs<b><?= (int)$count ?> (<?= e($pct($count, $ageTotal)) ?>)</b></div>
         <?php endforeach; ?>
