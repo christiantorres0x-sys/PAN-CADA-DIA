@@ -262,6 +262,10 @@ textarea.is-invalid {
   font-size: 12px;
 }
 
+.enrollment-status-hint {
+  margin-left: 4px;
+}
+
 /* Auto-calculated, read-only fields (BMI, Weight Status): no hover/focus
    highlight so they are not mistaken for editable text fields. */
 input[readonly],

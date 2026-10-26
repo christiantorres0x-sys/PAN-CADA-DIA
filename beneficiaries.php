@@ -93,24 +93,25 @@ require __DIR__ . '/partials/header.php';
 
 <section class="panel beneficiaries-results">
     <p class="list-count">Total Beneficiaries: <?= count($rows) ?></p>
-    <div class="table-wrap">
+    <div class="table-wrap dashboard-recent-table">
         <table>
             <thead>
-                <tr><th>ID</th><th>Grade Level</th><th>Birth Date</th><th>Name</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>
+                <tr><th>ID</th><th>Name</th><th>Site</th><th>Grade Level</th><th>Birth Date</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>
             </thead>
             <tbody>
-                <?php foreach ($rows as $b): $rec = $latestByBeneficiary[$b['beneficiary_id']] ?? null; $nutritionStatus = strtolower($rec['nutritional_status'] ?? ''); $flag = str_contains($nutritionStatus, 'under') || str_contains($nutritionStatus, 'severe'); $nutritionAlert = $flag || str_contains($nutritionStatus, 'over'); ?>
+                <?php foreach ($rows as $b): $rec = $latestByBeneficiary[$b['beneficiary_id']] ?? null; $nutritionStatus = strtolower($rec['nutritional_status'] ?? ''); $flag = str_contains($nutritionStatus, 'under') || str_contains($nutritionStatus, 'severe'); ?>
                 <tr class="clickable-row <?= $flag ? 'row-flag' : '' ?>" data-href="beneficiary.php?id=<?= (int)$b['beneficiary_id'] ?>" onclick="window.location=this.dataset.href">
                     <td><?= $b['beneficiary_code'] ? '<span class="code-tag">' . e($b['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
+                    <td><strong><?= e($b['full_name']) ?></strong></td>
+                    <td><?= e($b['site_name'] ?? '—') ?></td>
                     <td><?= e($b['grade_level'] ?: '—') ?></td>
                     <td><?= e($b['birth_date'] ?: '—') ?></td>
-                    <td><strong><a href="beneficiary.php?id=<?= (int)$b['beneficiary_id'] ?>"><?= e($b['full_name']) ?></a></strong></td>
                     <td><?= e($b['sex']) ?></td>
                     <td class="num"><?= $rec ? e($rec['height_cm']) . ' cm' : '—' ?></td>
                     <td class="num"><?= $rec ? e($rec['weight_kg']) . ' kg' : '—' ?></td>
                     <td class="num"><?= $rec ? e($rec['bmi']) . ' kg/m<sup>2</sup>' : '—' ?></td>
-                    <td><span class="<?= $nutritionAlert ? 'beneficiary-nutrition-alert' : '' ?>"><?= ($rec && $rec['nutritional_status']) ? e($rec['nutritional_status']) : '<span class="muted">Pending</span>' ?></span></td>
-                    <td><?= e($b['program_status'] ?: '—') ?></td>
+                    <td><?= ($rec && $rec['nutritional_status']) ? pcd_badge($rec['nutritional_status']) : '<span class="muted">Pending</span>' ?></td>
+                    <td><?= pcd_badge($b['program_status'] ?: '—') ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

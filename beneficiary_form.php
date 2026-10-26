@@ -291,7 +291,7 @@ require __DIR__ . '/partials/header.php';
                             </select>
                             <?php else: ?>
                             <input class="auto-field" value="Active" readonly>
-                            <span class="form-hint">New beneficiaries are set to Active automatically.</span>
+                            <span class="form-hint enrollment-status-hint">New beneficiaries are set to Active automatically.</span>
                             <?php endif; ?>
                         </div>
                         <div>

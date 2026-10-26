@@ -466,18 +466,6 @@
   flex: 1;
 }
 
-.beneficiaries-results th {
-  font-size: 12px;
-  color: #000000;
-  text-align: center;
-}
-
-.beneficiaries-results td {
-  font-size: 12px;
-  vertical-align: middle;
-  text-align: center;
-}
-
 .beneficiaries-results .list-count {
   margin: 10px 0 14px 2px;
   text-align: left;
@@ -494,9 +482,6 @@
     min-height: 0;
   }
 
-  .beneficiaries-results table {
-    min-width: 760px;
-  }
 }
 
 /* Simple CSS conic-gradient pie chart, built server-side from real counts */
