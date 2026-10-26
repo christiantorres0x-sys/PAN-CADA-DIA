@@ -151,7 +151,7 @@ require __DIR__ . '/partials/header.php';
     <div class="table-wrap">
         <table>
             <thead>
-                <tr><th>Name</th><th>Barangay</th><th>City</th><th>Beneficiary Count</th></tr>
+                <tr><th>Name</th><th>Barangay</th><th>City</th><th>Beneficiary Count</th><th>Actions</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($sites as $s): ?>
@@ -160,6 +160,12 @@ require __DIR__ . '/partials/header.php';
                     <td><?= e($s['barangay']) ?></td>
                     <td><?= e($s['municipality']) ?></td>
                     <td><?= (int)$s['beneficiary_count'] ?></td>
+                    <td>
+                        <a class="btn secondary sm" href="site_edit.php?id=<?= (int)$s['site_id'] ?>" data-slideover="site_edit.php?panel=1&id=<?= (int)$s['site_id'] ?>" data-slideover-title="Edit Feeding Site">Edit</a>
+                        <?php if (can_delete_beneficiaries()): ?>
+                        <a class="btn secondary sm danger-outline" href="site_delete.php?id=<?= (int)$s['site_id'] ?>" data-slideover="site_delete.php?panel=1&id=<?= (int)$s['site_id'] ?>" data-slideover-title="Delete Feeding Site">Delete</a>
+                        <?php endif; ?>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

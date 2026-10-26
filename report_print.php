@@ -82,6 +82,10 @@ $rowNo = 0;
   .pair .chart { display: flex; gap: 10px; align-items: center; text-align: left; }
   .pair .pie { margin: 0; flex: none; }
   .pair .legend { flex: 1; }
+  .pair.trio { grid-template-columns: repeat(3, 1fr); }
+  .pair.trio .chart { flex-direction: column; text-align: center; }
+  .pair.trio .pie { margin: 0 auto; }
+  .pair.trio .legend { flex: none; width: 100%; }
 
   .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6in; margin-top: 0.45in; break-inside: avoid; }
   .sig { text-align: center; font-size: 10pt; }
@@ -191,8 +195,8 @@ $rowNo = 0;
     <?php endforeach; ?>
   </div>
 
-  <h2 class="sec">IV. Attendance and Age Profile</h2>
-  <div class="pair">
+  <h2 class="sec">IV. Attendance, Age and Gender Profile</h2>
+  <div class="pair trio">
     <div class="chart">
       <div class="pie" style="background: conic-gradient(<?= $attGradient ?>);"></div>
       <div class="legend">
@@ -206,11 +210,21 @@ $rowNo = 0;
     <div class="chart">
       <div class="pie" style="background: conic-gradient(<?= $pieGradient ?>);"></div>
       <div class="legend">
-        <strong>Age Distribution<?= $ageFilter !== '' ? ' (age ' . e($ageFilter) . ')' : '' ?></strong>
+        <strong>Age Distribution</strong>
         <?php foreach ($ageBuckets as $label => $count): ?>
         <div><span class="sw" style="background:<?= $ageColors[$label] ?>;"></span><?= e($label) ?> yrs<b><?= (int)$count ?> (<?= e($pct($count, $ageTotal)) ?>)</b></div>
         <?php endforeach; ?>
         <?php if ($ageTotal === 0): ?><div>No beneficiaries in scope.</div><?php endif; ?>
+      </div>
+    </div>
+    <div class="chart">
+      <div class="pie" style="background: conic-gradient(<?= $sexGradient ?>);"></div>
+      <div class="legend">
+        <strong>Gender Distribution</strong>
+        <?php foreach ($sexCounts as $label => $count): ?>
+        <div><span class="sw" style="background:<?= $sexColors[$label] ?>;"></span><?= e($label) ?><b><?= (int)$count ?> (<?= e($pct($count, $sexTotal)) ?>)</b></div>
+        <?php endforeach; ?>
+        <?php if ($sexTotal === 0): ?><div>No beneficiaries in scope.</div><?php endif; ?>
       </div>
     </div>
   </div>
