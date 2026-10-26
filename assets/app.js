@@ -155,23 +155,27 @@ function pcdWireFormExtras(root) {
     }
   }
 
-  // Grade level "Other (please specify)": reveal the text box only when needed,
-  // and only require it while it's visible (a hidden required field would
-  // silently block the form from submitting).
-  const gradeSelect = root.querySelector('#grade_level_select');
-  const gradeOtherWrap = root.querySelector('#grade_other_wrap');
-  const gradeOther = root.querySelector('#grade_level_other');
-  if (gradeSelect && gradeOtherWrap && gradeOther) {
-    const syncGrade = () => {
-      const isOther = gradeSelect.value === 'Other';
-      gradeOtherWrap.style.display = isOther ? '' : 'none';
-      gradeOther.required = isOther;
-      if (!isOther) gradeOther.value = '';
+  // Age is calculated from the birthdate (no input), like BMI. Mirrors
+  // age_label() in config.php.
+  const birthInput = root.querySelector('#birth_date_input');
+  const agePreview = root.querySelector('#age_preview');
+  if (birthInput && agePreview) {
+    const showAge = () => {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthInput.value);
+      if (!m) { agePreview.value = ''; return; }
+      const by = +m[1], bm = +m[2], bd = +m[3];
+      const now = new Date();
+      let months = (now.getFullYear() - by) * 12 + (now.getMonth() + 1 - bm);
+      if (now.getDate() < bd) months -= 1;
+      if (months < 0) { agePreview.value = ''; return; }
+      const years = Math.floor(months / 12);
+      agePreview.value = years >= 1
+        ? years + (years === 1 ? ' year old' : ' years old')
+        : months + (months === 1 ? ' month old' : ' months old');
     };
-    gradeSelect.addEventListener('change', () => {
-      syncGrade();
-      if (gradeSelect.value === 'Other') gradeOther.focus();
-    });
+    birthInput.addEventListener('input', showAge);
+    birthInput.addEventListener('change', showAge);
+    showAge();
   }
 
   // Soft-lock warning when recording Midline/Endline without a prior milestone on file.

@@ -21,7 +21,7 @@ if ($q !== '') {
     $searchParams = [$esc . '%', '% ' . $esc . '%'];
 }
 $latestStmt = $pdo->prepare("
-    SELECT hr.*, b.full_name, b.beneficiary_code, b.birth_date, b.sex, b.grade_level, b.program_status, s.site_name
+    SELECT hr.*, b.full_name, b.beneficiary_code, b.birth_date, b.sex, b.program_status, s.site_name
     FROM beneficiaries b
     JOIN health_records hr ON hr.record_id = (
         SELECT latest.record_id
@@ -93,7 +93,7 @@ require __DIR__ . '/partials/header.php';
     <div class="table-wrap dashboard-recent-table">
         <table>
             <thead>
-                <tr><th>ID</th><th>Name</th><th>Site</th><th>Grade Level</th><th>Birth Date</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>
+                <tr><th>ID</th><th>Name</th><th>Site</th><th>Age</th><th>Birth Date</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($latest as $r): ?>
@@ -101,7 +101,7 @@ require __DIR__ . '/partials/header.php';
                     <td><?= $r['beneficiary_code'] ? '<span class="code-tag">' . e($r['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td><strong><?= e($r['full_name']) ?></strong></td>
                     <td><?= e($r['site_name'] ?? '—') ?></td>
-                    <td><?= e($r['grade_level'] ?: '—') ?></td>
+                    <td><?= e(age_label($r['birth_date'])) ?></td>
                     <td><?= e($r['birth_date']) ?></td>
                     <td><?= e($r['sex']) ?></td>
                     <td class="num"><?= e($r['height_cm']) ?> cm</td>

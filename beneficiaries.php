@@ -96,7 +96,7 @@ require __DIR__ . '/partials/header.php';
     <div class="table-wrap dashboard-recent-table">
         <table>
             <thead>
-                <tr><th>ID</th><th>Name</th><th>Site</th><th>Grade Level</th><th>Birth Date</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>
+                <tr><th>ID</th><th>Name</th><th>Site</th><th>Age</th><th>Birth Date</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($rows as $b): $rec = $latestByBeneficiary[$b['beneficiary_id']] ?? null; $nutritionStatus = strtolower($rec['nutritional_status'] ?? ''); $flag = str_contains($nutritionStatus, 'under') || str_contains($nutritionStatus, 'severe'); ?>
@@ -104,7 +104,7 @@ require __DIR__ . '/partials/header.php';
                     <td><?= $b['beneficiary_code'] ? '<span class="code-tag">' . e($b['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td><strong><?= e($b['full_name']) ?></strong></td>
                     <td><?= e($b['site_name'] ?? '—') ?></td>
-                    <td><?= e($b['grade_level'] ?: '—') ?></td>
+                    <td><?= e(age_label($b['birth_date'])) ?></td>
                     <td><?= e($b['birth_date'] ?: '—') ?></td>
                     <td><?= e($b['sex']) ?></td>
                     <td class="num"><?= $rec ? e($rec['height_cm']) . ' cm' : '—' ?></td>

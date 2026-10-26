@@ -246,7 +246,7 @@ if ($page > $totalPages) {
 $offset = ($page - 1) * $perPage;
 
 $stmt = $pdo->prepare("
-            SELECT b.beneficiary_id, b.full_name, b.beneficiary_code, b.grade_level, s.site_name,
+            SELECT b.beneficiary_id, b.full_name, b.beneficiary_code, s.site_name,
            ar.attendance_status, ar.remarks
     FROM beneficiaries b
     LEFT JOIN feeding_sites s ON s.site_id = b.site_id

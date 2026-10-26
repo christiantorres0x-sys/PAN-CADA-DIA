@@ -60,7 +60,7 @@ if ($to !== '') {
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $stmt = $pdo->prepare("
-    SELECT hr.record_id, hr.record_date, hr.milestone, b.beneficiary_id, b.full_name, b.beneficiary_code, b.birth_date, b.sex, b.grade_level,
+    SELECT hr.record_id, hr.record_date, hr.milestone, b.beneficiary_id, b.full_name, b.beneficiary_code, b.birth_date, b.sex,
            b.program_status, b.inactive_since, s.site_name, p.program_name, hr.height_cm, hr.weight_kg, hr.bmi,
            COALESCE(hr.nutritional_status, 'Pending child reference') nutritional_status
     FROM health_records hr
@@ -410,7 +410,7 @@ require __DIR__ . '/partials/header.php';
                     <?php foreach (MILESTONES as $m): ?>
                     <th colspan="3" class="ms-start ms-group"><?= e(milestone_label($m)) ?></th>
                     <?php endforeach; ?>
-                    <th rowspan="2" class="ms-start">Grade Level</th><th rowspan="2">Birth Date</th><th rowspan="2">Sex</th><th rowspan="2">Program Status</th>
+                    <th rowspan="2" class="ms-start">Age</th><th rowspan="2">Birth Date</th><th rowspan="2">Sex</th><th rowspan="2">Program Status</th>
                 </tr>
                 <tr>
                     <?php foreach (MILESTONES as $m): ?>
@@ -424,7 +424,7 @@ require __DIR__ . '/partials/header.php';
                     <td rowspan="<?= $span ?>"><?= $info['beneficiary_code'] ? '<span class="code-tag">' . e($info['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td rowspan="<?= $span ?>"><strong><a href="beneficiary.php?id=<?= (int)$info['beneficiary_id'] ?>"><?= e($info['full_name']) ?></a></strong></td>
                     <?php foreach (MILESTONES as $m): ?><?= $renderMilestoneCells($g['by'][$m]) ?><?php endforeach; ?>
-                    <td rowspan="<?= $span ?>" class="ms-start"><?= e($info['grade_level'] ?: '—') ?></td>
+                    <td rowspan="<?= $span ?>" class="ms-start"><?= e(age_label($info['birth_date'])) ?></td>
                     <td rowspan="<?= $span ?>"><?= e($fmtDate($info['birth_date'])) ?></td>
                     <td rowspan="<?= $span ?>"><?= e($info['sex']) ?></td>
                     <td rowspan="<?= $span ?>"><?= pcd_badge($info['program_status'] ?? 'ACTIVE') ?><?php if (($info['program_status'] ?? '') === 'INACTIVE' && !empty($info['inactive_since'])): ?><br><small class="muted">since <?= e($fmtDate($info['inactive_since'])) ?></small><?php endif; ?></td>

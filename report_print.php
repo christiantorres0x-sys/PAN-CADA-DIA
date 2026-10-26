@@ -149,7 +149,7 @@ $rowNo = 0;
       <tr>
         <th rowspan="2" style="width:0.28in;">No.</th>
         <th rowspan="2">Beneficiary</th>
-        <th rowspan="2" style="width:0.5in;">Grade / Sex</th>
+        <th rowspan="2" style="width:0.5in;">Age / Sex</th>
         <?php foreach (MILESTONES as $m): ?><th colspan="2"><?= e(milestone_label($m)) ?></th><?php endforeach; ?>
       </tr>
       <tr>
@@ -161,7 +161,7 @@ $rowNo = 0;
       <tr>
         <td class="c"><?= $rowNo ?></td>
         <td><strong><?= e($info['full_name']) ?></strong><span class="sub"><?= e($info['beneficiary_code'] ?: '—') ?> &middot; <?= e($fmtDate($info['birth_date'])) ?></span></td>
-        <td class="c"><?= e($info['grade_level'] ?: '—') ?><span class="sub"><?= e($info['sex']) ?></span></td>
+        <td class="c"><?= e(age_label($info['birth_date'])) ?><span class="sub"><?= e($info['sex']) ?></span></td>
         <?php foreach (MILESTONES as $m): $r = $g['by'][$m]; ?>
           <?php if ($r === null): ?>
             <td colspan="2" class="pend"><?= $dateFilterActive ? 'No record in date range' : 'Pending' ?></td>

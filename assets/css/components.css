@@ -1638,7 +1638,7 @@ details.collapsible[open] > summary {
 
 /* Reports > Health Monitoring Records: one row per beneficiary. Baseline /
    Midline / Endline come first (3 compact columns each); the profile columns
-   (grade, birth date, sex, program status) sit at the far right. Sized to fit
+   (age, birth date, sex, program status) sit at the far right. Sized to fit
    a normal desktop width without sideways scrolling; .table-wrap still
    scrolls as a fallback on very narrow screens. */
 table.milestone-table {

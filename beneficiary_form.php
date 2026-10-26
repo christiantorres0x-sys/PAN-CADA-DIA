@@ -16,7 +16,6 @@ $beneficiary = [
     'beneficiary_code' => '',
     'birth_date' => '',
     'sex' => 'Male',
-    'grade_level' => '',
     'site_id' => '',
     'program_status' => 'ACTIVE',
     'date_enlisted' => '',
@@ -65,13 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $parentGuardianName = capitalize_words(trim($_POST['parent_guardian_name'] ?? ''));
     $parentContactNumber = trim($_POST['parent_contact_number'] ?? '');
 
-    // Grade level: either one of the listed options, or "Other" + typed text.
-    $gradeChoice = trim($_POST['grade_level'] ?? '');
-    $gradeOtherText = capitalize_words(trim($_POST['grade_level_other'] ?? ''));
-    $gradeValue = $gradeChoice === GRADE_LEVEL_OTHER
-        ? ($gradeOtherText !== '' ? str_limit_utf8($gradeOtherText, GRADE_LEVEL_MAX_LENGTH) : GRADE_LEVEL_OTHER)
-        : $gradeChoice;
-
     // Keep whatever the user typed on screen if we have to re-show the form
     // (validation error or duplicate warning) instead of resetting it.
     $beneficiary = array_merge($beneficiary, [
@@ -83,7 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'full_name' => $fullName,
         'birth_date' => $_POST['birth_date'] ?? '',
         'sex' => $_POST['sex'] ?? 'Male',
-        'grade_level' => $gradeValue,
         'site_id' => $_POST['site_id'] ?? '',
         // New beneficiaries are always Active; only an edit can switch to Inactive.
         'program_status' => ($isEdit && strtoupper(trim((string)($_POST['program_status'] ?? ''))) === 'INACTIVE') ? 'INACTIVE' : 'ACTIVE',
@@ -150,10 +141,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $msg = 'This beneficiary is not eligible for the program because their BMI is within the Normal range and outside the 0.1 cutoff allowance.';
         flash('danger', $msg);
         if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
-    } elseif ($gradeChoice === GRADE_LEVEL_OTHER && $gradeOtherText === '') {
-        $msg = 'Please type the grade level or category for "Other".';
-        flash('danger', $msg);
-        if (is_ajax_request()) json_response(['ok' => false, 'message' => $msg]);
     } else {
         // Duplicate check: is there already a beneficiary with the same name
         // and birthdate? Confirming once (confirm_duplicate=1) lets the officer
@@ -166,11 +153,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (is_ajax_request()) json_response(['ok' => false, 'duplicate' => true, 'message' => $msg]);
         } elseif ($isEdit) {
             $prevStatus = (string)$pdo->query("SELECT program_status FROM beneficiaries WHERE beneficiary_id=" . (int)$id)->fetchColumn();
-            $sql = "UPDATE beneficiaries SET full_name=?, first_name=?, middle_name=?, last_name=?, parent_guardian_name=?, parent_contact_number=?, birth_date=?, sex=?, grade_level=?, site_id=?, program_status=?, date_enlisted=?, remarks=? WHERE beneficiary_id=?";
+            $sql = "UPDATE beneficiaries SET full_name=?, first_name=?, middle_name=?, last_name=?, parent_guardian_name=?, parent_contact_number=?, birth_date=?, sex=?, site_id=?, program_status=?, date_enlisted=?, remarks=? WHERE beneficiary_id=?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 $fullName, $firstName, $middleName, $lastName, $parentGuardianName, $parentContactNumber,
-                $beneficiary['birth_date'], $beneficiary['sex'], $beneficiary['grade_level'],
+                $beneficiary['birth_date'], $beneficiary['sex'],
                 $siteId, $beneficiary['program_status'], $dateEnlisted, $beneficiary['remarks'], $id,
             ]);
             if ($prevStatus !== $beneficiary['program_status']) {
@@ -191,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->beginTransaction();
             try {
-                $sql = "INSERT INTO beneficiaries (full_name, first_name, middle_name, last_name, parent_guardian_name, parent_contact_number, beneficiary_code, birth_date, sex, grade_level, site_id, program_id, program_status, date_enlisted, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                $sql = "INSERT INTO beneficiaries (full_name, first_name, middle_name, last_name, parent_guardian_name, parent_contact_number, beneficiary_code, birth_date, sex, site_id, program_id, program_status, date_enlisted, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmt = $pdo->prepare($sql);
                 // The ID (year + running order, e.g. 260001) is generated here. If two
                 // officers save at the same instant the unique key rejects the
@@ -201,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     try {
                         $stmt->execute([
                             $fullName, $firstName, $middleName, $lastName, $parentGuardianName, $parentContactNumber, $code,
-                            $beneficiary['birth_date'], $beneficiary['sex'], $beneficiary['grade_level'],
+                            $beneficiary['birth_date'], $beneficiary['sex'],
                             $siteId, $programId, $beneficiary['program_status'], $dateEnlisted, $beneficiary['remarks'],
                         ]);
                         break;
@@ -243,19 +230,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     }
-}
-
-// Grade level dropdown state. A stored value that isn't one of the listed
-// options (older records, or a category typed under "Other") is shown as
-// "Other" with its text filled in, so editing never silently drops it.
-$gradeGroups = grade_level_groups();
-$gradeSelected = (string)$beneficiary['grade_level'];
-$gradeOtherValue = '';
-if ($gradeSelected !== '' && $gradeSelected !== GRADE_LEVEL_OTHER && !in_array($gradeSelected, grade_level_known_values(), true)) {
-    $gradeOtherValue = $gradeSelected;
-    $gradeSelected = GRADE_LEVEL_OTHER;
-} elseif ($gradeSelected === GRADE_LEVEL_OTHER) {
-    $gradeOtherValue = (string)($_POST['grade_level_other'] ?? '');
 }
 
 $pageTitle = $isEdit ? 'Edit Beneficiary' : 'Add Beneficiary';
@@ -348,7 +322,11 @@ require __DIR__ . '/partials/header.php';
                         </div>
                         <div>
                             <label>Birthdate *</label>
-                            <input type="date" name="birth_date" value="<?= e($beneficiary['birth_date']) ?>" required>
+                            <input type="date" name="birth_date" id="birth_date_input" max="<?= date('Y-m-d') ?>" value="<?= e($beneficiary['birth_date']) ?>" required>
+                        </div>
+                        <div>
+                            <label>Age</label>
+                            <input id="age_preview" class="auto-field" readonly tabindex="-1" aria-readonly="true" value="<?= e(age_label($beneficiary['birth_date'] ?? '')) ?>" placeholder="Enter birthdate">
                         </div>
                         <div>
                             <label>Sex *</label>
@@ -356,24 +334,6 @@ require __DIR__ . '/partials/header.php';
                                 <option <?= $beneficiary['sex'] === 'Male' ? 'selected' : '' ?>>Male</option>
                                 <option <?= $beneficiary['sex'] === 'Female' ? 'selected' : '' ?>>Female</option>
                             </select>
-                        </div>
-                        <div>
-                            <label>Grade Level / Category *</label>
-                            <select name="grade_level" id="grade_level_select" required>
-                                <option value="">Select grade level</option>
-                                <?php foreach ($gradeGroups as $groupLabel => $groupOptions): ?>
-                                    <optgroup label="<?= e($groupLabel) ?>">
-                                        <?php foreach ($groupOptions as $g): ?>
-                                            <option value="<?= e($g) ?>" <?= $gradeSelected === $g ? 'selected' : '' ?>><?= e($g) ?></option>
-                                        <?php endforeach; ?>
-                                    </optgroup>
-                                <?php endforeach; ?>
-                                <option value="<?= e(GRADE_LEVEL_OTHER) ?>" <?= $gradeSelected === GRADE_LEVEL_OTHER ? 'selected' : '' ?>>Other (specify)</option>
-                            </select>
-                        </div>
-                        <div class="full-col" id="grade_other_wrap" style="<?= $gradeSelected === GRADE_LEVEL_OTHER ? '' : 'display:none;' ?>">
-                            <label>Specify Grade Level / Category *</label>
-                            <input name="grade_level_other" id="grade_level_other" maxlength="<?= GRADE_LEVEL_MAX_LENGTH ?>" value="<?= e($gradeOtherValue) ?>" placeholder="e.g. Madrasah, Home-schooled" <?= $gradeSelected === GRADE_LEVEL_OTHER ? 'required' : '' ?>>
                         </div>
                     </div>
                 </div>

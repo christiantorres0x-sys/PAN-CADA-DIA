@@ -49,7 +49,7 @@ require __DIR__ . '/partials/header.php';
                 <div><dt>Parent/Guardian Contact</dt><dd><?= e($b['parent_contact_number'] ?? '—') ?></dd></div>
                 <div><dt>Birthdate</dt><dd><?= e($b['birth_date']) ?></dd></div>
                 <div><dt>Sex</dt><dd><?= e($b['sex']) ?></dd></div>
-                <div><dt>Grade Level</dt><dd><?= e($b['grade_level']) ?></dd></div>
+                <div><dt>Age</dt><dd><?= e(age_label($b['birth_date'])) ?></dd></div>
                 <div><dt>Status</dt><dd><?= pcd_badge($b['program_status']) ?></dd></div>
                 <?php if ($b['program_status'] === 'INACTIVE' && !empty($b['inactive_since'])): ?>
                 <div><dt>Inactive Since</dt><dd><?= e($b['inactive_since']) ?></dd></div>

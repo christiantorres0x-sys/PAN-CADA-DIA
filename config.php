@@ -634,30 +634,25 @@ function capitalize_sentences(string $s): string {
 }
 
 // ---------------------------------------------------------------------
-// Beneficiary grade level / learner category
+// Beneficiary age
 //
-// Not every beneficiary is in a graded class: some are toddlers, some are
-// in Alternative Learning System or SPED, some are out of school. The
-// list is grouped (<optgroup>) so it stays scannable, and "Other" lets
-// staff type a category that isn't listed instead of forcing a wrong one.
-// Stored value is the option text itself (or the typed text for "Other").
+// Age is never typed in: it is always calculated from the birthdate, the
+// same way BMI is calculated from height and weight. assets/app.js mirrors
+// this logic for the live preview on the beneficiary form.
 // ---------------------------------------------------------------------
 
-const GRADE_LEVEL_OTHER = 'Other';
-const GRADE_LEVEL_MAX_LENGTH = 80; // matches beneficiaries.grade_level VARCHAR(80)
-
-function grade_level_groups(): array {
-    return [
-        'Not yet in school (by age)' => ['1 year old', '2 years old', '3 years old', '4 years old'],
-        'Early childhood'            => ['Day Care', 'Kinder'],
-        'Elementary'                 => ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'],
-        'Junior High School'         => ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'],
-        'Senior High School'         => ['Grade 11', 'Grade 12'],
-        'Other learners'             => ['Alternative Learning System (ALS)', 'Special Education (SPED)', 'Out of School'],
-    ];
-}
-
-/** Flat list of every predefined grade/category value. */
-function grade_level_known_values(): array {
-    return array_merge(...array_values(grade_level_groups()));
+/** "5 years old", "1 year old" or "8 months old" (under 1 year); "—" if the date is missing or invalid. */
+function age_label(?string $birthDate, ?string $asOf = null): string {
+    $birthDate = trim((string)$birthDate);
+    if ($birthDate === '') return '—';
+    try {
+        $birth = new DateTime($birthDate);
+        $today = new DateTime($asOf ?: 'today');
+    } catch (Exception $e) {
+        return '—';
+    }
+    if ($birth > $today) return '—';
+    $diff = $birth->diff($today);
+    if ($diff->y >= 1) return $diff->y . ($diff->y === 1 ? ' year old' : ' years old');
+    return $diff->m . ($diff->m === 1 ? ' month old' : ' months old');
 }

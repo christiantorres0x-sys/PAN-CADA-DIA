@@ -40,7 +40,6 @@ CREATE TABLE IF NOT EXISTS beneficiaries (
     beneficiary_code VARCHAR(10) NULL,
     birth_date DATE NOT NULL,
     sex ENUM('Male','Female') NOT NULL,
-    grade_level VARCHAR(80) NULL,
     program_status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
     inactive_since DATE NULL,
     date_enlisted DATE NULL,
