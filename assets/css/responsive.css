@@ -121,9 +121,7 @@
     display: none;
   }
 
-  .scope-row .field,
-  .reports-filter-panel .scope-row .field,
-  .reports-filter-panel .scope-row .field.reports-site-field {
+  .scope-row .field {
     flex: 1 1 100%;
     min-width: 100%;
   }

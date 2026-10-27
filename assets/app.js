@@ -614,6 +614,57 @@ function pcdWireAutosubmit(root) {
   });
 }
 
+function pcdWireRequiredFilters(root) {
+  root.querySelectorAll('form[data-required-filters]').forEach((form) => {
+    const fields = Array.from(form.querySelectorAll('[data-filter-required]'));
+    const button = form.querySelector('button[type="submit"]');
+    const notice = form.querySelector('.filter-requirement-notice');
+    const showRequiredLabels = form.hasAttribute('data-required-labels');
+    if (!fields.length || !button) return;
+
+    const update = () => {
+      fields.forEach((field) => {
+        const missing = field.value.trim() === '';
+        const label = form.querySelector(`label[for="${field.id}"]`);
+        if (showRequiredLabels && label) {
+          label.classList.toggle('is-required-missing', missing);
+          field.setAttribute('aria-invalid', missing ? 'true' : 'false');
+        }
+        if (showRequiredLabels) {
+          field.setCustomValidity('');
+          return;
+        }
+        if (field.name === 'site_id') {
+          field.setCustomValidity('');
+          return;
+        }
+        const fieldLabel = label?.textContent.trim().toLowerCase() || 'filter';
+        field.setCustomValidity(missing ? `Choose a ${fieldLabel} before applying filters.` : '');
+      });
+      const complete = fields.every((field) => field.value.trim() !== '' && field.checkValidity());
+      button.disabled = !complete;
+      if (notice) notice.hidden = complete;
+    };
+
+    fields.forEach((field) => {
+      field.addEventListener('input', update);
+      field.addEventListener('change', update);
+    });
+    form.addEventListener('submit', (event) => {
+      update();
+      if (button.disabled) {
+        event.preventDefault();
+        if (showRequiredLabels) {
+          form.querySelector('[aria-invalid="true"]')?.focus();
+        } else {
+          notice?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    });
+    update();
+  });
+}
+
 // Forms that need a confirmation before a bulk change.
 function pcdWireConfirmForms(root) {
   root.querySelectorAll('form[data-confirm]').forEach((form) => {
@@ -747,6 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
   pcdWireAutoCapitalize(document);
   pcdWireAutogrow(document);
   pcdWireAutosubmit(document);
+  pcdWireRequiredFilters(document);
   pcdWireConfirmForms(document);
   pcdWireFormExtras(document);
   pcdWireAttendanceRows(document);

@@ -3,12 +3,20 @@ require_once __DIR__ . '/db.php';
 require_login();
 
 $siteId = (int)($_GET['site_id'] ?? 0);
+$siteSelected = isset($_GET['site_id']) && ctype_digit((string)$_GET['site_id']);
 $programId = (int)($_GET['program_id'] ?? 0);
 $status = trim($_GET['status'] ?? '');
-$month = trim($_GET['month'] ?? '');
-$year = trim($_GET['year'] ?? '');
+$monthChoice = trim($_GET['month'] ?? '');
+$yearChoice = trim($_GET['year'] ?? '');
+$monthSelected = $monthChoice !== '';
+$yearSelected = $yearChoice !== '';
+$month = $monthChoice === 'all' ? '' : $monthChoice;
+$year = $yearChoice === 'all' ? '' : $yearChoice;
 if ($month !== '' && (!ctype_digit($month) || (int)$month < 1 || (int)$month > 12)) $month = '';
 if ($year !== '' && (!ctype_digit($year) || (int)$year < 1900 || (int)$year > (int)date('Y'))) $year = '';
+$monthSelected = $monthSelected && ($monthChoice === 'all' || $month !== '');
+$yearSelected = $yearSelected && ($yearChoice === 'all' || $year !== '');
+$reportFiltersComplete = $siteSelected && $monthSelected && $yearSelected;
 $month = $month === '' ? '' : (string)(int)$month;
 $year = $year === '' ? '' : (string)(int)$year;
 $from = '';
@@ -144,7 +152,7 @@ $activeFilters = [];
 if ($siteId > 0) {
     $siteName = '';
     foreach ($sites as $s) { if ((int)$s['site_id'] === $siteId) { $siteName = $s['site_name']; break; } }
-    $activeFilters[] = ['label' => 'Site: ' . $siteName, 'clear' => array_diff_key($_GET, ['site_id' => ''])];
+    $activeFilters[] = ['label' => $siteName, 'clear' => array_diff_key($_GET, ['site_id' => ''])];
 }
 if ($programId > 0) {
     $programName = '';
@@ -154,8 +162,8 @@ if ($programId > 0) {
 if ($status !== '') {
     $activeFilters[] = ['label' => 'Status: ' . $status, 'clear' => array_diff_key($_GET, ['status' => ''])];
 }
-if ($month !== '') $activeFilters[] = ['label' => 'Month: ' . $monthName, 'clear' => array_diff_key($_GET, ['month' => ''])];
-if ($year !== '') $activeFilters[] = ['label' => 'Year: ' . $year, 'clear' => array_diff_key($_GET, ['year' => ''])];
+if ($month !== '') $activeFilters[] = ['label' => $monthName, 'clear' => array_diff_key($_GET, ['month' => ''])];
+if ($year !== '') $activeFilters[] = ['label' => $year, 'clear' => array_diff_key($_GET, ['year' => ''])];
 
 // Attendance participation, scoped by the same site/program/status/date
 // filters as the tables above (using attendance_date for the date range
@@ -348,36 +356,39 @@ require __DIR__ . '/partials/header.php';
 <?php if (!$generated): ?>
 <section class="panel filters-panel reports-filter-panel">
     <span class="filter-label">Filter</span>
-    <form class="scope-row" method="get">
+    <form class="scope-row" method="get" data-required-filters data-required-labels>
         <input type="hidden" name="generated" value="1">
-        <div class="field filter-field reports-site-field <?= $siteId > 0 ? 'is-active' : '' ?>">
-            <label for="report_site">Feeding Site</label>
-            <select id="report_site" name="site_id">
-                <option value="0">All sites</option>
+        <div class="field filter-field <?= $siteSelected && $siteId > 0 ? 'is-active' : '' ?>">
+            <label for="report_site">Feeding Site *</label>
+            <select id="report_site" name="site_id" data-filter-required>
+                <option value="" <?= !$siteSelected ? 'selected' : '' ?>>Select feeding site</option>
+                <option value="0" <?= $siteSelected && $siteId === 0 ? 'selected' : '' ?>>All sites</option>
                 <?php foreach ($sites as $s): ?>
                     <option value="<?= $s['site_id'] ?>" <?= $siteId === (int)$s['site_id'] ? 'selected' : '' ?>><?= e($s['site_name']) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
         <div class="field filter-field <?= $month !== '' ? 'is-active' : '' ?>">
-            <label for="report_month">Month</label>
-            <select id="report_month" name="month">
-                <option value="">All months</option>
+            <label for="report_month">Month *</label>
+            <select id="report_month" name="month" data-filter-required>
+                <option value="" <?= !$monthSelected ? 'selected' : '' ?>>Select month</option>
+                <option value="all" <?= $monthChoice === 'all' ? 'selected' : '' ?>>All months</option>
                 <?php for ($monthOption = 1; $monthOption <= 12; $monthOption++): ?>
                     <option value="<?= $monthOption ?>" <?= (int)$month === $monthOption ? 'selected' : '' ?>><?= e(date('F', mktime(0, 0, 0, $monthOption, 1))) ?></option>
                 <?php endfor; ?>
             </select>
         </div>
         <div class="field filter-field <?= $year !== '' ? 'is-active' : '' ?>">
-            <label for="report_year">Year</label>
-            <select id="report_year" name="year">
-                <option value="">All years</option>
+            <label for="report_year">Year *</label>
+            <select id="report_year" name="year" data-filter-required>
+                <option value="" <?= !$yearSelected ? 'selected' : '' ?>>Select year</option>
+                <option value="all" <?= $yearChoice === 'all' ? 'selected' : '' ?>>All years</option>
                 <?php foreach ($reportYears as $yearOption): ?>
                     <option value="<?= $yearOption ?>" <?= (int)$year === $yearOption ? 'selected' : '' ?>><?= $yearOption ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <button class="btn primary">Generate</button>
+        <button class="btn primary" type="submit"<?= $reportFiltersComplete ? '' : ' disabled' ?>>Generate</button>
     </form>
     <?php if ($activeFilters): ?>
     <div class="active-filters">
@@ -401,7 +412,9 @@ require __DIR__ . '/partials/header.php';
 <?php endif; ?>
 
 <section class="panel bp-card" id="records">
-    <h2>Health Monitoring Records</h2>
+    <div class="panel-head report-analysis-head">
+        <h2>Health Monitoring Records</h2>
+    </div>
     <div class="table-wrap reports-health-records-wrap<?= $healthTableRowCount >= 10 ? ' is-scrollable' : '' ?>">
         <table class="milestone-table">
             <thead>
@@ -410,7 +423,7 @@ require __DIR__ . '/partials/header.php';
                     <?php foreach (MILESTONES as $m): ?>
                     <th colspan="3" class="ms-start ms-group"><?= e(milestone_label($m)) ?></th>
                     <?php endforeach; ?>
-                    <th rowspan="2" class="ms-start">Age</th><th rowspan="2">Birth Date</th><th rowspan="2">Sex</th><th rowspan="2">Program Status</th>
+                    <th rowspan="2" class="ms-start">Birth Date</th><th rowspan="2">Age</th><th rowspan="2">Sex</th><th rowspan="2">Program Status</th>
                 </tr>
                 <tr>
                     <?php foreach (MILESTONES as $m): ?>
@@ -424,8 +437,8 @@ require __DIR__ . '/partials/header.php';
                     <td rowspan="<?= $span ?>"><?= $info['beneficiary_code'] ? '<span class="code-tag">' . e($info['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td rowspan="<?= $span ?>"><strong><a href="beneficiary.php?id=<?= (int)$info['beneficiary_id'] ?>"><?= e($info['full_name']) ?></a></strong></td>
                     <?php foreach (MILESTONES as $m): ?><?= $renderMilestoneCells($g['by'][$m]) ?><?php endforeach; ?>
-                    <td rowspan="<?= $span ?>" class="ms-start"><?= e(age_label($info['birth_date'])) ?></td>
                     <td rowspan="<?= $span ?>"><?= e($fmtDate($info['birth_date'])) ?></td>
+                    <td rowspan="<?= $span ?>" class="ms-start"><?= e(age_label($info['birth_date'])) ?></td>
                     <td rowspan="<?= $span ?>"><?= e($info['sex']) ?></td>
                     <td rowspan="<?= $span ?>"><?= pcd_badge($info['program_status'] ?? 'ACTIVE') ?><?php if (($info['program_status'] ?? '') === 'INACTIVE' && !empty($info['inactive_since'])): ?><br><small class="muted">since <?= e($fmtDate($info['inactive_since'])) ?></small><?php endif; ?></td>
                 </tr>
@@ -463,12 +476,12 @@ require __DIR__ . '/partials/header.php';
     </div>
 
 <div class="chart-pair chart-trio">
-<section class="panel bp-card" id="attendance">
+<section class="panel bp-card report-summary-chart" id="attendance">
     <div class="panel-head">
         <h2>Attendance Participation</h2>
     </div>
-    <div class="pie-wrap attendance-pie-wrap">
-        <div class="pie-chart" role="img" aria-label="<?= e('Attendance: ' . implode(', ', array_map(fn($k, $n) => $attLabels[$k] . ' ' . $n, array_keys($attCounts), $attCounts))) ?>" style="background: conic-gradient(<?= $attGradient ?>);"></div>
+    <div class="pie-wrap">
+        <div class="pie-chart sm" role="img" aria-label="<?= e('Attendance: ' . implode(', ', array_map(fn($k, $n) => $attLabels[$k] . ' ' . $n, array_keys($attCounts), $attCounts))) ?>" style="background: conic-gradient(<?= $attGradient ?>);"></div>
         <div class="pie-legend">
             <?php foreach ($attCounts as $key => $count): ?>
             <div class="pie-legend-item"><span class="swatch" style="background:<?= $attColors[$key] ?>;"></span><?= e($attLabels[$key]) ?> <strong><?= $count ?></strong></div>
@@ -478,12 +491,12 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 
-<section class="panel bp-card" id="age">
+<section class="panel bp-card report-summary-chart" id="age">
     <div class="panel-head">
         <h2>Age Distribution</h2>
     </div>
     <div class="pie-wrap">
-        <div class="pie-chart" role="img" aria-label="<?= e('Age distribution: ' . implode(', ', array_map(fn($l, $n) => $l . ' years ' . $n, array_keys($ageBuckets), $ageBuckets))) ?>" style="background: conic-gradient(<?= $pieGradient ?>);"></div>
+        <div class="pie-chart sm" role="img" aria-label="<?= e('Age distribution: ' . implode(', ', array_map(fn($l, $n) => $l . ' years ' . $n, array_keys($ageBuckets), $ageBuckets))) ?>" style="background: conic-gradient(<?= $pieGradient ?>);"></div>
         <div class="pie-legend">
             <?php foreach ($ageBuckets as $label => $count): ?>
             <div class="pie-legend-item"><span class="swatch" style="background:<?= $ageColors[$label] ?>;"></span><?= e($label) ?> years <strong><?= $count ?></strong></div>
@@ -493,12 +506,12 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 
-<section class="panel bp-card" id="gender">
+<section class="panel bp-card report-summary-chart" id="gender">
     <div class="panel-head">
         <h2>Gender Distribution</h2>
     </div>
     <div class="pie-wrap">
-        <div class="pie-chart" role="img" aria-label="<?= e('Gender distribution: ' . implode(', ', array_map(fn($l, $n) => $l . ' ' . $n, array_keys($sexCounts), $sexCounts))) ?>" style="background: conic-gradient(<?= $sexGradient ?>);"></div>
+        <div class="pie-chart sm" role="img" aria-label="<?= e('Gender distribution: ' . implode(', ', array_map(fn($l, $n) => $l . ' ' . $n, array_keys($sexCounts), $sexCounts))) ?>" style="background: conic-gradient(<?= $sexGradient ?>);"></div>
         <div class="pie-legend">
             <?php foreach ($sexCounts as $label => $count): ?>
             <div class="pie-legend-item"><span class="swatch" style="background:<?= $sexColors[$label] ?>;"></span><?= e($label) ?> <strong><?= $count ?></strong></div>
@@ -511,7 +524,7 @@ require __DIR__ . '/partials/header.php';
 </section><!-- /#bmi-charts (Report Analysis) -->
 
 <section class="panel bp-card report-attendance-register" id="attendance-register">
-    <div class="panel-head">
+    <div class="panel-head report-analysis-head">
         <h2>Attendance</h2>
     </div>
     <?php if (!$attendanceDates): ?>
@@ -521,6 +534,11 @@ require __DIR__ . '/partials/header.php';
     <?php else: ?>
     <div class="table-wrap reports-attendance-wrap">
         <table class="reports-attendance-table">
+            <colgroup>
+                <col class="attendance-id-column">
+                <col class="attendance-beneficiary-column">
+                <?php foreach ($attendanceDates as $_): ?><col class="attendance-day-col"><?php endforeach; ?>
+            </colgroup>
             <thead>
                 <tr>
                     <th rowspan="2">ID</th>

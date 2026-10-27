@@ -19,12 +19,14 @@ $pct = fn(int $n, int $t): string => $t > 0 ? number_format($n / $t * 100, 1) . 
 // Status counts for the overall summary (latest classification of each record in scope).
 $statusTotals = [];
 foreach ($rows as $r) {
-    $k = $r['nutritional_status'] === 'Pending child reference' ? 'Not yet classified' : $r['nutritional_status'];
+  if ($r['nutritional_status'] === 'Pending child reference') continue;
+  $k = $r['nutritional_status'];
     $statusTotals[$k] = ($statusTotals[$k] ?? 0) + 1;
 }
 arsort($statusTotals);
+$classifiedTotal = array_sum($statusTotals);
 $attRate = $attTotal > 0 ? number_format($attCounts['PRESENT'] / $attTotal * 100, 1) . '%' : '—';
-$rowNo = 0;
+$attendanceDateGroups = array_chunk($attendanceDates, 31);
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -65,9 +67,18 @@ $rowNo = 0;
   table.data td.c { text-align: center; }
   table.data td.r { text-align: right; }
   table.data .sub { display: block; font-size: 7.5pt; color: #444; }
+  table.health-records-table td.beneficiary-name { white-space: nowrap; }
   table.data .flag { font-weight: 700; }
   table.data .pend { color: #666; font-style: italic; text-align: center; }
   table.data tfoot td { font-weight: 700; background: #f1f3f8; }
+  table.attendance-register { table-layout: fixed; font-size: 6.5pt; margin-top: 6px; }
+  table.attendance-register th, table.attendance-register td { padding: 2px 1px; text-align: center; }
+  table.attendance-register .id-col { width: 0.48in; }
+  table.attendance-register .name-col { width: 1.55in; }
+  table.attendance-register .date-col { width: auto; }
+  table.attendance-register td.name { text-align: left; overflow-wrap: anywhere; }
+  table.attendance-register .mark-present { color: #137a40; font-weight: 700; }
+  table.attendance-register .mark-absent { color: #c53030; font-weight: 700; }
   .caption { font-size: 8.5pt; font-style: italic; margin: 0 0 8px; }
 
   .charts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; break-inside: avoid; }
@@ -112,18 +123,16 @@ $rowNo = 0;
     <div>
       <div class="org">Ateneo de Zamboanga University</div>
       <div class="prog"><?= e(APP_NAME) ?></div>
-      <div class="sys"><?= e(APP_FULL_NAME) ?></div>
+      <div class="sys">Health Monitoring System</div>
     </div>
     <img src="assets/images/CCES-logo.png" alt="">
   </header>
 
   <h1 class="title">Health Monitoring Report</h1>
-  <div class="subtitle">Nutritional Status and Attendance Analysis</div>
-
   <table class="meta">
-    <tr><td class="k">Feeding Site</td><td>: <?= e($scopeSite) ?></td><td class="k">Date Generated</td><td>: <?= e(date('F j, Y')) ?></td></tr>
-    <tr><td class="k">Program</td><td>: <?= e($scopeProgram) ?></td><td class="k">Period Covered</td><td>: <?= e($period) ?></td></tr>
-    <tr><td class="k">Program Status</td><td>: <?= e($statusScope) ?></td><td class="k">Prepared By</td><td>: <?= e($preparedBy ?: '—') ?></td></tr>
+    <tr><td class="k">Feeding Site:</td><td><?= e($scopeSite) ?></td><td class="k">Date Generated:</td><td><?= e(date('F j, Y')) ?></td></tr>
+    <tr><td class="k">Program:</td><td><?= e($scopeProgram) ?></td><td class="k">Period Covered:</td><td><?= e($period) ?></td></tr>
+    <tr><td class="k">Program Status:</td><td><?= e($statusScope) ?></td><td class="k">Prepared By:</td><td><?= e($preparedBy ?: '—') ?></td></tr>
   </table>
 
   <h2 class="sec">I. Summary</h2>
@@ -131,37 +140,41 @@ $rowNo = 0;
   <?php if ($avgBmi !== null): ?>and an average BMI of <strong><?= e($n2($avgBmi)) ?></strong> kg/m&sup2;<?php endif; ?>.
   Attendance in the selected scope was recorded at <strong><?= e($attRate) ?></strong> participation (<?= (int)$attCounts['PRESENT'] ?> present, <?= (int)$attCounts['ABSENT'] ?> absent out of <?= (int)$attTotal ?> record<?= $attTotal === 1 ? '' : 's' ?>).</p>
   <?php if ($statusTotals): ?>
-  <table class="data" style="width:60%;">
-    <thead><tr><th>Weight Status (all milestones)</th><th style="width:0.8in;">Records</th><th style="width:0.8in;">Share</th></tr></thead>
+  <table class="data">
+    <thead><tr><th>Weight Status (All Milestones)</th><th style="width:0.8in;">Records</th><th style="width:0.8in;">Share</th></tr></thead>
     <tbody>
       <?php foreach ($statusTotals as $k => $n): ?>
-      <tr><td><?= e($k) ?></td><td class="c"><?= (int)$n ?></td><td class="c"><?= e($pct($n, $totalRecords)) ?></td></tr>
+      <tr><td><?= e($k) ?></td><td class="c"><?= (int)$n ?></td><td class="c"><?= e($pct($n, $classifiedTotal)) ?></td></tr>
       <?php endforeach; ?>
     </tbody>
-    <tfoot><tr><td>Total</td><td class="c"><?= (int)$totalRecords ?></td><td class="c">100%</td></tr></tfoot>
+    <tfoot><tr><td>Total</td><td class="c"><?= (int)$classifiedTotal ?></td><td class="c">100%</td></tr></tfoot>
   </table>
   <?php endif; ?>
 
   <h2 class="sec">II. Health Monitoring Records</h2>
   <p class="caption">Height (cm), weight (kg) and BMI (kg/m&sup2;) per growth milestone. Weight status follows the Asian BMI cut-offs.</p>
-  <table class="data">
+  <table class="data health-records-table">
     <thead>
       <tr>
-        <th rowspan="2" style="width:0.28in;">No.</th>
+        <th rowspan="2" style="width:0.48in;">ID</th>
         <th rowspan="2">Beneficiary</th>
-        <th rowspan="2" style="width:0.5in;">Age / Sex</th>
+        <th rowspan="2">Birth Date</th>
+        <th rowspan="2" style="width:0.5in;">Age</th>
+        <th rowspan="2">Sex</th>
         <?php foreach (MILESTONES as $m): ?><th colspan="2"><?= e(milestone_label($m)) ?></th><?php endforeach; ?>
       </tr>
       <tr>
-        <?php foreach (MILESTONES as $m): ?><th>Date &middot; Ht / Wt</th><th>BMI &middot; Status</th><?php endforeach; ?>
+        <?php foreach (MILESTONES as $m): ?><th>Ht / Wt &middot; Date</th><th>BMI &middot; Status</th><?php endforeach; ?>
       </tr>
     </thead>
     <tbody>
-      <?php foreach ($recordGroups as $g): $info = $g['info']; $rowNo++; ?>
+      <?php foreach ($recordGroups as $g): $info = $g['info']; ?>
       <tr>
-        <td class="c"><?= $rowNo ?></td>
-        <td><strong><?= e($info['full_name']) ?></strong><span class="sub"><?= e($info['beneficiary_code'] ?: '—') ?> &middot; <?= e($fmtDate($info['birth_date'])) ?></span></td>
-        <td class="c"><?= e(age_label($info['birth_date'])) ?><span class="sub"><?= e($info['sex']) ?></span></td>
+        <td class="c"><?= e($info['beneficiary_code'] ?: '—') ?></td>
+        <td class="beneficiary-name"><strong><?= e($info['full_name']) ?></strong></td>
+        <td><?= e($fmtD($info['birth_date'])) ?></td>
+        <td class="c"><?= e(age_label($info['birth_date'])) ?></td>
+        <td class="c"><?= e($info['sex']) ?></td>
         <?php foreach (MILESTONES as $m): $r = $g['by'][$m]; ?>
           <?php if ($r === null): ?>
             <td colspan="2" class="pend"><?= $dateFilterActive ? 'No record in date range' : 'Pending' ?></td>
@@ -169,7 +182,7 @@ $rowNo = 0;
             $lower = strtolower($r['nutritional_status']);
             $flag = str_contains($lower, 'under') || str_contains($lower, 'severe');
             $st = $r['nutritional_status'] === 'Pending child reference' ? 'Pending' : $r['nutritional_status']; ?>
-            <td><?= e($fmtDate($r['record_date'])) ?><span class="sub"><?= e($fmtNum($r['height_cm'])) ?> cm / <?= e($fmtNum($r['weight_kg'])) ?> kg</span></td>
+            <td><strong><?= e($fmtNum($r['height_cm'])) ?> cm / <?= e($fmtNum($r['weight_kg'])) ?> kg</strong><span class="sub"><?= e($fmtD($r['record_date'])) ?></span></td>
             <td class="c"><strong><?= e(number_format((float)$r['bmi'], 2, '.', '')) ?></strong><span class="sub<?= $flag ? ' flag' : '' ?>"><?= e($st) ?></span></td>
           <?php endif; ?>
         <?php endforeach; ?>
@@ -228,6 +241,59 @@ $rowNo = 0;
       </div>
     </div>
   </div>
+
+  <h2 class="sec">V. Attendance</h2>
+  <?php if (!$attendanceDates): ?>
+    <p class="caption">No attendance days match the selected filters.</p>
+  <?php elseif (!$attendanceBeneficiaries): ?>
+    <p class="caption">No beneficiaries match the selected filters.</p>
+  <?php else: ?>
+    <?php foreach ($attendanceDateGroups as $groupIndex => $dateGroup): ?>
+    <?php if (count($attendanceDateGroups) > 1): ?>
+      <p class="caption">Attendance dates <?= e($fmtD($dateGroup[0])) ?> to <?= e($fmtD(end($dateGroup))) ?></p>
+    <?php endif; ?>
+    <table class="data attendance-register">
+      <colgroup>
+        <col class="id-col">
+        <col class="name-col">
+        <?php foreach ($dateGroup as $_): ?><col class="date-col"><?php endforeach; ?>
+      </colgroup>
+      <thead>
+        <tr>
+          <th rowspan="2">ID</th>
+          <th rowspan="2">Beneficiary</th>
+          <th colspan="<?= count($dateGroup) ?>">Implementation Date (<?= e($period) ?>)</th>
+        </tr>
+        <tr>
+          <?php foreach ($dateGroup as $attendanceDate): ?>
+            <?php
+              if ($month !== '' && $year !== '') $attendanceDateLabel = date('j', strtotime($attendanceDate));
+              elseif ($month !== '' || $year !== '') $attendanceDateLabel = date('n/j', strtotime($attendanceDate));
+              else $attendanceDateLabel = date('n/j/y', strtotime($attendanceDate));
+            ?>
+            <th><?= e($attendanceDateLabel) ?></th>
+          <?php endforeach; ?>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($attendanceBeneficiaries as $attendanceBeneficiary): ?>
+        <tr>
+          <td><?= e($attendanceBeneficiary['beneficiary_code'] ?: '—') ?></td>
+          <td class="name"><?= e($attendanceBeneficiary['full_name']) ?></td>
+          <?php foreach ($dateGroup as $attendanceDate): ?>
+            <?php $dayStatus = $attendanceMatrix[(int)$attendanceBeneficiary['beneficiary_id']][$attendanceDate] ?? ''; ?>
+            <td>
+              <?php if ($dayStatus === 'PRESENT'): ?><span class="mark-present">&#10003;</span>
+              <?php elseif ($dayStatus === 'ABSENT'): ?><span class="mark-absent">&times;</span>
+              <?php else: ?>—<?php endif; ?>
+            </td>
+          <?php endforeach; ?>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+    <?php endforeach; ?>
+  <?php endif; ?>
 
   <div class="signatures">
     <div class="sig"><div class="line"><?= e($preparedBy ?: ' ') ?></div>Prepared by</div>

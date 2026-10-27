@@ -366,20 +366,26 @@
   flex: none;
 }
 
+.scope-row .btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.filter-requirement-notice {
+  flex: 1 0 100%;
+  margin: 0 4px 2px;
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.scope-row[data-required-labels] label.is-required-missing {
+  color: var(--red);
+}
+
 .attendance-filter-panel .scope-row > .btn.primary,
 .reports-filter-panel .scope-row > .btn.primary {
   margin-right: 0;
-}
-
-/* Reports filter: site dropdown stays compact so the From / To date fields fit beside it. */
-.reports-filter-panel .scope-row .field {
-  flex: 0 1 180px;
-  min-width: 150px;
-}
-
-.reports-filter-panel .scope-row .field.reports-site-field {
-  flex: 0 1 260px;
-  min-width: 200px;
 }
 
 .beneficiary-search-row {
@@ -1657,17 +1663,32 @@ table.milestone-table {
 }
 
 .reports-attendance-table {
-  width: max-content;
+  width: 100%;
   min-width: 100%;
-  table-layout: auto;
+  table-layout: fixed;
+}
+
+.reports-attendance-table .attendance-id-column {
+  width: 84px;
+}
+
+.reports-attendance-table .attendance-beneficiary-column {
+  width: 180px;
+}
+
+.reports-attendance-table .attendance-day-col {
+  width: auto;
 }
 
 .reports-attendance-table th:first-child,
-.reports-attendance-table td:first-child,
+.reports-attendance-table td:first-child {
+  white-space: nowrap;
+}
+
 .reports-attendance-table th:nth-child(2),
 .reports-attendance-table td:nth-child(2) {
-  width: max-content;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .reports-attendance-table .attendance-days-heading {
@@ -1676,9 +1697,9 @@ table.milestone-table {
 
 .reports-attendance-table .attendance-day-column,
 .reports-attendance-table .attendance-day-cell {
-  width: 44px;
-  min-width: 44px;
-  max-width: 44px;
+  width: auto;
+  min-width: 0;
+  max-width: none;
   padding-left: 4px;
   padding-right: 4px;
   text-align: center;
@@ -1712,6 +1733,10 @@ table.milestone-table th {
 table.milestone-table td {
   font-size: 12px;
   vertical-align: middle;
+}
+
+table.milestone-table tr.group-start td:nth-child(2) {
+  white-space: nowrap;
 }
 
 table.milestone-table th.ms-group {
@@ -2213,7 +2238,7 @@ table.history-table td {
 .report-shell .report-analysis-head {
   justify-content: flex-start;
   align-items: flex-start;
-  margin-bottom: 4px;
+  margin-bottom: 12px;
 }
 
 /* Attendance + Age live inside the one Report Analysis card: no cards of their own */
@@ -2229,6 +2254,28 @@ table.history-table td {
   background: transparent;
   padding: 0;
   border-radius: 0;
+}
+
+.report-shell .report-summary-chart .pie-wrap {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding-top: 12px;
+  gap: 0;
+}
+
+.report-shell .report-summary-chart .panel-head h2 {
+  font-size: 13px;
+  width: 100%;
+  text-align: center;
+}
+
+.report-shell .report-summary-chart .pie-chart {
+  margin: 0 auto 8px;
+}
+
+.report-shell .report-summary-chart .pie-legend {
+  align-items: center;
 }
 
 @media (max-width: 900px) {

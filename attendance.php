@@ -188,9 +188,13 @@ $date = $_GET['date'] ?? $today;
 if ($date > $today) {
     $date = $today;
 }
+$purposeChoice = trim($_GET['purpose'] ?? '');
+$purposeSelected = in_array($purposeChoice, ['mark', 'history'], true);
 $siteId = (int)($_GET['site_id'] ?? 0);
+$siteSelected = isset($_GET['site_id']) && ctype_digit((string)$_GET['site_id']);
+$attendanceFiltersComplete = $purposeSelected && $siteSelected && $date !== '';
 $q = trim($_GET['q'] ?? '');
-$purpose = ($_GET['purpose'] ?? 'mark') === 'history' ? 'history' : 'mark';
+$purpose = $purposeChoice === 'history' ? 'history' : 'mark';
 $applied = ($_GET['applied'] ?? '') === '1';
 
 $sites = $pdo->query("SELECT * FROM feeding_sites WHERE status='ACTIVE' ORDER BY site_name")->fetchAll();
@@ -272,29 +276,31 @@ require __DIR__ . '/partials/header.php';
 <?php if (!$applied): ?>
 <section class="panel filters-panel attendance-filter-panel">
     <span class="filter-label">Filter</span>
-    <form class="scope-row" method="get">
+    <form class="scope-row" method="get" data-required-filters data-required-labels>
         <input type="hidden" name="applied" value="1">
             <div class="field filter-field">
-                <label for="att_purpose">Purpose</label>
-                <select id="att_purpose" name="purpose">
-                    <option value="mark" <?= $purpose === 'mark' ? 'selected' : '' ?>>Mark attendance</option>
-                    <option value="history" <?= $purpose === 'history' ? 'selected' : '' ?>>View previous attendance</option>
+                <label for="att_purpose">Purpose *</label>
+                <select id="att_purpose" name="purpose" data-filter-required>
+                    <option value="" <?= !$purposeSelected ? 'selected' : '' ?>>Select purpose</option>
+                    <option value="mark" <?= $purposeChoice === 'mark' ? 'selected' : '' ?>>Mark attendance</option>
+                    <option value="history" <?= $purposeChoice === 'history' ? 'selected' : '' ?>>View previous attendance</option>
                 </select>
             </div>
-            <div class="field filter-field <?= $siteId > 0 ? 'is-active' : '' ?>">
-                <label for="att_site">Feeding Site</label>
-                <select id="att_site" name="site_id">
-                    <option value="0">All sites</option>
+            <div class="field filter-field <?= $siteSelected && $siteId > 0 ? 'is-active' : '' ?>">
+                <label for="att_site">Feeding Site *</label>
+                <select id="att_site" name="site_id" data-filter-required>
+                    <option value="" <?= !$siteSelected ? 'selected' : '' ?>>Select feeding site</option>
+                    <option value="0" <?= $siteSelected && $siteId === 0 ? 'selected' : '' ?>>All sites</option>
                     <?php foreach ($sites as $s): ?>
                         <option value="<?= $s['site_id'] ?>" <?= $siteId === (int)$s['site_id'] ? 'selected' : '' ?>><?= e($s['site_name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="field filter-field is-active">
-                <label for="att_date">Date</label>
-                <input id="att_date" type="date" name="date" value="<?= e($date) ?>" max="<?= e($today) ?>">
+                <label for="att_date">Date *</label>
+                <input id="att_date" type="date" name="date" value="<?= e($date) ?>" max="<?= e($today) ?>" data-filter-required>
             </div>
-            <button class="btn primary">Apply</button>
+            <button class="btn primary" type="submit"<?= $attendanceFiltersComplete ? '' : ' disabled' ?>>Apply</button>
     </form>
 </section>
 <?php else: ?>
