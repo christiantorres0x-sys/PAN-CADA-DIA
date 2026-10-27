@@ -216,3 +216,542 @@
     display: block;
   }
 }
+
+/* ==========================================================================
+   Extra responsive layer: phones, small/large tablets, laptops, ultra-wide
+   and landscape phones. Loaded last, so these override the component CSS.
+   ========================================================================== */
+
+/* ---- Global safety nets (all sizes) ----------------------------------- */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-wrap: break-word;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+}
+
+.table-wrap {
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+/* Very large monitors: keep content readable instead of stretching forever. */
+@media (min-width: 1700px) {
+  .content {
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* ---- Laptops / small desktops ------------------------------------------ */
+@media (max-width: 1280px) {
+  .page-title h1 {
+    font-size: 34px;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---- Tablets (landscape + portrait) ------------------------------------ */
+@media (max-width: 1000px) {
+  .page-title h1 {
+    font-size: 30px;
+  }
+
+  .page-title {
+    margin-left: 4px;
+  }
+
+  .bmi-snapshot-grid,
+  .profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-top-grid {
+    margin-top: 36px;
+  }
+
+  .report-shell {
+    padding: 16px;
+  }
+
+  .slideover-backdrop {
+    padding: 16px;
+  }
+}
+
+/* ---- Landscape phones / short screens: sidebar must scroll, not clip --- */
+@media (min-width: 761px) and (max-height: 640px) {
+  .sidebar {
+    overflow-y: auto;
+    padding-top: 12px;
+  }
+
+  .sidebar .brand-mark {
+    width: 64px;
+    height: 64px;
+    margin-top: 0;
+  }
+
+  .nav {
+    gap: 8px;
+  }
+
+  .nav a {
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+}
+
+@media (min-width: 761px) {
+  .sidebar {
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+  }
+}
+
+/* ---- Phones & small tablets (portrait) --------------------------------- */
+@media (max-width: 760px) {
+  /* Top bar: scroll sideways smoothly, hide the scrollbar, respect notches. */
+  .sidebar {
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    height: auto;
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav {
+    gap: 6px;
+  }
+
+  .nav a {
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: nowrap;
+    border-radius: 10px;
+  }
+
+  .nav a .icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .content {
+    padding: 12px max(12px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+
+  /* Remove the desktop-only side gutters so cards use the full width. */
+  .stat,
+  .panel,
+  .chart-pair,
+  .attendance-alert,
+  .cards.cards-2.attendance-summary-cards,
+  .pending-card,
+  .page-title,
+  .beneficiaries-page .search,
+  .dashboard-page .search {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .beneficiaries-page .search,
+  .dashboard-page .search {
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  .page-title {
+    gap: 8px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+
+  .page-title h1 {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .page-title p {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .page-actions {
+    width: 100%;
+  }
+
+  .page-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Short stat cards sit two-up on phones; wide ones stack. */
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .cards > .stat {
+    margin: 0;
+  }
+
+  .attendance-summary-cards .stat strong {
+    font-size: 34px;
+  }
+
+  .bmi-snapshot-grid,
+  .profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form-grid,
+  .form-grid-3,
+  .filter-grid,
+  .grid-2,
+  .grid-3,
+  .beneficiary-form-grid,
+  .milestone-panel,
+  .quick-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Dashboard top area */
+  .dash-top-grid {
+    grid-template-columns: 1fr;
+    margin-top: 12px;
+    margin-bottom: 18px;
+  }
+
+  .dash-top-right {
+    margin-top: 28px;
+  }
+
+  .dash-top-right .filter-label {
+    white-space: normal;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .btn.dash-add-beneficiary {
+    width: 100%;
+    max-width: none;
+    flex-direction: row;
+  }
+
+  .btn.quick-primary {
+    width: 100%;
+    min-height: 56px;
+  }
+
+  .pending-card {
+    height: auto;
+    min-height: 120px;
+  }
+
+  .report-shell,
+  .bp {
+    padding: 12px;
+  }
+
+  .bp-card {
+    padding: 14px;
+  }
+
+  .panel {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .panel-head {
+    flex-wrap: wrap;
+  }
+
+  .attendance-panel > .table-wrap,
+  .dashboard-recent-table {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* Tables keep their columns and scroll sideways inside their own box. */
+  .table-wrap table {
+    min-width: 560px;
+  }
+
+  .table-wrap table.history-table {
+    min-width: 0;
+  }
+
+  th,
+  td {
+    padding: 8px 8px;
+    font-size: 13px;
+  }
+
+  table.milestone-table {
+    min-width: 900px;
+  }
+
+  .reports-attendance-table {
+    min-width: 100%;
+  }
+
+  .reports-health-records-wrap.is-scrollable,
+  .reports-attendance-wrap {
+    max-height: 70vh;
+  }
+
+  /* Touch-friendly controls. 16px text stops iOS zooming into fields. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 0;
+  }
+
+  .btn {
+    min-height: 44px;
+  }
+
+  .toolbar .btn,
+  .form-actions .btn {
+    justify-content: center;
+  }
+
+  .form-actions {
+    flex-wrap: wrap;
+  }
+
+  .form-actions .btn {
+    flex: 1 1 140px;
+  }
+
+  /* Slide-over forms become a full-width bottom sheet. */
+  .slideover-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .slideover-panel {
+    width: 100%;
+    max-height: 94vh;
+    max-height: 94dvh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .slideover-head {
+    padding: 10px 12px 10px 16px;
+  }
+
+  .slideover-body {
+    padding: 14px 16px 0;
+    overscroll-behavior: contain;
+  }
+
+  .slideover-body .form-actions {
+    margin: 12px -16px 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .form-panel,
+  .form-panel-wide {
+    max-width: 100%;
+  }
+
+  /* Login */
+  .login-page {
+    min-height: 100dvh;
+    padding: 16px;
+  }
+
+  .login-card {
+    width: min(380px, 100%);
+    padding: 22px 18px;
+  }
+}
+
+/* ---- Small phones ------------------------------------------------------ */
+@media (max-width: 400px) {
+  .cards,
+  .bmi-snapshot-grid,
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-title h1 {
+    font-size: 22px;
+  }
+
+  .nav a {
+    min-width: 60px;
+    padding: 6px 8px;
+  }
+
+  .quick-tile {
+    height: 100px;
+    font-size: 13px;
+  }
+
+  .stat strong {
+    font-size: 26px;
+  }
+}
+
+/* ---- Touch devices: no hover-only affordances, bigger tap targets ------- */
+@media (hover: none) and (pointer: coarse) {
+  .nav a,
+  .signout,
+  .btn,
+  .slideover-close {
+    min-height: 44px;
+  }
+}
+
+
+/* ---- Hamburger menu (phones) ------------------------------------------- */
+.nav-toggle {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .sidebar {
+    flex-wrap: wrap;
+    overflow: visible;
+    justify-content: space-between;
+    max-height: 100vh;
+    max-height: 100dvh;
+  }
+
+  .sidebar.nav-open {
+    overflow-y: auto;
+  }
+
+  .sidebar .brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+  }
+
+  .sidebar .brand strong {
+    margin-top: 0;
+    font-size: 15px;
+  }
+
+  .nav-toggle {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, .25);
+    border-radius: 10px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .nav-toggle:hover,
+  .nav-toggle[aria-expanded="true"] {
+    background: rgba(255, 255, 255, .12);
+  }
+
+  .nav-toggle-bars {
+    display: grid;
+    gap: 5px;
+    width: 22px;
+  }
+
+  .nav-toggle-bars i {
+    display: block;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform .2s ease, opacity .2s ease;
+  }
+
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bars i:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bars i:nth-child(2) {
+    opacity: 0;
+  }
+
+  .nav-toggle[aria-expanded="true"] .nav-toggle-bars i:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  /* Menu is collapsed until the button is tapped. */
+  .sidebar .nav,
+  .sidebar .sidebar-foot {
+    display: none;
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .sidebar.nav-open .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .sidebar.nav-open .nav a {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    font-size: 15px;
+    min-height: 48px;
+    min-width: 0;
+    padding: 10px 14px;
+    text-align: left;
+  }
+
+  .sidebar.nav-open .sidebar-foot {
+    display: block;
+    margin: 8px 0 0;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, .12);
+  }
+
+  .sidebar.nav-open .sidebar-foot .account {
+    display: flex;
+  }
+
+  .sidebar.nav-open .signout {
+    flex-direction: row;
+    font-size: 15px;
+    min-height: 44px;
+    padding: 8px 6px;
+  }
+}
