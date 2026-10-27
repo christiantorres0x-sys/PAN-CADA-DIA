@@ -138,6 +138,20 @@ SELECT 'System Administrator', 'admin',
        'Admin'
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
 
+-- Staff accounts (change these passwords after first login)
+INSERT INTO users (full_name, username, password_hash, role)
+SELECT * FROM (
+    SELECT 'Ma. Isabel D. Pantaleon' AS full_name, 'isabel.pantaleon' AS username,
+           '$2y$12$KUyCtbNXY0jZXvnl1s8XS.4wZbdFJS/nfxZgzm.zXrlbnZm/a45cO' AS password_hash, 'Staff' AS role
+    UNION ALL
+    SELECT 'Welma L. Omboy' AS full_name, 'welma.omboy' AS username,
+           '$2y$12$Fm2dFEoDFvjePt3dmojFs.gl8BYbTzRPLmW.UWBHBSNTEP6LgOHSe' AS password_hash, 'Staff' AS role
+    UNION ALL
+    SELECT 'Gilbert A. Rio' AS full_name, 'gilbert.rio' AS username,
+           '$2y$12$29ylFoMxJqWC14noV52eLOpkZ0MUbrPy0pOqQt46OPEBf5r6z7zSS' AS password_hash, 'Admin' AS role
+) AS new_users
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.username = new_users.username);
+
 INSERT INTO feeding_sites (site_name, barangay, municipality)
 SELECT 'Main Feeding Site', 'To be configured', 'To be configured'
 WHERE NOT EXISTS (SELECT 1 FROM feeding_sites LIMIT 1);
