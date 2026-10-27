@@ -995,6 +995,10 @@ td {
   font-size: 13px;
 }
 
+.single-line-cell {
+  white-space: nowrap;
+}
+
 .attendance-table th,
 .attendance-table td,
 .attendance-table td.num {
@@ -1691,6 +1695,12 @@ table.milestone-table {
   overflow-wrap: break-word;
 }
 
+.reports-attendance-table td.attendance-name-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .reports-attendance-table .attendance-days-heading {
   text-align: center;
 }
@@ -2092,6 +2102,10 @@ textarea.remarks-input {
   font-size: 28px;
   font-weight: 700;
   line-height: 1.2;
+}
+
+.page-actions .profile-delete-action {
+  margin-right: 16px;
 }
 
 .bp-section {

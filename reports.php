@@ -131,7 +131,7 @@ $dateFilterActive = ($month !== '' || $year !== '');
 // Stacking keeps the whole Baseline / Midline / Endline comparison on one
 // screen without sideways scrolling. A milestone with no record becomes a
 // single "Pending" cell spanning its three columns.
-$fmtDate = fn(string $d): string => ($ts = strtotime($d)) ? date('M j, Y', $ts) : $d;
+$fmtDate = fn(string $d): string => format_display_date($d);
 $fmtNum = fn($n): string => rtrim(rtrim(number_format((float)$n, 2, '.', ''), '0'), '.');
 $renderMilestoneCells = function (?array $r) use ($dateFilterActive, $fmtDate, $fmtNum): string {
     if ($r === null) {
@@ -437,8 +437,8 @@ require __DIR__ . '/partials/header.php';
                     <td rowspan="<?= $span ?>"><?= $info['beneficiary_code'] ? '<span class="code-tag">' . e($info['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td rowspan="<?= $span ?>"><strong><a href="beneficiary.php?id=<?= (int)$info['beneficiary_id'] ?>"><?= e($info['full_name']) ?></a></strong></td>
                     <?php foreach (MILESTONES as $m): ?><?= $renderMilestoneCells($g['by'][$m]) ?><?php endforeach; ?>
-                    <td rowspan="<?= $span ?>"><?= e($fmtDate($info['birth_date'])) ?></td>
-                    <td rowspan="<?= $span ?>" class="ms-start"><?= e(age_label($info['birth_date'])) ?></td>
+                    <td rowspan="<?= $span ?>" class="single-line-cell"><?= e($fmtDate($info['birth_date'])) ?></td>
+                    <td rowspan="<?= $span ?>" class="ms-start single-line-cell"><?= e(age_label($info['birth_date'])) ?></td>
                     <td rowspan="<?= $span ?>"><?= e($info['sex']) ?></td>
                     <td rowspan="<?= $span ?>"><?= pcd_badge($info['program_status'] ?? 'ACTIVE') ?><?php if (($info['program_status'] ?? '') === 'INACTIVE' && !empty($info['inactive_since'])): ?><br><small class="muted">since <?= e($fmtDate($info['inactive_since'])) ?></small><?php endif; ?></td>
                 </tr>

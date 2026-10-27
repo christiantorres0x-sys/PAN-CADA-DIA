@@ -15,6 +15,18 @@ function e($value): string {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function format_display_date($value): string {
+    $date = trim((string)$value);
+    if ($date === '') return '';
+    $datePart = substr($date, 0, 10);
+    $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $datePart);
+    $errors = DateTimeImmutable::getLastErrors();
+    if (!$parsed || ($errors !== false && ($errors['warning_count'] || $errors['error_count'])) || $parsed->format('Y-m-d') !== $datePart) {
+        return $date;
+    }
+    return $parsed->format('m-d-Y');
+}
+
 function require_login(): void {
     if (empty($_SESSION['user_id'])) {
         header('Location: index.php');

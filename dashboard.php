@@ -99,10 +99,10 @@ require __DIR__ . '/partials/header.php';
                 <?php foreach ($latest as $r): ?>
                 <tr class="clickable-row" data-href="beneficiary.php?id=<?= (int)$r['beneficiary_id'] ?>" onclick="window.location=this.dataset.href">
                     <td><?= $r['beneficiary_code'] ? '<span class="code-tag">' . e($r['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
-                    <td><strong><?= e($r['full_name']) ?></strong></td>
+                    <td class="single-line-cell"><strong><?= e($r['full_name']) ?></strong></td>
                     <td><?= e($r['site_name'] ?? '—') ?></td>
-                    <td><?= e(age_label($r['birth_date'])) ?></td>
-                    <td><?= e($r['birth_date']) ?></td>
+                    <td class="single-line-cell"><?= e(age_label($r['birth_date'])) ?></td>
+                    <td class="single-line-cell"><?= e(format_display_date($r['birth_date'])) ?></td>
                     <td><?= e($r['sex']) ?></td>
                     <td class="num"><?= e($r['height_cm']) ?> cm</td>
                     <td class="num"><?= e($r['weight_kg']) ?> kg</td>

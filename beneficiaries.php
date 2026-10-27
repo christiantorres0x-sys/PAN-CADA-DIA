@@ -39,7 +39,7 @@ $stmt = $pdo->prepare("
     LEFT JOIN feeding_sites s ON s.site_id=b.site_id
     LEFT JOIN feeding_programs p ON p.program_id=b.program_id
     $whereSql
-    ORDER BY b.full_name
+    ORDER BY b.beneficiary_id ASC
 ");
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
@@ -102,10 +102,10 @@ require __DIR__ . '/partials/header.php';
                 <?php foreach ($rows as $b): $rec = $latestByBeneficiary[$b['beneficiary_id']] ?? null; $nutritionStatus = strtolower($rec['nutritional_status'] ?? ''); $flag = str_contains($nutritionStatus, 'under') || str_contains($nutritionStatus, 'severe'); ?>
                 <tr class="clickable-row <?= $flag ? 'row-flag' : '' ?>" data-href="beneficiary.php?id=<?= (int)$b['beneficiary_id'] ?>" onclick="window.location=this.dataset.href">
                     <td><?= $b['beneficiary_code'] ? '<span class="code-tag">' . e($b['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
-                    <td><strong><?= e($b['full_name']) ?></strong></td>
+                    <td class="single-line-cell"><strong><?= e($b['full_name']) ?></strong></td>
                     <td><?= e($b['site_name'] ?? '—') ?></td>
-                    <td><?= e(age_label($b['birth_date'])) ?></td>
-                    <td><?= e($b['birth_date'] ?: '—') ?></td>
+                    <td class="single-line-cell"><?= e(age_label($b['birth_date'])) ?></td>
+                    <td class="single-line-cell"><?= e(format_display_date($b['birth_date'] ?: '—')) ?></td>
                     <td><?= e($b['sex']) ?></td>
                     <td class="num"><?= $rec ? e($rec['height_cm']) . ' cm' : '—' ?></td>
                     <td class="num"><?= $rec ? e($rec['weight_kg']) . ' kg' : '—' ?></td>

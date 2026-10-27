@@ -144,7 +144,7 @@ require __DIR__ . '/partials/header.php';
 <div class="form-panel">
     <div class="person-banner">
         <strong><?= e($rec['full_name']) ?></strong>
-        <span><?= e($title) ?> · recorded <?= e($rec['record_date']) ?></span>
+        <span><?= e($title) ?> · recorded <?= e(format_display_date($rec['record_date'])) ?></span>
     </div>
 
     <form method="post" action="health_record_edit.php?id=<?= $recordId ?>">
@@ -161,7 +161,7 @@ require __DIR__ . '/partials/header.php';
                 <?php if ($canDate): ?>
                     <input type="date" name="record_date" value="<?= e($rec['record_date']) ?>" min="<?= e($rec['birth_date']) ?>" max="<?= date('Y-m-d') ?>">
                 <?php else: ?>
-                    <input value="<?= e($rec['record_date']) ?>" readonly tabindex="-1">
+                    <input value="<?= e(format_display_date($rec['record_date'])) ?>" readonly tabindex="-1">
                     <span class="form-hint">Only an administrator can change the measurement date.</span>
                 <?php endif; ?>
             </div>

@@ -241,7 +241,7 @@ require __DIR__ . '/partials/header.php';
     <div class="notice danger">
         <strong>Possible duplicate:</strong> a beneficiary named
         <strong><?= e($duplicateMatch['full_name']) ?></strong>
-        (<?= $duplicateMatch['beneficiary_code'] ? 'ID ' . e($duplicateMatch['beneficiary_code']) . ', ' : '' ?>born <?= e($duplicateMatch['birth_date']) ?>, <?= e(strtolower($duplicateMatch['program_status'])) ?>)
+        (<?= $duplicateMatch['beneficiary_code'] ? 'ID ' . e($duplicateMatch['beneficiary_code']) . ', ' : '' ?>born <?= e(format_display_date($duplicateMatch['birth_date'])) ?>, <?= e(strtolower($duplicateMatch['program_status'])) ?>)
         is already on file with the same name and birthdate.
         <a href="beneficiary.php?id=<?= (int)$duplicateMatch['beneficiary_id'] ?>" target="_blank" rel="noopener">Review that record &rarr;</a>
         <br>If this is genuinely a different person, you can save anyway.
@@ -380,7 +380,7 @@ require __DIR__ . '/partials/header.php';
     </div>
     <?php if ($latestRecord): ?>
     <div class="bmi-snapshot-grid">
-        <div><span>Last Recorded</span><strong><?= e($latestRecord['record_date']) ?></strong></div>
+        <div><span>Last Recorded</span><strong><?= e(format_display_date($latestRecord['record_date'])) ?></strong></div>
         <div><span>Milestone</span><strong><?= $latestRecord['milestone'] ? e(milestone_label($latestRecord['milestone'])) : '—' ?></strong></div>
         <div><span>Height</span><strong><?= e($latestRecord['height_cm']) ?> cm</strong></div>
         <div><span>Weight</span><strong><?= e($latestRecord['weight_kg']) ?> kg</strong></div>

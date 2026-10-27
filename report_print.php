@@ -9,7 +9,7 @@ $scopeSite = 'All feeding sites';
 foreach ($sites as $s) { if ((int)$s['site_id'] === $siteId) { $scopeSite = $s['site_name']; break; } }
 $scopeProgram = 'All programs';
 foreach ($programs as $p) { if ((int)$p['program_id'] === $programId) { $scopeProgram = $p['program_name']; break; } }
-$fmtD = fn(string $d): string => ($ts = strtotime($d)) ? date('F j, Y', $ts) : $d;
+$fmtD = fn(string $d): string => format_display_date($d);
 $period = $implementationPeriod;
 $statusScope = $status !== '' ? beneficiary_status_label($status) : 'All statuses';
 $preparedBy = $_SESSION['user_name'] ?? '';
@@ -67,7 +67,9 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
   table.data td.c { text-align: center; }
   table.data td.r { text-align: right; }
   table.data .sub { display: block; font-size: 7.5pt; color: #444; }
-  table.health-records-table td.beneficiary-name { white-space: nowrap; }
+  table.health-records-table td.beneficiary-name,
+  table.health-records-table td.birth-date-cell,
+  table.health-records-table td.age-cell { white-space: nowrap; }
   table.data .flag { font-weight: 700; }
   table.data .pend { color: #666; font-style: italic; text-align: center; }
   table.data tfoot td { font-weight: 700; background: #f1f3f8; }
@@ -130,7 +132,7 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
 
   <h1 class="title">Health Monitoring Report</h1>
   <table class="meta">
-    <tr><td class="k">Feeding Site:</td><td><?= e($scopeSite) ?></td><td class="k">Date Generated:</td><td><?= e(date('F j, Y')) ?></td></tr>
+    <tr><td class="k">Feeding Site:</td><td><?= e($scopeSite) ?></td><td class="k">Date Generated:</td><td><?= e(format_display_date(date('Y-m-d'))) ?></td></tr>
     <tr><td class="k">Program:</td><td><?= e($scopeProgram) ?></td><td class="k">Period Covered:</td><td><?= e($period) ?></td></tr>
     <tr><td class="k">Program Status:</td><td><?= e($statusScope) ?></td><td class="k">Prepared By:</td><td><?= e($preparedBy ?: '—') ?></td></tr>
   </table>
@@ -172,8 +174,8 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
       <tr>
         <td class="c"><?= e($info['beneficiary_code'] ?: '—') ?></td>
         <td class="beneficiary-name"><strong><?= e($info['full_name']) ?></strong></td>
-        <td><?= e($fmtD($info['birth_date'])) ?></td>
-        <td class="c"><?= e(age_label($info['birth_date'])) ?></td>
+        <td class="birth-date-cell"><?= e($fmtD($info['birth_date'])) ?></td>
+        <td class="c age-cell"><?= e(age_label($info['birth_date'])) ?></td>
         <td class="c"><?= e($info['sex']) ?></td>
         <?php foreach (MILESTONES as $m): $r = $g['by'][$m]; ?>
           <?php if ($r === null): ?>
@@ -267,9 +269,7 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
         <tr>
           <?php foreach ($dateGroup as $attendanceDate): ?>
             <?php
-              if ($month !== '' && $year !== '') $attendanceDateLabel = date('j', strtotime($attendanceDate));
-              elseif ($month !== '' || $year !== '') $attendanceDateLabel = date('n/j', strtotime($attendanceDate));
-              else $attendanceDateLabel = date('n/j/y', strtotime($attendanceDate));
+              $attendanceDateLabel = format_display_date($attendanceDate);
             ?>
             <th><?= e($attendanceDateLabel) ?></th>
           <?php endforeach; ?>
@@ -279,7 +279,7 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
         <?php foreach ($attendanceBeneficiaries as $attendanceBeneficiary): ?>
         <tr>
           <td><?= e($attendanceBeneficiary['beneficiary_code'] ?: '—') ?></td>
-          <td class="name"><?= e($attendanceBeneficiary['full_name']) ?></td>
+          <td class="name single-line-cell"><?= e($attendanceBeneficiary['full_name']) ?></td>
           <?php foreach ($dateGroup as $attendanceDate): ?>
             <?php $dayStatus = $attendanceMatrix[(int)$attendanceBeneficiary['beneficiary_id']][$attendanceDate] ?? ''; ?>
             <td>
@@ -300,7 +300,7 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
     <div class="sig"><div class="line">&nbsp;</div>Noted by</div>
   </div>
 
-  <div class="foot"><?= e(APP_NAME) ?> &middot; <?= e(APP_FULL_NAME) ?> &middot; Generated <?= e(date('F j, Y g:i A')) ?></div>
+  <div class="foot"><?= e(APP_NAME) ?> &middot; <?= e(APP_FULL_NAME) ?> &middot; Generated <?= e(date('m-d-Y g:i A')) ?></div>
 </div>
 <script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 400); });</script>
 </body>

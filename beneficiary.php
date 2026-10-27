@@ -29,7 +29,7 @@ $attendance = $at->fetchAll();
 $pageTitle = 'Beneficiary Profile';
 $pageEyebrowHtml = '<a class="back-link" href="beneficiaries.php">&larr; Back to Beneficiaries</a>';
 $deleteButtonHtml = can_delete_beneficiaries()
-    ? ' <a class="btn secondary danger-outline" href="beneficiary_delete.php?id=' . $id . '" data-slideover="beneficiary_delete.php?panel=1&id=' . $id . '" data-slideover-title="Delete Beneficiary">Delete</a>'
+    ? ' <a class="btn secondary danger-outline profile-delete-action" href="beneficiary_delete.php?id=' . $id . '" data-slideover="beneficiary_delete.php?panel=1&id=' . $id . '" data-slideover-title="Delete Beneficiary">Delete</a>'
     : '';
 $recordButtonHtml = $nextUp
     ? '<a class="btn primary" href="health_record.php?beneficiary_id=' . $id . '&milestone=' . $nextUp . '" data-slideover="health_record.php?panel=1&beneficiary_id=' . $id . '&milestone=' . $nextUp . '" data-slideover-title="Record ' . e(milestone_label($nextUp)) . '"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Record ' . e(milestone_label($nextUp)) . '</span></a>'
@@ -47,15 +47,15 @@ require __DIR__ . '/partials/header.php';
                 <div><dt>Name</dt><dd><?= e($b['full_name']) ?></dd></div>
                 <div><dt>Parent/Guardian</dt><dd><?= e($b['parent_guardian_name'] ?? '—') ?></dd></div>
                 <div><dt>Parent/Guardian Contact</dt><dd><?= e($b['parent_contact_number'] ?? '—') ?></dd></div>
-                <div><dt>Birthdate</dt><dd><?= e($b['birth_date']) ?></dd></div>
+                <div><dt>Birthdate</dt><dd><?= e(format_display_date($b['birth_date'])) ?></dd></div>
                 <div><dt>Sex</dt><dd><?= e($b['sex']) ?></dd></div>
                 <div><dt>Age</dt><dd><?= e(age_label($b['birth_date'])) ?></dd></div>
                 <div><dt>Status</dt><dd><?= pcd_badge($b['program_status']) ?></dd></div>
                 <?php if ($b['program_status'] === 'INACTIVE' && !empty($b['inactive_since'])): ?>
-                <div><dt>Inactive Since</dt><dd><?= e($b['inactive_since']) ?></dd></div>
+                <div><dt>Inactive Since</dt><dd><?= e(format_display_date($b['inactive_since'])) ?></dd></div>
                 <?php endif; ?>
                 <div><dt>Feeding Site</dt><dd><?= e($b['site_name'] ?? '—') ?></dd></div>
-                <div><dt>Date Enlisted</dt><dd><?= e($b['date_enlisted'] ?? '—') ?></dd></div>
+                <div><dt>Date Enlisted</dt><dd><?= e(format_display_date($b['date_enlisted'] ?? '—')) ?></dd></div>
             </dl>
         </div>
 
@@ -82,7 +82,7 @@ require __DIR__ . '/partials/header.php';
             <tbody>
                 <?php foreach ($attendance as $a): ?>
                 <tr>
-                    <td data-label="Date"><?= e($a['attendance_date']) ?></td>
+                    <td class="single-line-cell" data-label="Date"><?= e(format_display_date($a['attendance_date'])) ?></td>
                     <td data-label="Status"><?= pcd_badge($a['attendance_status']) ?></td>
                 </tr>
                 <?php endforeach; ?>
@@ -109,7 +109,7 @@ require __DIR__ . '/partials/header.php';
                 <tr>
                     <?php $rowStatus = $r['record_status'] ?: 'ACTIVE'; ?>
                     <td data-label="Status"><span class="status-text <?= $rowStatus === 'ACTIVE' ? 'green' : 'red' ?>"><?= e(beneficiary_status_label($rowStatus)) ?></span></td>
-                    <td data-label="Date"><?= e($r['record_date']) ?></td>
+                    <td class="single-line-cell" data-label="Date"><?= e(format_display_date($r['record_date'])) ?></td>
                     <td data-label="Milestone"><?= $r['milestone'] ? '<span class="pill green">' . e(milestone_label($r['milestone'])) . '</span>' : '<span class="pill gray">—</span>' ?></td>
                     <td class="num" data-label="Height"><?= e($r['height_cm']) ?> cm</td>
                     <td class="num" data-label="Weight"><?= e($r['weight_kg']) ?> kg</td>
@@ -117,7 +117,7 @@ require __DIR__ . '/partials/header.php';
                     <td data-label="Weight Status"><?= $r['nutritional_status'] ? pcd_badge($r['nutritional_status']) : '<span class="muted">Pending</span>' ?></td>
                     <td data-label="Remarks" class="remarks-cell"><?php if (trim((string)$r['remarks']) !== ''): ?><span class="remark-text" data-remark-toggle><?= e($r['remarks']) ?></span><?php endif; ?></td>
                     <?php if (can_edit_health_records()): ?>
-                    <td data-label="Action"><a class="btn secondary sm" href="health_record_edit.php?id=<?= (int)$r['record_id'] ?>" data-slideover="health_record_edit.php?panel=1&id=<?= (int)$r['record_id'] ?>" data-slideover-title="Edit <?= e($r['milestone'] ? milestone_label($r['milestone']) : 'Measurement') ?>" aria-label="Edit measurement of <?= e($r['record_date']) ?>">Edit</a></td>
+                    <td data-label="Action"><a class="btn secondary sm" href="health_record_edit.php?id=<?= (int)$r['record_id'] ?>" data-slideover="health_record_edit.php?panel=1&id=<?= (int)$r['record_id'] ?>" data-slideover-title="Edit <?= e($r['milestone'] ? milestone_label($r['milestone']) : 'Measurement') ?>" aria-label="Edit measurement of <?= e(format_display_date($r['record_date'])) ?>">Edit</a></td>
                     <?php endif; ?>
                 </tr>
                 <?php endforeach; ?>

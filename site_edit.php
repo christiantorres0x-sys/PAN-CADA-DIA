@@ -92,7 +92,7 @@ require __DIR__ . '/partials/header.php';
             </div>
         </div>
         <div class="form-actions">
-            <a class="btn success cancel-button" href="manage.php">Cancel</a>
+            <a class="btn danger cancel-button" href="manage.php">Cancel</a>
             <button class="btn primary">Save Changes</button>
         </div>
     </form>

@@ -305,7 +305,7 @@ require __DIR__ . '/partials/header.php';
 </section>
 <?php else: ?>
 <?php if ($purpose === 'mark' && $savedAttendanceCount > 0): ?>
-<div class="alert success attendance-alert">Attendance for <?= e($date) ?> has already been marked. You are editing the saved attendance.</div>
+<div class="alert success attendance-alert">Attendance for <?= e(format_display_date($date)) ?> has already been marked. You are editing the saved attendance.</div>
 <?php endif; ?>
 <div class="cards cards-2 attendance-summary-cards">
     <div class="stat green"><span>Present</span><strong data-attendance-count="PRESENT"><?= $counts['PRESENT'] ?></strong></div>
@@ -314,7 +314,7 @@ require __DIR__ . '/partials/header.php';
 
 <section class="panel attendance-panel">
     <div class="panel-head">
-        <h2><?= e($attendanceSiteName) ?> - <?= e($date) ?></h2>
+        <h2><?= e($attendanceSiteName) ?> - <?= e(format_display_date($date)) ?></h2>
     </div>
     <div class="table-wrap">
         <table class="attendance-table">
