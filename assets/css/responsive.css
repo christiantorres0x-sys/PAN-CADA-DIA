@@ -152,16 +152,9 @@
   }
 
   /* full-width on phones: keep text at a sensible size */
-  .pending-card {
-    max-width: none;
-  }
-
-  .pending-card strong {
-    font-size: 40px;
-  }
-
   .quick-actions-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: auto;
     width: 100%;
   }
 
@@ -174,7 +167,7 @@
   }
 
   .quick-tile {
-    height: 120px;
+    height: auto;
   }
 
   .page-title {
@@ -273,6 +266,10 @@ video {
     margin-left: 4px;
   }
 
+  .dash-top-grid {
+    margin-left: 4px;
+  }
+
   .bmi-snapshot-grid,
   .profile-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -364,7 +361,6 @@ video {
   .chart-pair,
   .attendance-alert,
   .cards.cards-2.attendance-summary-cards,
-  .pending-card,
   .page-title,
   .beneficiaries-page .search,
   .dashboard-page .search {
@@ -436,12 +432,8 @@ video {
   /* Dashboard top area */
   .dash-top-grid {
     grid-template-columns: 1fr;
-    margin-top: 12px;
+    margin-top: 18px;
     margin-bottom: 18px;
-  }
-
-  .dash-top-right {
-    margin-top: 28px;
   }
 
   .dash-top-right .filter-label {
@@ -462,11 +454,6 @@ video {
   .btn.quick-primary {
     width: 100%;
     min-height: 56px;
-  }
-
-  .pending-card {
-    height: auto;
-    min-height: 120px;
   }
 
   .report-shell,

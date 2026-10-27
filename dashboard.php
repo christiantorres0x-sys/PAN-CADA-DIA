@@ -9,8 +9,6 @@ $enrolled = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries WHERE program_s
 $sites = (int)$pdo->query("SELECT COUNT(*) FROM feeding_sites WHERE status='ACTIVE'")->fetchColumn();
 $records = (int)$pdo->query("SELECT COUNT(*) FROM health_records")->fetchColumn();
 $baselineDone = (int)$pdo->query("SELECT COUNT(*) FROM health_records WHERE milestone='BASELINE'")->fetchColumn();
-$pendingEnrollment = max(0, $total - $enrolled);
-
 // Search box: only names where a word starts with what was typed
 // (typing "k" shows Kyle / Anna Kim, not "Mika"). Case-insensitive.
 $searchSql = '';
@@ -44,23 +42,13 @@ require __DIR__ . '/partials/header.php';
 ?>
 <div class="dashboard-page">
     <div class="dash-top-grid">
-        <div class="dash-top-left">
-            <a class="stat pending-card" href="beneficiaries.php" title="Go to Beneficiaries">
-                <span class="pending-card-label">Pending Enrollments</span>
-                <strong class="pending-count-<?= $pendingEnrollment === 0 ? 'zero' : 'positive' ?>"><?= $pendingEnrollment ?></strong>
-                <span class="pending-card-review">
-                    Manage
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                </span>
-            </a>
-        </div>
-
         <section class="dash-top-right">
             <span class="filter-label">Quick Actions</span>
             <div class="quick-actions-body">
                 <div class="quick-actions-grid">
                     <a class="quick-tile quick-tile-add" href="beneficiary_form.php" data-slideover="beneficiary_form.php?panel=1" data-slideover-title="Add Beneficiary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Beneficiary</span></a>
-                    <a class="btn quick-primary" href="attendance.php?date=<?= date('Y-m-d') ?>">Take Attendance</a>                </div>
+                    <a class="quick-tile quick-tile-attendance" href="attendance.php?date=<?= date('Y-m-d') ?>"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5h6M8 12l2.5 2.5L16 9"/></svg><span>Take Attendance</span></a>
+                </div>
             </div>
         </section>
     </div>

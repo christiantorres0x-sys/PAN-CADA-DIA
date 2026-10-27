@@ -111,15 +111,14 @@
 
 .dash-top-grid {
   display: grid;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
   align-items: stretch;
-  margin-top: 28px;
-  margin-bottom: 30px;
+  margin-top: 36px;
+  margin-left: 16px;
+  margin-bottom: 18px;
 }
 
-/* Quick Actions: label floats above the row so the tiles line up with the
-   Pending Enrollments card (same top and bottom edge). */
 .dash-top-right {
   position: relative;
   display: flex;
@@ -129,18 +128,8 @@
   position: absolute;
   left: 0;
   bottom: 100%;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
   white-space: nowrap;
-}
-
-.dash-top-left {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.dash-top-left .pending-card {
-  max-width: none;
 }
 
 .btn.dash-add-beneficiary {
@@ -173,6 +162,7 @@
   width: max-content;
   display: grid;
   grid-template-columns: repeat(2, 135px);
+  grid-auto-rows: 135px;
   gap: 10px;
 }
 
@@ -183,7 +173,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 100%;
+  width: 100%;
+  aspect-ratio: 1;
   padding: 12px;
   border: 1px solid transparent;
   border-radius: 10px;
@@ -201,8 +192,14 @@
 }
 
 .quick-tile .icon {
-  width: 20px;
-  height: 20px;
+  display: block;
+  width: 36px;
+  height: 36px;
+  align-self: center;
+}
+
+.quick-tile span {
+  white-space: nowrap;
 }
 
 .quick-tile-add {
@@ -291,64 +288,6 @@
   text-decoration: none;
 }
 
-/* Pending Requests: the whole card is a link to Beneficiaries; turns gray
-   on hover. Sized with a fixed max-width rather than a parent container,
-   since it now stands on its own at the bottom of the page. */
-.pending-card {
-  display: flex;
-  flex-direction: column;
-  height: 160px;
-  max-width: 320px;
-  padding: 16px 18px;
-  margin-left: 16px;
-  color: var(--text);
-  cursor: pointer;
-  transition: background .15s ease, border-color .15s ease;
-}
-
-.pending-card:hover,
-.pending-card:focus-visible {
-  background: #cdd2da;
-  border-color: #b9c0cb;
-  text-decoration: none;
-}
-
-.pending-card-label {
-  font-size: 13px;
-  margin: 2px 0 2px 2px;
-}
-
-.pending-card strong {
-  display: block;
-  font-size: 65px;
-  color: var(--red);
-  margin-top: 8px;
-}
-
-.pending-card strong.pending-count-zero {
-  color: #000;
-}
-
-.pending-card strong.pending-count-positive {
-  color: var(--red);
-}
-
-.pending-card-review {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  align-self: flex-end;
-  margin: 15px 2px 2px 2px;
-  font-size: 15px;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.pending-card-review .icon {
-  width: 16px;
-  height: 16px;
-}
-
 /* Scope/filter panel used above list pages: one field + an action button */
 .scope-row {
   display: flex;
@@ -400,6 +339,8 @@
 }
 
 .beneficiaries-page .beneficiaries-scope {
+  background: #e1e7f0;
+  border-color: #b8c4d6;
   margin-bottom: 14px;
 }
 
@@ -473,7 +414,7 @@
 }
 
 .beneficiaries-results .list-count {
-  margin: 10px 0 14px 2px;
+  margin: 10px 0 2px 2px;
   text-align: left;
   font-size: 12px;
   text-transform: uppercase;
