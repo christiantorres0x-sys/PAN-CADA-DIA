@@ -65,7 +65,7 @@ $pcd_nav_items = [
 $pcd_css = static fn(string $f): string => 'assets/css/' . $f . '?v=' . (@filemtime(__DIR__ . '/../assets/css/' . $f) ?: 1);
 ?>
 <!doctype html><html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title><?= e($pageTitle) ?> | <?= e(APP_NAME) ?></title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,7 +87,8 @@ $pcd_css = static fn(string $f): string => 'assets/css/' . $f . '?v=' . (@filemt
         <strong><?= e(APP_NAME) ?></strong>
         <small>Health Monitoring System</small>
     </div>
-    <nav class="nav" aria-label="Main navigation">
+    <button type="button" class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="site-nav"><span class="nav-toggle-bars" aria-hidden="true"><i></i><i></i><i></i></span></button>
+    <nav class="nav" id="site-nav" aria-label="Main navigation">
         <?php foreach ($pcd_nav_items as $pcd_item): ?>
         <a href="<?= e($pcd_item['href']) ?>" class="<?= $activeNav === $pcd_item['href'] ? 'active' : '' ?>"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><?= $pcd_item['icon'] ?></svg><span><?= e($pcd_item['label']) ?></span></a>
         <?php endforeach; ?>
