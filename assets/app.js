@@ -805,3 +805,26 @@ document.addEventListener('DOMContentLoaded', () => {
   pcdWireAttendanceDrafts(document);
   pcdWireSlideoverTriggers();
 });
+
+
+// ---------------------------------------------------------------------
+// Mobile hamburger menu: opens/closes the sidebar navigation on phones.
+// ---------------------------------------------------------------------
+function pcdWireNavToggle() {
+  const sidebar = document.querySelector('.sidebar');
+  const btn = sidebar && sidebar.querySelector('.nav-toggle');
+  if (!btn) return;
+  const set = (open) => {
+    sidebar.classList.toggle('nav-open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  };
+  btn.addEventListener('click', () => set(!sidebar.classList.contains('nav-open')));
+  sidebar.addEventListener('click', (e) => { if (e.target.closest('.nav a')) set(false); });
+  document.addEventListener('click', (e) => {
+    if (sidebar.classList.contains('nav-open') && !sidebar.contains(e.target)) set(false);
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') set(false); });
+  window.addEventListener('resize', () => { if (window.innerWidth > 760) set(false); });
+}
+document.addEventListener('DOMContentLoaded', pcdWireNavToggle);
