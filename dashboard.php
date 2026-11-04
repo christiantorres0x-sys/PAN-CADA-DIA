@@ -31,7 +31,7 @@ $latestStmt = $pdo->prepare("
     LEFT JOIN feeding_sites s ON s.site_id = b.site_id
     $searchSql
     ORDER BY hr.record_date DESC, hr.record_id DESC
-    LIMIT 8
+    LIMIT 5
 ");
 $latestStmt->execute($searchParams);
 $latest = $latestStmt->fetchAll();
