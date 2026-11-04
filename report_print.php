@@ -13,6 +13,7 @@ $fmtD = fn(string $d): string => format_display_date($d);
 $period = $implementationPeriod;
 $statusScope = $status !== '' ? beneficiary_status_label($status) : 'All statuses';
 $preparedBy = $_SESSION['user_name'] ?? '';
+$preparedByRole = $_SESSION['role'] ?? '';
 $n2 = fn($n): string => rtrim(rtrim(number_format((float)$n, 2, '.', ''), '0'), '.');
 $pct = fn(int $n, int $t): string => $t > 0 ? number_format($n / $t * 100, 1) . '%' : '—';
 
@@ -102,7 +103,8 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
 
   .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6in; margin-top: 0.45in; break-inside: avoid; }
   .sig { text-align: center; font-size: 10pt; }
-  .sig .line { border-top: 1px solid #111; margin-top: 0.5in; padding-top: 3px; font-weight: 700; }
+  .sig .line { border-bottom: 1px solid #111; margin-top: 0.5in; padding-top: 3px; font-weight: 700; }
+  .sig .position { display: block; font-size: 9pt; font-weight: 400; }
   .foot { margin-top: 18px; font-size: 8pt; color: #444; text-align: center; border-top: 1px solid #999; padding-top: 4px; }
 
   @media print {
@@ -296,8 +298,8 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
   <?php endif; ?>
 
   <div class="signatures">
-    <div class="sig"><div class="line"><?= e($preparedBy ?: ' ') ?></div>Prepared by</div>
-    <div class="sig"><div class="line">&nbsp;</div>Noted by</div>
+    <div class="sig"><div class="line"><?= e($preparedBy ?: ' ') ?></div><div><span class="position"><?= e($preparedByRole) ?></span></div>Prepared by</div>
+    <div class="sig"><div class="line">Welma L. Omboy</div><div><span class="position">Director</span></div>Witnessed by</div>
   </div>
 
   <div class="foot"><?= e(APP_NAME) ?> &middot; <?= e(APP_FULL_NAME) ?> &middot; Generated <?= e(date('m-d-Y g:i A')) ?></div>
