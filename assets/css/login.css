@@ -17,47 +17,110 @@
 
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  background: var(--adzu-blue-deep);
+  grid-template-columns: minmax(0, 1.2fr) minmax(400px, 0.8fr);
+  background: #fff;
   color: var(--ink);
   font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* ---------- Background: program photo with the AdZU seal ---------- */
-/* The photo layer is taller than the screen and anchored to the bottom, which crops off
-   the captions and CCES logo baked into the top of the original image. */
-.login-photo {
-  position: fixed;
-  z-index: -1;
+/* ---------- AdZU brand panel (background design) ---------- */
+.login-brand {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: clamp(28px, 4vw, 56px);
+  background: var(--adzu-blue);
+  color: #fff;
+}
+
+/* Program photo, cropped to hide the captions baked into the original image, tinted to the AdZU blue. */
+.login-brand__photo {
+  position: absolute;
+  z-index: -3;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 128%;
+  height: 135%;
   background: url('../images/login-bg.jpg') center bottom / cover no-repeat;
+  opacity: .32;
+  mix-blend-mode: luminosity;
 }
 
-.login-photo::after {
+.login-brand::after {
   content: '';
   position: absolute;
+  z-index: -2;
   inset: 0;
-  background: linear-gradient(90deg, rgba(0, 0, 80, .42) 0%, rgba(0, 0, 80, .3) 55%, rgba(0, 0, 80, .5) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 144, .94) 0%, rgba(0, 0, 144, .72) 42%, rgba(0, 0, 106, .93) 100%);
 }
 
-.login-brand {
-  display: grid;
-  place-items: center;
-  padding: clamp(24px, 4vw, 56px);
-}
-
+/* Oversized seal, cropped by the panel edge. */
 .login-brand__seal {
-  display: block;
-  width: min(520px, 100%, 68vh);
-  height: auto;
-  aspect-ratio: 768 / 764;
-  max-width: 100%;
-  filter: drop-shadow(0 18px 40px rgba(0, 0, 50, .45));
+  position: absolute;
+  z-index: -1;
+  width: min(860px, 125%);
+  right: -36%;
+  bottom: -26%;
+  opacity: .24;
+  filter: grayscale(1) brightness(1.5);
+  pointer-events: none;
   user-select: none;
+}
+
+.login-brand__lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.login-brand__lockup img {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 40, .35));
+}
+
+.login-brand__lockup span {
+  font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+  font-size: clamp(17px, 1.6vw, 21px);
+  line-height: 1.2;
+  letter-spacing: .01em;
+}
+
+.login-brand__message {
+  max-width: 30rem;
+}
+
+.login-brand__message::before {
+  content: '';
+  display: block;
+  width: 44px;
+  height: 4px;
+  margin-bottom: 20px;
+  border-radius: 2px;
+  background: var(--adzu-gold);
+}
+
+.login-brand__message h2 {
+  margin: 0 0 14px;
+  font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  font-size: clamp(26px, 3vw, 40px);
+  line-height: 1.18;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+
+.login-brand__message p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #d6e0fa;
 }
 
 /* ---------- Form panel ---------- */
@@ -65,14 +128,11 @@
   display: grid;
   place-items: center;
   padding: clamp(24px, 4vw, 56px);
+  background: #fff;
 }
 
 .login-card {
-  width: min(420px, 100%);
-  padding: 36px 36px 28px;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 24px 60px rgba(0, 0, 50, .4);
+  width: min(380px, 100%);
   text-align: left;
 }
 
@@ -263,47 +323,58 @@
   color: var(--ink-soft);
 }
 
-/* ---------- Tablet and mobile: seal on top, card below ---------- */
+/* ---------- Tablet: stack the brand panel above the form ---------- */
 @media (max-width: 900px) {
   .login-page {
     grid-template-columns: 1fr;
-    align-items: start;
-    align-content: start;
+    grid-template-rows: auto 1fr;
   }
 
   .login-brand {
-    padding: 32px 24px 0;
+    gap: 28px;
+    padding: 28px clamp(20px, 5vw, 40px) 32px;
   }
 
   .login-brand__seal {
-    width: 200px;
+    width: 520px;
+    right: -120px;
+    bottom: -210px;
+  }
+
+  .login-brand__message h2 {
+    font-size: clamp(22px, 4.2vw, 30px);
   }
 
   .login-panel {
-    padding: 24px clamp(16px, 5vw, 40px) 40px;
-  }
-
-  .login-card {
-    width: min(440px, 100%);
+    place-items: start center;
+    padding: 36px clamp(20px, 5vw, 40px) 40px;
   }
 }
 
+/* ---------- Mobile ---------- */
 @media (max-width: 560px) {
   .login-brand {
-    padding: 24px 16px 0;
+    gap: 0;
+    padding: 20px 20px 22px;
+  }
+
+  .login-brand__lockup img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .login-brand__message {
+    display: none;
   }
 
   .login-brand__seal {
-    width: 140px;
+    width: 380px;
+    right: -150px;
+    bottom: -190px;
   }
 
   .login-panel {
-    padding: 20px 16px 28px;
-  }
-
-  .login-card {
-    padding: 28px 22px 22px;
-    border-radius: 16px;
+    padding: 28px 20px 32px;
   }
 
   .login-mark {
@@ -324,6 +395,10 @@
   .login-card input {
     font-size: 16px;
   }
+}
+
+@media (max-height: 640px) and (min-width: 901px) {
+  .login-brand__message p { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
