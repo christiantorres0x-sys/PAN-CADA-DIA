@@ -152,6 +152,36 @@ SELECT * FROM (
 ) AS new_users
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.username = new_users.username);
 
+-- ---------------------------------------------------------------------
+-- User roles: Admin, Staff, Program Officer (PO), BLGU
+--
+-- users.role is a free-text VARCHAR(30) (not an ENUM or foreign key), so the
+-- Program Officer and BLGU roles need no schema change. They are registered
+-- in PHP (USER_ROLES in config.php). Spelling is matched case-insensitively
+-- at login, and 'PO' is accepted as 'Program Officer'.
+--
+-- There is no "create user" screen; accounts are added with SQL. To add one:
+-- 1) Generate a bcrypt hash (PHP 8):
+--        php -r "echo password_hash('CHOOSE-A-PASSWORD', PASSWORD_BCRYPT, ['cost' => 12]), PHP_EOL;"
+-- 2) Uncomment the block below, fill it in, and run it. It is safe to re-run:
+--    an existing username is never touched.
+--
+-- INSERT INTO users (full_name, username, password_hash, role)
+-- SELECT * FROM (
+--     SELECT 'Full Name Here' AS full_name,
+--            'username.here' AS username,
+--            'PASTE_BCRYPT_HASH_HERE' AS password_hash,
+--            'Program Officer' AS role          -- 'Program Officer' | 'BLGU'
+-- ) AS new_user
+-- WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.username = new_user.username);
+--
+-- To give an existing account one of the new roles:
+-- UPDATE users SET role = 'BLGU' WHERE username = 'username.here';
+--
+-- Note: the role column defaults to 'Admin', so an INSERT that omits the role
+-- creates an administrator. Always name the role explicitly.
+-- ---------------------------------------------------------------------
+
 INSERT INTO feeding_sites (site_name, barangay, municipality)
 SELECT 'Main Feeding Site', 'To be configured', 'To be configured'
 WHERE NOT EXISTS (SELECT 1 FROM feeding_sites LIMIT 1);
