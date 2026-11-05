@@ -95,8 +95,9 @@ $pcd_css = static fn(string $f): string => 'assets/css/' . $f . '?v=' . (@filemt
     </nav>
     <div class="sidebar-foot">
         <div class="account"><span class="avatar"><?= e(function_exists('mb_substr') ? mb_substr($_SESSION['user_name'] ?? 'A', 0, 1) : substr($_SESSION['user_name'] ?? 'A', 0, 1)) ?></span>
-            <div><strong><?= e($_SESSION['user_name'] ?? '') ?></strong><small><?= e(strtolower($_SESSION['role'] ?? 'admin')) ?></small></div>
+            <div><strong><?= e($_SESSION['user_name'] ?? '') ?></strong><small><?= e(role_display_label()) ?></small></div>
         </div>
+        <a class="signout" href="change_password.php"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg><span>Change Password</span></a>
         <a class="signout" href="logout.php"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="M16 17l5-5-5-5M21 12H9"/></svg><span>Sign Out</span></a>
     </div>
 </aside>

@@ -283,3 +283,23 @@ input.auto-field:focus {
   border-color: var(--border);
   box-shadow: none;
 }
+
+/* Narrow single-column form (Change Password), centered on the page. */
+.form-panel-narrow {
+  max-width: 460px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* The card inside it uses the same .panel look as the Program Setup forms;
+   the wrapper handles centering, so the panel's own side gutters are dropped. */
+.form-panel-narrow > .panel {
+  margin-left: 0;
+  margin-right: 0;
+  padding: 16px 18px;
+}
+
+.form-panel-narrow > .panel h2 {
+  margin: 2px 0 12px 2px;
+  font-size: 16px;
+}

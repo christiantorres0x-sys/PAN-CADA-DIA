@@ -63,3 +63,8 @@ Password: Welma#Omb2026
 Administrator
 Username: gilbert.rio
 Password: Gilbert#Rio2026
+
+User Roles
+Admin, Staff, Program Officer (PO), BLGU (stored in users.role; see USER_ROLES in config.php).
+Only Admin may delete/deactivate beneficiaries or feeding sites and change a measurement date. Program Officer and BLGU are not administrators; their permissions are still to be confirmed with CCES.
+To add an account with one of the new roles, see the User roles comment block in setup.sql (no database structure change is required).

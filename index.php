@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_regenerate_id(true); // new session ID on login (prevents session fixation)
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['user_name'] = $user['full_name'];
-            $_SESSION['role'] = $user['role'];
+            $_SESSION['role'] = normalize_role($user['role']);
             header('Location: dashboard.php');
             exit;
         }
@@ -71,36 +71,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/components.css">
 <link rel="stylesheet" href="assets/css/forms.css">
-<link rel="stylesheet" href="assets/css/login.css">
+<link rel="stylesheet" href="assets/css/login.css?v=<?= (int)@filemtime(__DIR__ . '/assets/css/login.css') ?>">
 </head>
 <body class="login-page">
-<div class="login-card">
-    <div class="brand-mark login-mark">
-        <img src="assets/images/CCES-logo.png" alt="<?= e(APP_NAME) ?> logo">
+<aside class="login-brand" aria-label="Ateneo de Zamboanga University">
+    <div class="login-brand__photo" aria-hidden="true"></div>
+    <img class="login-brand__seal" src="assets/images/AdZU-logo.svg" width="768" height="764" alt="" aria-hidden="true">
+    <div class="login-brand__lockup">
+        <img src="assets/images/AdZU-logo.svg" width="768" height="764" alt="Ateneo de Zamboanga University seal">
+        <span>Ateneo de Zamboanga University</span>
     </div>
-    <h1><?= e(APP_NAME) ?></h1>
-    <p class="muted">Health Monitoring System</p>
+    <div class="login-brand__message">
+        <h2>Track the health and nutrition of every child in the feeding program.</h2>
+        <p>A program of the Center for Community Extension Services.</p>
+    </div>
+</aside>
 
-    <?php if ($error): ?>
-        <div class="alert danger" id="login-alert" role="alert"<?= $lockSeconds > 0 ? ' data-lock-seconds="' . (int)$lockSeconds . '"' : '' ?>><?= e($error) ?></div>
-    <?php endif; ?>
-
-    <form method="post" id="login-form">
-        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-        <label for="username">Username</label>
-        <input id="username" name="username" required autofocus autocomplete="username" data-no-capitalize value="<?= e($_POST['username'] ?? '') ?>">
-        <label for="password">Password</label>
-        <div class="password-field">
-            <input id="password" type="password" name="password" required autocomplete="current-password">
-            <button type="button" class="password-toggle" id="password-toggle" aria-label="Show password" aria-pressed="false" aria-controls="password">
-                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.4 10.4 0 0 1 12 19c-6.4 0-10-7-10-7a17.7 17.7 0 0 1 4.06-5.06M9.9 5.24A9.8 9.8 0 0 1 12 5c6.4 0 10 7 10 7a17.8 17.8 0 0 1-2.17 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M2 2l20 20"/></svg>
-            </button>
+<main class="login-panel">
+    <div class="login-card">
+        <div class="login-mark">
+            <img src="assets/images/CCES-logo.png" width="240" height="240" alt="<?= e(APP_NAME) ?> logo">
         </div>
-        <button class="btn primary full" type="submit" id="login-submit">Log In</button>
-    </form>
+        <h1><?= e(APP_NAME) ?></h1>
+        <p class="login-subtitle"><?= e(defined('APP_FULL_NAME') ? APP_FULL_NAME : 'Feeding Program Health Monitoring System') ?></p>
 
-</div>
+        <?php if ($error): ?>
+            <div class="alert danger" id="login-alert" role="alert"<?= $lockSeconds > 0 ? ' data-lock-seconds="' . (int)$lockSeconds . '"' : '' ?>><?= e($error) ?></div>
+        <?php endif; ?>
+
+        <form method="post" id="login-form">
+            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+            <div class="field">
+                <label for="username">Username</label>
+                <input id="username" name="username" required autofocus autocomplete="username" data-no-capitalize value="<?= e($_POST['username'] ?? '') ?>">
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <div class="password-field">
+                    <input id="password" type="password" name="password" required autocomplete="current-password">
+                    <button type="button" class="password-toggle" id="password-toggle" aria-label="Show password" aria-pressed="false" aria-controls="password">
+                        <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.4 10.4 0 0 1 12 19c-6.4 0-10-7-10-7a17.7 17.7 0 0 1 4.06-5.06M9.9 5.24A9.8 9.8 0 0 1 12 5c6.4 0 10 7 10 7a17.8 17.8 0 0 1-2.17 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M2 2l20 20"/></svg>
+                    </button>
+                </div>
+            </div>
+            <button class="btn primary full" type="submit" id="login-submit">Log In</button>
+        </form>
+
+        <p class="login-foot">Center for Community Extension Services<br>Ateneo de Zamboanga University</p>
+    </div>
+</main>
 <script>
 (function () {
     // Show / hide password. Keeps the caret where it was and never changes the typed value.

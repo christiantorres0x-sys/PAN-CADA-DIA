@@ -273,6 +273,76 @@ function parse_weight_kg(array $in, string $prefix = ''): array {
 }
 
 // ---------------------------------------------------------------------
+// User roles
+//
+// users.role is a plain VARCHAR(30) (no role table, no ENUM), so adding a role
+// needs no schema change - it only has to be registered here so it is
+// recognised consistently after login. Stored values are the canonical names
+// below.
+//
+//   Admin            - full access, including delete/deactivate and changing
+//                      a measurement date.
+//   Staff            - existing day-to-day account.
+//   Program Officer  - NEW. Permissions NOT yet defined by the client.
+//                      "PO" is accepted as another spelling of this role.
+//   BLGU             - NEW. Permissions NOT yet defined by the client.
+//
+// The only role-based rules that exist in the app are the Admin-only ones
+// (can_delete_beneficiaries(), can_change_measurement_date()). Program Officer
+// and BLGU are deliberately NOT admins, so they get exactly what any
+// signed-in non-admin account gets today. No role-specific rules were invented
+// for them: when the client confirms what each role may do, add the rules in
+// the can_*() helpers below using has_role().
+// ---------------------------------------------------------------------
+const ROLE_ADMIN           = 'Admin';
+const ROLE_STAFF           = 'Staff';
+const ROLE_BLGU            = 'BLGU';
+const ROLE_PROGRAM_OFFICER = 'Program Officer';
+
+const USER_ROLES = [ROLE_ADMIN, ROLE_STAFF, ROLE_PROGRAM_OFFICER, ROLE_BLGU];
+
+// Other spellings that mean the same role (PO = Program Officer).
+const ROLE_ALIASES = ['PO' => ROLE_PROGRAM_OFFICER];
+
+/** Maps any capitalisation of a known role (or alias such as PO) to its canonical name; unknown values are returned trimmed, unchanged. */
+function normalize_role($raw): string {
+    $raw = trim((string)$raw);
+    foreach (USER_ROLES as $role) {
+        if (strcasecmp($raw, $role) === 0) return $role;
+    }
+    foreach (ROLE_ALIASES as $alias => $role) {
+        if (strcasecmp($raw, $alias) === 0) return $role;
+    }
+    return $raw;
+}
+
+/** Role of the signed-in user ('' when signed out). */
+function current_role(): string {
+    return normalize_role($_SESSION['role'] ?? '');
+}
+
+/** True when the signed-in user holds any one of the given roles. */
+function has_role(string ...$roles): bool {
+    $mine = current_role();
+    if ($mine === '') return false;
+    foreach ($roles as $role) {
+        if (strcasecmp($mine, $role) === 0) return true;
+    }
+    return false;
+}
+
+function is_admin(): bool {
+    return has_role(ROLE_ADMIN);
+}
+
+/** Role text for the sidebar: BLGU stays upper-case, other roles keep the existing lower-case look. */
+function role_display_label(): string {
+    $role = current_role();
+    if ($role === '') return 'admin';
+    return $role === ROLE_BLGU ? $role : strtolower($role);
+}
+
+// ---------------------------------------------------------------------
 // Who may edit saved health measurements.
 //   can_edit_health_records()      - any signed-in user may correct a weight /
 //                                    height / remarks. Tighten here (e.g. by
@@ -286,7 +356,7 @@ function can_edit_health_records(): bool {
 }
 
 function can_change_measurement_date(): bool {
-    return strcasecmp((string)($_SESSION['role'] ?? ''), 'Admin') === 0;
+    return is_admin();
 }
 
 /** Fingerprint of an editable record, used to detect that someone else changed it while a form was open. */
@@ -299,7 +369,7 @@ function health_record_token(array $r): string {
 
 /** Only Admin accounts may deactivate or permanently delete a beneficiary. */
 function can_delete_beneficiaries(): bool {
-    return strcasecmp((string)($_SESSION['role'] ?? ''), 'Admin') === 0;
+    return is_admin();
 }
 
 function age_in_years(string $birthDate, ?string $asOf = null): int {
