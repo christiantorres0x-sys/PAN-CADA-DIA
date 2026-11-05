@@ -223,6 +223,7 @@ $attendanceBeneficiaryStmt->execute($attendanceScopeParams);
 $attendanceBeneficiaries = $attendanceBeneficiaryStmt->fetchAll();
 
 $attendanceMatrix = [];
+$attendanceDailyCounts = [];
 $attendanceRowsWhere = $attendanceScope;
 $attendanceRowsParams = $attendanceScopeParams;
 if ($from !== '') { $attendanceRowsWhere[] = 'ar.attendance_date>=?'; $attendanceRowsParams[] = $from; }
@@ -232,21 +233,54 @@ $attendanceRowsSql = $attendanceRowsWhere ? 'WHERE ' . implode(' AND ', $attenda
 $attendanceRowsStmt = $pdo->prepare("SELECT ar.beneficiary_id, ar.attendance_date, ar.attendance_status FROM attendance_records ar JOIN beneficiaries b ON b.beneficiary_id = ar.beneficiary_id $attendanceRowsSql");
 $attendanceRowsStmt->execute($attendanceRowsParams);
 foreach ($attendanceRowsStmt->fetchAll() as $attendanceRow) {
-    $attendanceMatrix[(int)$attendanceRow['beneficiary_id']][$attendanceRow['attendance_date']] = $attendanceRow['attendance_status'];
+    $attendanceDate = $attendanceRow['attendance_date'];
+    $attendanceMatrix[(int)$attendanceRow['beneficiary_id']][$attendanceDate] = $attendanceRow['attendance_status'];
+    if (isset($attCounts[$attendanceRow['attendance_status']])) {
+        $attendanceDailyCounts[$attendanceDate] ??= ['PRESENT' => 0, 'ABSENT' => 0];
+        $attendanceDailyCounts[$attendanceDate][$attendanceRow['attendance_status']]++;
+    }
 }
 
 $attTotal = array_sum($attCounts);
 $attColors = ['PRESENT' => '#1a9c53', 'ABSENT' => '#e53e3e'];
 $attLabels = ['PRESENT' => 'Present', 'ABSENT' => 'Absent'];
-$attGradientParts = [];
-$attCursor = 0;
-foreach ($attCounts as $key => $count) {
-    if ($attTotal === 0) break;
-    $pct = $count / $attTotal * 100;
-    $attGradientParts[] = $attColors[$key] . ' ' . round($attCursor, 2) . '% ' . round($attCursor + $pct, 2) . '%';
-    $attCursor += $pct;
+$attendanceChartMax = 0;
+foreach ($attendanceDates as $attendanceDate) {
+    $dailyCounts = $attendanceDailyCounts[$attendanceDate] ?? ['PRESENT' => 0, 'ABSENT' => 0];
+    $attendanceChartMax = max($attendanceChartMax, $dailyCounts['PRESENT'], $dailyCounts['ABSENT']);
 }
-$attGradient = $attGradientParts ? implode(', ', $attGradientParts) : '#eef1f6 0% 100%';
+$attendanceChartPoints = [];
+$attendanceDateCount = count($attendanceDates);
+foreach ($attendanceDates as $index => $attendanceDate) {
+    $dailyCounts = $attendanceDailyCounts[$attendanceDate] ?? ['PRESENT' => 0, 'ABSENT' => 0];
+    $x = $attendanceDateCount > 1 ? 36 + $index * 328 / ($attendanceDateCount - 1) : 200;
+    $scaleMax = max(1, $attendanceChartMax);
+    $attendanceChartPoints[] = [
+        'x' => $x,
+        'present' => $dailyCounts['PRESENT'],
+        'presentY' => 126 - $dailyCounts['PRESENT'] / $scaleMax * 100,
+        'absent' => $dailyCounts['ABSENT'],
+        'absentY' => 126 - $dailyCounts['ABSENT'] / $scaleMax * 100,
+        'label' => (new DateTimeImmutable($attendanceDate))->format('n/j'),
+    ];
+}
+$attendancePresentLine = implode(' ', array_map(
+    fn($point) => number_format($point['x'], 1, '.', '') . ',' . number_format($point['presentY'], 1, '.', ''),
+    $attendanceChartPoints
+));
+$attendanceAbsentLine = implode(' ', array_map(
+    fn($point) => number_format($point['x'], 1, '.', '') . ',' . number_format($point['absentY'], 1, '.', ''),
+    $attendanceChartPoints
+));
+$attendanceLabelIndexes = $attendanceDateCount <= 5
+    ? array_keys($attendanceChartPoints)
+    : array_values(array_unique([
+        0,
+        (int)round(($attendanceDateCount - 1) / 4),
+        (int)round(($attendanceDateCount - 1) / 2),
+        (int)round(3 * ($attendanceDateCount - 1) / 4),
+        $attendanceDateCount - 1,
+    ]));
 
 // Age-bracket distribution for the pie chart, respecting the same site/
 // program/status scope as the tables above but independent of whether a
@@ -267,16 +301,8 @@ foreach ($ageStmt->fetchAll(PDO::FETCH_COLUMN) as $bd) {
     else $ageBuckets['13+']++;
 }
 $ageTotal = array_sum($ageBuckets);
+$ageChartMax = max($ageBuckets);
 $ageColors = ['Under 6' => '#7c3aed', '6–12' => '#cf9319', '13+' => '#14b8a6'];
-$gradientParts = [];
-$cursor = 0;
-foreach ($ageBuckets as $label => $count) {
-    if ($ageTotal === 0) break;
-    $pct = $count / $ageTotal * 100;
-    $gradientParts[] = $ageColors[$label] . ' ' . round($cursor, 2) . '% ' . round($cursor + $pct, 2) . '%';
-    $cursor += $pct;
-}
-$pieGradient = $gradientParts ? implode(', ', $gradientParts) : '#eef1f6 0% 100%';
 
 // Gender (sex) distribution of beneficiaries, scoped by the same site/
 // program/status filters as the age chart and likewise independent of
@@ -321,20 +347,12 @@ foreach ($milestoneBuckets as $key => $counts) {
         $colorMap[$cat] = $categoryPalette[$i % count($categoryPalette)];
         $i++;
     }
-    $cursor = 0;
-    $parts = [];
-    foreach ($counts as $cat => $n) {
-        if ($total === 0) break;
-        $pct = $n / $total * 100;
-        $parts[] = $colorMap[$cat] . ' ' . round($cursor, 2) . '% ' . round($cursor + $pct, 2) . '%';
-        $cursor += $pct;
-    }
     $milestoneCharts[$key] = [
         'label' => $milestoneLabels[$key],
         'counts' => $counts,
         'colors' => $colorMap,
         'total' => $total,
-        'gradient' => $parts ? implode(', ', $parts) : '#eef1f6 0% 100%',
+        'max' => $counts ? max($counts) : 0,
     ];
 }
 
@@ -464,10 +482,13 @@ require __DIR__ . '/partials/header.php';
         <?php foreach ($milestoneCharts as $chart): ?>
         <div class="milestone-chart">
             <h3><?= e($chart['label']) ?> BMI Categories</h3>
-            <div class="pie-chart sm" role="img" aria-label="<?= e($chart['label'] . ' BMI categories: ' . implode(', ', array_map(fn($c, $n) => $c . ' ' . $n, array_keys($chart['counts']), $chart['counts']))) ?>" style="background: conic-gradient(<?= $chart['gradient'] ?>);"></div>
-            <div class="pie-legend">
+            <div class="bmi-bars" role="img" aria-label="<?= e($chart['label'] . ' BMI categories: ' . implode(', ', array_map(fn($c, $n) => $c . ' ' . $n, array_keys($chart['counts']), $chart['counts']))) ?>">
                 <?php foreach ($chart['counts'] as $cat => $n): ?>
-                <div class="pie-legend-item"><span class="swatch" style="background:<?= $chart['colors'][$cat] ?>;"></span><?= e($cat) ?> <strong><?= $n ?></strong></div>
+                <div class="bmi-bar-row">
+                    <strong><?= (int)$n ?></strong>
+                    <span class="bmi-bar-track"><span class="bmi-bar-fill" style="height: <?= $chart['max'] ? ($n / $chart['max'] * 100) : 0 ?>%; background: <?= e($chart['colors'][$cat]) ?>;"></span></span>
+                    <span class="bmi-bar-label"><?= e($cat) ?></span>
+                </div>
                 <?php endforeach; ?>
                 <?php if ($chart['total'] === 0): ?><p class="muted" style="margin:2px 0 0;">No records yet.</p><?php endif; ?>
             </div>
@@ -481,12 +502,31 @@ require __DIR__ . '/partials/header.php';
         <h2>Attendance Participation</h2>
     </div>
     <div class="pie-wrap">
-        <div class="pie-chart sm" role="img" aria-label="<?= e('Attendance: ' . implode(', ', array_map(fn($k, $n) => $attLabels[$k] . ' ' . $n, array_keys($attCounts), $attCounts))) ?>" style="background: conic-gradient(<?= $attGradient ?>);"></div>
+        <?php if ($attTotal > 0 && $attendanceChartPoints): ?>
+        <svg class="attendance-line-chart" viewBox="0 0 400 160" role="img" aria-label="<?= e('Daily attendance counts for present and absent records, ' . $attendanceChartPoints[0]['label'] . ' through ' . $attendanceChartPoints[count($attendanceChartPoints) - 1]['label']) ?>">
+            <line x1="36" y1="26" x2="364" y2="26" class="attendance-chart-grid" />
+            <line x1="36" y1="76" x2="364" y2="76" class="attendance-chart-grid" />
+            <line x1="36" y1="126" x2="364" y2="126" class="attendance-chart-grid" />
+            <text x="30" y="29" text-anchor="end" class="attendance-chart-axis"><?= (int)$attendanceChartMax ?></text>
+            <text x="30" y="79" text-anchor="end" class="attendance-chart-axis"><?= (int)ceil($attendanceChartMax / 2) ?></text>
+            <text x="30" y="129" text-anchor="end" class="attendance-chart-axis">0</text>
+            <polyline points="<?= e($attendancePresentLine) ?>" class="attendance-chart-line present" />
+            <polyline points="<?= e($attendanceAbsentLine) ?>" class="attendance-chart-line absent" />
+            <?php if ($attendanceDateCount === 1): ?>
+            <circle cx="<?= number_format($attendanceChartPoints[0]['x'], 1, '.', '') ?>" cy="<?= number_format($attendanceChartPoints[0]['presentY'], 1, '.', '') ?>" r="4" class="attendance-chart-point present" />
+            <circle cx="<?= number_format($attendanceChartPoints[0]['x'], 1, '.', '') ?>" cy="<?= number_format($attendanceChartPoints[0]['absentY'], 1, '.', '') ?>" r="4" class="attendance-chart-point absent" />
+            <?php endif; ?>
+            <?php foreach ($attendanceLabelIndexes as $labelIndex): ?>
+            <text x="<?= number_format($attendanceChartPoints[$labelIndex]['x'], 1, '.', '') ?>" y="150" text-anchor="middle" class="attendance-chart-axis"><?= e($attendanceChartPoints[$labelIndex]['label']) ?></text>
+            <?php endforeach; ?>
+        </svg>
+        <?php else: ?>
+        <p class="muted" style="margin:4px 0 0;">No attendance records match this scope.</p>
+        <?php endif; ?>
         <div class="pie-legend">
             <?php foreach ($attCounts as $key => $count): ?>
             <div class="pie-legend-item"><span class="swatch" style="background:<?= $attColors[$key] ?>;"></span><?= e($attLabels[$key]) ?> <strong><?= $count ?></strong></div>
             <?php endforeach; ?>
-            <?php if ($attTotal === 0): ?><p class="muted" style="margin:4px 0 0;">No attendance records match this scope.</p><?php endif; ?>
         </div>
     </div>
 </section>
@@ -495,14 +535,15 @@ require __DIR__ . '/partials/header.php';
     <div class="panel-head">
         <h2>Age Distribution</h2>
     </div>
-    <div class="pie-wrap">
-        <div class="pie-chart sm" role="img" aria-label="<?= e('Age distribution: ' . implode(', ', array_map(fn($l, $n) => $l . ' years ' . $n, array_keys($ageBuckets), $ageBuckets))) ?>" style="background: conic-gradient(<?= $pieGradient ?>);"></div>
-        <div class="pie-legend">
-            <?php foreach ($ageBuckets as $label => $count): ?>
-            <div class="pie-legend-item"><span class="swatch" style="background:<?= $ageColors[$label] ?>;"></span><?= e($label) ?> years <strong><?= $count ?></strong></div>
-            <?php endforeach; ?>
-            <?php if ($ageTotal === 0): ?><p class="muted" style="margin:4px 0 0;">No beneficiaries match this scope.</p><?php endif; ?>
+    <div class="age-chart-bars" role="img" aria-label="<?= e('Age distribution: ' . implode(', ', array_map(fn($l, $n) => $l . ' years ' . $n, array_keys($ageBuckets), $ageBuckets))) ?>">
+        <?php foreach ($ageBuckets as $label => $count): ?>
+        <div class="age-chart-bar-row">
+            <strong><?= (int)$count ?></strong>
+            <span class="age-chart-bar-track"><span class="age-chart-bar-fill" style="height: <?= $ageChartMax ? ($count / $ageChartMax * 100) : 0 ?>%; background: <?= e($ageColors[$label]) ?>;"></span></span>
+            <span class="age-chart-bar-label"><?= e($label) ?> years</span>
         </div>
+        <?php endforeach; ?>
+        <?php if ($ageTotal === 0): ?><p class="muted" style="margin:4px 0 0;">No beneficiaries match this scope.</p><?php endif; ?>
     </div>
 </section>
 

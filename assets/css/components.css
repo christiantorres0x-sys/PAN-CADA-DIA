@@ -609,17 +609,103 @@ tbody tr.clickable-row {
   color: var(--muted);
 }
 
-.milestone-chart .pie-chart {
-  margin: 0 auto 8px;
+.milestone-chart .bmi-bars,
+.age-chart-bars {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+  min-height: 180px;
 }
 
-.milestone-chart .pie-legend {
-  align-items: center;
+.milestone-chart .bmi-bar-row,
+.age-chart-bar-row {
+  display: grid;
+  flex: 0 0 58px;
+  grid-template-rows: 14px 120px 2.5em;
+  justify-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 11px;
+}
+
+.milestone-chart .bmi-bar-row strong,
+.age-chart-bar-row strong {
+  line-height: 1;
+}
+
+.milestone-chart .bmi-bar-label,
+.age-chart-bar-label {
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.milestone-chart .bmi-bar-track,
+.age-chart-bar-track {
+  display: flex;
+  align-items: flex-end;
+  align-self: end;
+  width: 18px;
+  height: 120px;
+  overflow: hidden;
+  border-radius: 0;
+  background: #eef1f6;
+}
+
+.milestone-chart .bmi-bar-fill,
+.age-chart-bar-fill {
+  display: block;
+  width: 100%;
+  border-radius: 0;
 }
 
 .pie-chart.sm {
   width: 96px;
   height: 96px;
+}
+
+.attendance-line-chart {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  overflow: visible;
+  flex: none;
+}
+
+.attendance-chart-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.attendance-chart-axis {
+  fill: var(--muted);
+  font-size: 10px;
+}
+
+.attendance-chart-line {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.attendance-chart-line.present {
+  stroke: #1a9c53;
+}
+
+.attendance-chart-point.present {
+  fill: #1a9c53;
+  stroke: #1a9c53;
+}
+
+.attendance-chart-line.absent {
+  stroke: #e53e3e;
+}
+
+.attendance-chart-point.absent {
+  fill: #e53e3e;
+  stroke: #e53e3e;
 }
 
 .big-number {
