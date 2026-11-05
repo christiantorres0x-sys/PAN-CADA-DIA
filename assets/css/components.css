@@ -549,12 +549,22 @@ tbody tr.clickable-row {
   margin-left: 2px;
 }
 
+/* Collapsed state: a compact button-sized panel resting on the left edge.
+   Once opened it goes back to full width so the form has room. */
 .program-setup-add-panel:has(> details.collapsible:not([open])) {
   background: var(--green-bg);
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 14px;
+}
+
+.program-setup-add-panel:has(> details.collapsible:not([open])) details.collapsible > summary {
+  min-height: 34px;
+  gap: 14px;
 }
 
 .program-setup-add-panel details.collapsible > summary h2 {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .program-setup-add-panel:has(> details.collapsible[open]) {

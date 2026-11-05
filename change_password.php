@@ -114,6 +114,8 @@ $pageSubtitle = 'Signed in as ' . ($_SESSION['user_name'] ?? '');
 require __DIR__ . '/partials/header.php';
 ?>
 <div class="form-panel form-panel-narrow">
+    <section class="panel change-password-panel">
+    <h2>Update Your Password</h2>
     <form method="post" action="change_password.php" id="change-password-form" autocomplete="off">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <div class="form-grid">
@@ -136,6 +138,7 @@ require __DIR__ . '/partials/header.php';
             <button class="btn primary" type="submit">Change Password</button>
         </div>
     </form>
+    </section>
 </div>
 <script>
 (function () {
