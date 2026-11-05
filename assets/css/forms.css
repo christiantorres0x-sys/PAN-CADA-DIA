@@ -283,3 +283,9 @@ input.auto-field:focus {
   border-color: var(--border);
   box-shadow: none;
 }
+
+/* Narrow single-column form (Change Password). */
+.form-panel-narrow {
+  max-width: 460px;
+  margin-left: 0;
+}
