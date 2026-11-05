@@ -74,9 +74,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link rel="stylesheet" href="assets/css/login.css?v=<?= (int)@filemtime(__DIR__ . '/assets/css/login.css') ?>">
 </head>
 <body class="login-page">
-<div class="login-photo" aria-hidden="true"></div>
 <aside class="login-brand" aria-label="Ateneo de Zamboanga University">
-    <img class="login-brand__seal" src="assets/images/AdZU-logo.svg" width="768" height="764" alt="Ateneo de Zamboanga University seal">
+    <div class="login-brand__photo" aria-hidden="true"></div>
+    <img class="login-brand__seal" src="assets/images/AdZU-logo.svg" width="768" height="764" alt="" aria-hidden="true">
+    <div class="login-brand__lockup">
+        <img src="assets/images/AdZU-logo.svg" width="768" height="764" alt="Ateneo de Zamboanga University seal">
+        <span>Ateneo de Zamboanga University</span>
+    </div>
+    <div class="login-brand__message">
+        <h2>Track the health and nutrition of every child in the feeding program.</h2>
+        <p>A program of the Center for Community Extension Services.</p>
+    </div>
 </aside>
 
 <main class="login-panel">
