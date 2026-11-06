@@ -218,9 +218,16 @@ if ($from !== '' && $to !== '') {
     $attendanceDates = $attendanceDateStmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
-$attendanceBeneficiaryStmt = $pdo->prepare("SELECT b.beneficiary_id, b.beneficiary_code, b.full_name FROM beneficiaries b $attendanceScopeSql ORDER BY b.full_name");
+$attendanceBeneficiaryStmt = $pdo->prepare("SELECT b.beneficiary_id, b.beneficiary_code, b.full_name, b.program_status FROM beneficiaries b $attendanceScopeSql ORDER BY b.full_name");
 $attendanceBeneficiaryStmt->execute($attendanceScopeParams);
 $attendanceBeneficiaries = $attendanceBeneficiaryStmt->fetchAll();
+$attendanceTotals = [];
+$attendanceIsActive = [];
+foreach ($attendanceBeneficiaries as $attendanceBeneficiary) {
+    $beneficiaryId = (int)$attendanceBeneficiary['beneficiary_id'];
+    $attendanceTotals[$beneficiaryId] = ['present' => 0, 'absent' => 0, 'active_days' => 0, 'marked_days' => 0];
+    $attendanceIsActive[$beneficiaryId] = strcasecmp((string)$attendanceBeneficiary['program_status'], 'ACTIVE') === 0;
+}
 
 $attendanceMatrix = [];
 $attendanceDailyCounts = [];
@@ -234,10 +241,20 @@ $attendanceRowsStmt = $pdo->prepare("SELECT ar.beneficiary_id, ar.attendance_dat
 $attendanceRowsStmt->execute($attendanceRowsParams);
 foreach ($attendanceRowsStmt->fetchAll() as $attendanceRow) {
     $attendanceDate = $attendanceRow['attendance_date'];
-    $attendanceMatrix[(int)$attendanceRow['beneficiary_id']][$attendanceDate] = $attendanceRow['attendance_status'];
-    if (isset($attCounts[$attendanceRow['attendance_status']])) {
+    $beneficiaryId = (int)$attendanceRow['beneficiary_id'];
+    $attendanceStatus = $attendanceRow['attendance_status'];
+    $attendanceMatrix[$beneficiaryId][$attendanceDate] = $attendanceStatus;
+    if ($attendanceStatus === 'PRESENT' || $attendanceStatus === 'ABSENT') {
+        $countKey = strtolower($attendanceStatus);
+        $attendanceTotals[$beneficiaryId][$countKey]++;
+        $attendanceTotals[$beneficiaryId]['marked_days']++;
+        if ($attendanceIsActive[$beneficiaryId]) {
+            $attendanceTotals[$beneficiaryId]['active_days']++;
+        }
+    }
+    if (isset($attCounts[$attendanceStatus])) {
         $attendanceDailyCounts[$attendanceDate] ??= ['PRESENT' => 0, 'ABSENT' => 0];
-        $attendanceDailyCounts[$attendanceDate][$attendanceRow['attendance_status']]++;
+        $attendanceDailyCounts[$attendanceDate][$attendanceStatus]++;
     }
 }
 
@@ -251,9 +268,18 @@ foreach ($attendanceDates as $attendanceDate) {
 }
 $attendanceChartPoints = [];
 $attendanceDateCount = count($attendanceDates);
+$attendanceLabelTicks = [];
+$attendanceStartDate = $attendanceDateCount ? new DateTimeImmutable($attendanceDates[0]) : null;
+$attendanceEndDate = $attendanceDateCount ? new DateTimeImmutable($attendanceDates[$attendanceDateCount - 1]) : null;
+$attendanceDateSpan = $attendanceStartDate && $attendanceEndDate
+    ? (int)$attendanceStartDate->diff($attendanceEndDate)->format('%a')
+    : 0;
 foreach ($attendanceDates as $index => $attendanceDate) {
     $dailyCounts = $attendanceDailyCounts[$attendanceDate] ?? ['PRESENT' => 0, 'ABSENT' => 0];
-    $x = $attendanceDateCount > 1 ? 36 + $index * 328 / ($attendanceDateCount - 1) : 200;
+    $dateOffset = $attendanceStartDate
+        ? (int)$attendanceStartDate->diff(new DateTimeImmutable($attendanceDate))->format('%a')
+        : 0;
+    $x = $attendanceDateSpan > 0 ? 36 + $dateOffset * 328 / $attendanceDateSpan : 200;
     $scaleMax = max(1, $attendanceChartMax);
     $attendanceChartPoints[] = [
         'x' => $x,
@@ -264,6 +290,26 @@ foreach ($attendanceDates as $index => $attendanceDate) {
         'label' => (new DateTimeImmutable($attendanceDate))->format('n/j'),
     ];
 }
+if ($attendanceStartDate && $attendanceEndDate) {
+    $tickMonth = $attendanceStartDate->modify('first day of this month');
+    while ($tickMonth <= $attendanceEndDate) {
+        foreach ([5, 10, 15, 20, 25, 30] as $dayOfMonth) {
+            $tickDate = $tickMonth->setDate(
+                (int)$tickMonth->format('Y'),
+                (int)$tickMonth->format('n'),
+                $dayOfMonth
+            );
+            if ($tickDate < $attendanceStartDate || $tickDate > $attendanceEndDate) continue;
+
+            $tickOffset = (int)$attendanceStartDate->diff($tickDate)->format('%a');
+            $attendanceLabelTicks[] = [
+                'x' => $attendanceDateSpan > 0 ? 36 + $tickOffset * 328 / $attendanceDateSpan : 200,
+                'label' => $tickDate->format('j') . 'th',
+            ];
+        }
+        $tickMonth = $tickMonth->modify('first day of next month');
+    }
+}
 $attendancePresentLine = implode(' ', array_map(
     fn($point) => number_format($point['x'], 1, '.', '') . ',' . number_format($point['presentY'], 1, '.', ''),
     $attendanceChartPoints
@@ -272,16 +318,6 @@ $attendanceAbsentLine = implode(' ', array_map(
     fn($point) => number_format($point['x'], 1, '.', '') . ',' . number_format($point['absentY'], 1, '.', ''),
     $attendanceChartPoints
 ));
-$attendanceLabelIndexes = $attendanceDateCount <= 5
-    ? array_keys($attendanceChartPoints)
-    : array_values(array_unique([
-        0,
-        (int)round(($attendanceDateCount - 1) / 4),
-        (int)round(($attendanceDateCount - 1) / 2),
-        (int)round(3 * ($attendanceDateCount - 1) / 4),
-        $attendanceDateCount - 1,
-    ]));
-
 // Age-bracket distribution for the pie chart, respecting the same site/
 // program/status scope as the tables above but independent of whether a
 // health record exists yet.
@@ -516,8 +552,8 @@ require __DIR__ . '/partials/header.php';
             <circle cx="<?= number_format($attendanceChartPoints[0]['x'], 1, '.', '') ?>" cy="<?= number_format($attendanceChartPoints[0]['presentY'], 1, '.', '') ?>" r="4" class="attendance-chart-point present" />
             <circle cx="<?= number_format($attendanceChartPoints[0]['x'], 1, '.', '') ?>" cy="<?= number_format($attendanceChartPoints[0]['absentY'], 1, '.', '') ?>" r="4" class="attendance-chart-point absent" />
             <?php endif; ?>
-            <?php foreach ($attendanceLabelIndexes as $labelIndex): ?>
-            <text x="<?= number_format($attendanceChartPoints[$labelIndex]['x'], 1, '.', '') ?>" y="150" text-anchor="middle" class="attendance-chart-axis"><?= e($attendanceChartPoints[$labelIndex]['label']) ?></text>
+            <?php foreach ($attendanceLabelTicks as $tick): ?>
+            <text x="<?= number_format($tick['x'], 1, '.', '') ?>" y="150" text-anchor="middle" class="attendance-chart-axis"><?= e($tick['label']) ?></text>
             <?php endforeach; ?>
         </svg>
         <?php else: ?>
@@ -525,7 +561,7 @@ require __DIR__ . '/partials/header.php';
         <?php endif; ?>
         <div class="pie-legend">
             <?php foreach ($attCounts as $key => $count): ?>
-            <div class="pie-legend-item"><span class="swatch" style="background:<?= $attColors[$key] ?>;"></span><?= e($attLabels[$key]) ?> <strong><?= $count ?></strong></div>
+            <div class="pie-legend-item"><span class="swatch" style="background:<?= $attColors[$key] ?>;"></span><?= e($attLabels[$key]) ?></div>
             <?php endforeach; ?>
         </div>
     </div>
@@ -578,39 +614,34 @@ require __DIR__ . '/partials/header.php';
             <colgroup>
                 <col class="attendance-id-column">
                 <col class="attendance-beneficiary-column">
-                <?php foreach ($attendanceDates as $_): ?><col class="attendance-day-col"><?php endforeach; ?>
+                <col class="attendance-active-days-column">
+                <col class="attendance-count-column">
+                <col class="attendance-count-column">
+                <col class="attendance-rate-column">
+                <col class="attendance-rate-column">
             </colgroup>
             <thead>
                 <tr>
-                    <th rowspan="2">ID</th>
-                    <th rowspan="2">Beneficiary</th>
-                    <th colspan="<?= count($attendanceDates) ?>" class="attendance-days-heading">Implementation Date (<?= e($implementationPeriod) ?>)</th>
-                </tr>
-                <tr>
-                    <?php foreach ($attendanceDates as $attendanceDate): ?>
-                    <th class="attendance-day-column" title="<?= e($fmtDate($attendanceDate)) ?>">
-                        <?= (int)date('j', strtotime($attendanceDate)) ?>
-                    </th>
-                    <?php endforeach; ?>
+                    <th>ID</th>
+                    <th>Beneficiary</th>
+                    <th>Days Active</th>
+                    <th>Present</th>
+                    <th>Absent</th>
+                    <th>Present Rate</th>
+                    <th>Absent Rate</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($attendanceBeneficiaries as $attendanceBeneficiary): ?>
+                    <?php $beneficiaryAttendance = $attendanceTotals[(int)$attendanceBeneficiary['beneficiary_id']]; ?>
                 <tr>
                     <td><?= $attendanceBeneficiary['beneficiary_code'] ? '<span class="code-tag">' . e($attendanceBeneficiary['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
                     <td><a href="beneficiary.php?id=<?= (int)$attendanceBeneficiary['beneficiary_id'] ?>"><?= e($attendanceBeneficiary['full_name']) ?></a></td>
-                    <?php foreach ($attendanceDates as $attendanceDate): ?>
-                        <?php $dayStatus = $attendanceMatrix[(int)$attendanceBeneficiary['beneficiary_id']][$attendanceDate] ?? ''; ?>
-                        <td class="attendance-day-cell">
-                            <?php if ($dayStatus === 'PRESENT'): ?>
-                                <span class="attendance-mark present" aria-label="Present" title="Present">&#10003;</span>
-                            <?php elseif ($dayStatus === 'ABSENT'): ?>
-                                <span class="attendance-mark absent" aria-label="Absent" title="Absent">&times;</span>
-                            <?php else: ?>
-                                <span class="muted" aria-label="Not marked">—</span>
-                            <?php endif; ?>
-                        </td>
-                    <?php endforeach; ?>
+                    <td class="attendance-count-cell"><?= (int)$beneficiaryAttendance['active_days'] ?></td>
+                    <td class="attendance-count-cell"><?= (int)$beneficiaryAttendance['present'] ?></td>
+                    <td class="attendance-count-cell"><?= (int)$beneficiaryAttendance['absent'] ?></td>
+                    <td class="attendance-count-cell"><?= $beneficiaryAttendance['marked_days'] > 0 ? number_format($beneficiaryAttendance['present'] / $beneficiaryAttendance['marked_days'] * 100, 0) . '%' : '—' ?></td>
+                    <td class="attendance-count-cell"><?= $beneficiaryAttendance['marked_days'] > 0 ? number_format($beneficiaryAttendance['absent'] / $beneficiaryAttendance['marked_days'] * 100, 0) . '%' : '—' ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

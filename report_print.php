@@ -27,7 +27,6 @@ foreach ($rows as $r) {
 arsort($statusTotals);
 $classifiedTotal = array_sum($statusTotals);
 $attRate = $attTotal > 0 ? number_format($attCounts['PRESENT'] / $attTotal * 100, 1) . '%' : '—';
-$attendanceDateGroups = array_chunk($attendanceDates, 31);
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -74,20 +73,34 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
   table.data .flag { font-weight: 700; }
   table.data .pend { color: #666; font-style: italic; text-align: center; }
   table.data tfoot td { font-weight: 700; background: #f1f3f8; }
-  table.attendance-register { table-layout: fixed; font-size: 6.5pt; margin-top: 6px; }
-  table.attendance-register th, table.attendance-register td { padding: 2px 1px; text-align: center; }
-  table.attendance-register .id-col { width: 0.48in; }
-  table.attendance-register .name-col { width: 1.55in; }
-  table.attendance-register .date-col { width: auto; }
+  table.attendance-register { table-layout: fixed; font-size: 8.5pt; margin-top: 6px; }
+  table.attendance-register th, table.attendance-register td { padding: 4px 5px; text-align: center; }
+  table.attendance-register .id-col { width: 0.7in; }
+  table.attendance-register .name-col { width: 2.3in; }
+  table.attendance-register .count-col { width: 0.65in; }
+  table.attendance-register .active-days-col { width: 0.9in; }
+  table.attendance-register .rate-col { width: 0.8in; }
   table.attendance-register td.name { text-align: left; overflow-wrap: anywhere; }
-  table.attendance-register .mark-present { color: #137a40; font-weight: 700; }
-  table.attendance-register .mark-absent { color: #c53030; font-weight: 700; }
   .caption { font-size: 8.5pt; font-style: italic; margin: 0 0 8px; }
 
   .charts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; break-inside: avoid; }
   .chart { border: 1px solid #333; padding: 8px; text-align: center; break-inside: avoid; }
   .chart h3 { margin: 0 0 6px; font-size: 9.5pt; }
   .pie { width: 1.05in; height: 1.05in; border-radius: 50%; margin: 0 auto 6px; border: 1px solid #333; }
+  .bar-chart { display: flex; justify-content: center; align-items: stretch; gap: 4px; min-height: 1.75in; }
+  .bar-row { display: grid; flex: 0 1 0.55in; grid-template-rows: 9pt 1.2in auto; justify-items: center; gap: 3px; min-width: 0; font: 6.5pt Arial, sans-serif; }
+  .bar-row strong { line-height: 1; }
+  .bar-label { text-align: center; white-space: nowrap; font-size: 6pt; }
+  .bar-track { display: flex; align-items: flex-end; align-self: end; width: 0.14in; height: 1.2in; overflow: hidden; background: #eef1f6; }
+  .bar-fill { display: block; width: 100%; }
+  .attendance-chart { display: block; width: 100%; height: auto; margin: 4px auto; }
+  .attendance-grid { stroke: #bbb; stroke-width: 1; }
+  .attendance-axis { fill: #444; font: 10px Arial, sans-serif; }
+  .attendance-line { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .attendance-line.present { stroke: #1a9c53; }
+  .attendance-line.absent { stroke: #e53e3e; }
+  .attendance-legend { display: flex; justify-content: center; gap: 12px; font: 8pt Arial, sans-serif; }
+  .attendance-legend span { display: inline-flex; align-items: center; gap: 4px; }
   .legend { font-size: 8pt; text-align: left; }
   .legend div { display: flex; align-items: center; gap: 5px; margin: 1px 0; }
   .sw { width: 9px; height: 9px; border: 1px solid #333; flex: none; }
@@ -201,10 +214,13 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
     <?php foreach ($milestoneCharts as $chart): ?>
     <div class="chart">
       <h3><?= e($chart['label']) ?> (n = <?= (int)$chart['total'] ?>)</h3>
-      <div class="pie" style="background: conic-gradient(<?= $chart['gradient'] ?>);"></div>
-      <div class="legend">
+      <div class="bar-chart" role="img" aria-label="<?= e($chart['label'] . ' BMI categories: ' . implode(', ', array_map(fn($cat, $count) => $cat . ' ' . $count, array_keys($chart['counts']), $chart['counts']))) ?>">
         <?php foreach ($chart['counts'] as $cat => $n): ?>
-        <div><span class="sw" style="background:<?= $chart['colors'][$cat] ?>;"></span><?= e($cat) ?><b><?= (int)$n ?> (<?= e($pct($n, $chart['total'])) ?>)</b></div>
+        <div class="bar-row">
+          <strong><?= (int)$n ?></strong>
+          <span class="bar-track"><span class="bar-fill" style="height: <?= $chart['max'] ? ($n / $chart['max'] * 100) : 0 ?>%; background: <?= e($chart['colors'][$cat]) ?>;"></span></span>
+          <span class="bar-label"><?= e($cat) ?></span>
+        </div>
         <?php endforeach; ?>
         <?php if ($chart['total'] === 0): ?><div>No records yet.</div><?php endif; ?>
       </div>
@@ -213,31 +229,53 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
   </div>
 
   <h2 class="sec">IV. Attendance, Age and Gender Profile</h2>
-  <div class="pair trio">
+  <div class="charts">
     <div class="chart">
-      <div class="pie" style="background: conic-gradient(<?= $attGradient ?>);"></div>
-      <div class="legend">
-        <strong>Attendance Participation</strong>
-        <?php foreach ($attCounts as $key => $count): ?>
-        <div><span class="sw" style="background:<?= $attColors[$key] ?>;"></span><?= e($attLabels[$key]) ?><b><?= (int)$count ?> (<?= e($pct($count, $attTotal)) ?>)</b></div>
+      <h3>Attendance Participation</h3>
+      <?php if ($attTotal > 0 && $attendanceChartPoints): ?>
+      <svg class="attendance-chart" viewBox="0 0 400 160" role="img" aria-label="<?= e('Daily attendance counts for present and absent records, ' . $attendanceChartPoints[0]['label'] . ' through ' . $attendanceChartPoints[count($attendanceChartPoints) - 1]['label']) ?>">
+        <line x1="36" y1="26" x2="364" y2="26" class="attendance-grid" />
+        <line x1="36" y1="76" x2="364" y2="76" class="attendance-grid" />
+        <line x1="36" y1="126" x2="364" y2="126" class="attendance-grid" />
+        <text x="30" y="29" text-anchor="end" class="attendance-axis"><?= (int)$attendanceChartMax ?></text>
+        <text x="30" y="79" text-anchor="end" class="attendance-axis"><?= (int)ceil($attendanceChartMax / 2) ?></text>
+        <text x="30" y="129" text-anchor="end" class="attendance-axis">0</text>
+        <polyline points="<?= e($attendancePresentLine) ?>" class="attendance-line present" />
+        <polyline points="<?= e($attendanceAbsentLine) ?>" class="attendance-line absent" />
+        <?php if ($attendanceDateCount === 1): ?>
+        <circle cx="<?= number_format($attendanceChartPoints[0]['x'], 1, '.', '') ?>" cy="<?= number_format($attendanceChartPoints[0]['presentY'], 1, '.', '') ?>" r="4" fill="#1a9c53" />
+        <circle cx="<?= number_format($attendanceChartPoints[0]['x'], 1, '.', '') ?>" cy="<?= number_format($attendanceChartPoints[0]['absentY'], 1, '.', '') ?>" r="4" fill="#e53e3e" />
+        <?php endif; ?>
+        <?php foreach ($attendanceLabelTicks as $tick): ?>
+        <text x="<?= number_format($tick['x'], 1, '.', '') ?>" y="150" text-anchor="middle" class="attendance-axis"><?= e($tick['label']) ?></text>
         <?php endforeach; ?>
-        <?php if ($attTotal === 0): ?><div>No attendance records.</div><?php endif; ?>
+      </svg>
+      <?php else: ?>
+      <div>No attendance records match this scope.</div>
+      <?php endif; ?>
+      <div class="attendance-legend">
+        <?php foreach ($attCounts as $key => $count): ?>
+        <span><span class="sw" style="background:<?= $attColors[$key] ?>;"></span><?= e($attLabels[$key]) ?></span>
+        <?php endforeach; ?>
       </div>
     </div>
     <div class="chart">
-      <div class="pie" style="background: conic-gradient(<?= $pieGradient ?>);"></div>
-      <div class="legend">
-        <strong>Age Distribution</strong>
+      <h3>Age Distribution</h3>
+      <div class="bar-chart" role="img" aria-label="<?= e('Age distribution: ' . implode(', ', array_map(fn($label, $count) => $label . ' years ' . $count, array_keys($ageBuckets), $ageBuckets))) ?>">
         <?php foreach ($ageBuckets as $label => $count): ?>
-        <div><span class="sw" style="background:<?= $ageColors[$label] ?>;"></span><?= e($label) ?> yrs<b><?= (int)$count ?> (<?= e($pct($count, $ageTotal)) ?>)</b></div>
+        <div class="bar-row">
+          <strong><?= (int)$count ?></strong>
+          <span class="bar-track"><span class="bar-fill" style="height: <?= $ageChartMax ? ($count / $ageChartMax * 100) : 0 ?>%; background: <?= e($ageColors[$label]) ?>;"></span></span>
+          <span class="bar-label"><?= e($label) ?> years</span>
+        </div>
         <?php endforeach; ?>
         <?php if ($ageTotal === 0): ?><div>No beneficiaries in scope.</div><?php endif; ?>
       </div>
     </div>
     <div class="chart">
+      <h3>Gender Distribution</h3>
       <div class="pie" style="background: conic-gradient(<?= $sexGradient ?>);"></div>
       <div class="legend">
-        <strong>Gender Distribution</strong>
         <?php foreach ($sexCounts as $label => $count): ?>
         <div><span class="sw" style="background:<?= $sexColors[$label] ?>;"></span><?= e($label) ?><b><?= (int)$count ?> (<?= e($pct($count, $sexTotal)) ?>)</b></div>
         <?php endforeach; ?>
@@ -252,49 +290,42 @@ $attendanceDateGroups = array_chunk($attendanceDates, 31);
   <?php elseif (!$attendanceBeneficiaries): ?>
     <p class="caption">No beneficiaries match the selected filters.</p>
   <?php else: ?>
-    <?php foreach ($attendanceDateGroups as $groupIndex => $dateGroup): ?>
-    <?php if (count($attendanceDateGroups) > 1): ?>
-      <p class="caption">Attendance dates <?= e($fmtD($dateGroup[0])) ?> to <?= e($fmtD(end($dateGroup))) ?></p>
-    <?php endif; ?>
     <table class="data attendance-register">
       <colgroup>
         <col class="id-col">
         <col class="name-col">
-        <?php foreach ($dateGroup as $_): ?><col class="date-col"><?php endforeach; ?>
+        <col class="active-days-col">
+        <col class="count-col">
+        <col class="count-col">
+        <col class="rate-col">
+        <col class="rate-col">
       </colgroup>
       <thead>
         <tr>
-          <th rowspan="2">ID</th>
-          <th rowspan="2">Beneficiary</th>
-          <th colspan="<?= count($dateGroup) ?>">Implementation Date (<?= e($period) ?>)</th>
-        </tr>
-        <tr>
-          <?php foreach ($dateGroup as $attendanceDate): ?>
-            <?php
-              $attendanceDateLabel = format_display_date($attendanceDate);
-            ?>
-            <th><?= e($attendanceDateLabel) ?></th>
-          <?php endforeach; ?>
+          <th>ID</th>
+          <th>Beneficiary</th>
+          <th>Days Active</th>
+          <th>Present</th>
+          <th>Absent</th>
+          <th>Present Rate</th>
+          <th>Absent Rate</th>
         </tr>
       </thead>
       <tbody>
         <?php foreach ($attendanceBeneficiaries as $attendanceBeneficiary): ?>
+        <?php $beneficiaryAttendance = $attendanceTotals[(int)$attendanceBeneficiary['beneficiary_id']]; ?>
         <tr>
           <td><?= e($attendanceBeneficiary['beneficiary_code'] ?: '—') ?></td>
           <td class="name single-line-cell"><?= e($attendanceBeneficiary['full_name']) ?></td>
-          <?php foreach ($dateGroup as $attendanceDate): ?>
-            <?php $dayStatus = $attendanceMatrix[(int)$attendanceBeneficiary['beneficiary_id']][$attendanceDate] ?? ''; ?>
-            <td>
-              <?php if ($dayStatus === 'PRESENT'): ?><span class="mark-present">&#10003;</span>
-              <?php elseif ($dayStatus === 'ABSENT'): ?><span class="mark-absent">&times;</span>
-              <?php else: ?>—<?php endif; ?>
-            </td>
-          <?php endforeach; ?>
+          <td><?= (int)$beneficiaryAttendance['active_days'] ?></td>
+          <td><?= (int)$beneficiaryAttendance['present'] ?></td>
+          <td><?= (int)$beneficiaryAttendance['absent'] ?></td>
+          <td><?= $beneficiaryAttendance['marked_days'] > 0 ? number_format($beneficiaryAttendance['present'] / $beneficiaryAttendance['marked_days'] * 100, 0) . '%' : '—' ?></td>
+          <td><?= $beneficiaryAttendance['marked_days'] > 0 ? number_format($beneficiaryAttendance['absent'] / $beneficiaryAttendance['marked_days'] * 100, 0) . '%' : '—' ?></td>
         </tr>
         <?php endforeach; ?>
       </tbody>
     </table>
-    <?php endforeach; ?>
   <?php endif; ?>
 
   <div class="signatures">

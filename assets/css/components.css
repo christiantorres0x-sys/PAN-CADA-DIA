@@ -667,6 +667,15 @@ tbody tr.clickable-row {
   white-space: nowrap;
 }
 
+.age-chart-bar-row {
+  flex: 0 0 max-content;
+  min-width: 58px;
+}
+
+.age-chart-bar-label {
+  white-space: nowrap;
+}
+
 .milestone-chart .bmi-bar-track,
 .age-chart-bar-track {
   display: flex;
@@ -1734,8 +1743,34 @@ table.milestone-table {
   width: 180px;
 }
 
-.reports-attendance-table .attendance-day-col {
-  width: auto;
+.reports-attendance-table .attendance-count-column {
+  width: 90px;
+}
+
+.reports-attendance-table .attendance-rate-column {
+  width: 110px;
+}
+
+.reports-attendance-table .attendance-active-days-column {
+  width: 140px;
+}
+
+.reports-attendance-table td.attendance-count-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.reports-attendance-table tfoot th,
+.reports-attendance-table tfoot td {
+  font-weight: 800;
+}
+
+.reports-attendance-table tfoot th {
+  text-align: center;
+}
+
+.reports-attendance-table tfoot td {
+  text-align: center;
 }
 
 .reports-attendance-table th:first-child,
@@ -1753,35 +1788,6 @@ table.milestone-table {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.reports-attendance-table .attendance-days-heading {
-  text-align: center;
-}
-
-.reports-attendance-table .attendance-day-column,
-.reports-attendance-table .attendance-day-cell {
-  width: auto;
-  min-width: 0;
-  max-width: none;
-  padding-left: 4px;
-  padding-right: 4px;
-  text-align: center;
-  vertical-align: middle;
-}
-
-.reports-attendance-table .attendance-mark {
-  font-size: 15px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.reports-attendance-table .attendance-mark.present {
-  color: var(--green);
-}
-
-.reports-attendance-table .attendance-mark.absent {
-  color: var(--red);
 }
 
 table.milestone-table th,
