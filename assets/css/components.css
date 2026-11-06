@@ -628,6 +628,14 @@ tbody tr.clickable-row {
   min-height: 180px;
 }
 
+.milestone-chart .bmi-bars {
+  justify-content: flex-start;
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  overflow-x: auto;
+}
+
 .milestone-chart .bmi-bar-row,
 .age-chart-bar-row {
   display: grid;
@@ -648,6 +656,15 @@ tbody tr.clickable-row {
 .age-chart-bar-label {
   text-align: center;
   overflow-wrap: anywhere;
+}
+
+.milestone-chart .bmi-bar-row {
+  flex: 0 0 max-content;
+  min-width: 58px;
+}
+
+.milestone-chart .bmi-bar-label {
+  white-space: nowrap;
 }
 
 .milestone-chart .bmi-bar-track,
