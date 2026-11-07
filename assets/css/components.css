@@ -553,9 +553,14 @@ tbody tr.clickable-row {
    Once opened it goes back to full width so the form has room. */
 .program-setup-add-panel:has(> details.collapsible:not([open])) {
   background: var(--green-bg);
-  width: fit-content;
-  max-width: 100%;
+  width: calc((100% - 96px) / 4 + 17px);
   padding: 4px 14px;
+}
+
+@media (max-width: 1280px) {
+  .program-setup-add-panel:has(> details.collapsible:not([open])) {
+    width: calc((100% - 76px) / 2 + 17px);
+  }
 }
 
 .program-setup-add-panel:has(> details.collapsible:not([open])) details.collapsible > summary {
@@ -840,6 +845,34 @@ tbody tr.clickable-row {
 
 .btn.secondary:hover {
   background: #f5f7fb;
+  text-decoration: none;
+}
+
+.btn.cancel-light-red-button {
+  background: #fff0f0;
+  border-color: #f3c6c6;
+  color: #8a2323;
+}
+
+.btn.cancel-light-red-button:hover,
+.btn.cancel-light-red-button:focus-visible {
+  background: #ffe2e2;
+  border-color: #e9aaaa;
+  color: #721c1c;
+  text-decoration: none;
+}
+
+.beneficiary-entry-form .btn.add-another-button {
+  background: #e7f8ee;
+  border-color: #b7e3c8;
+  color: #176b3a;
+}
+
+.beneficiary-entry-form .btn.add-another-button:hover,
+.beneficiary-entry-form .btn.add-another-button:focus-visible {
+  background: #d5f1df;
+  border-color: #9ed6b2;
+  color: #12572f;
   text-decoration: none;
 }
 

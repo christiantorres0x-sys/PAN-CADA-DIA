@@ -192,7 +192,7 @@ require __DIR__ . '/partials/header.php';
             Saving recalculates BMI and the weight status (Asian BMI cut-offs) from the new height and weight. Other measurements for this child are not affected.
         </div>
         <div class="form-actions">
-            <a class="btn secondary cancel-button" href="beneficiary.php?id=<?= $beneficiaryId ?>#health">Cancel</a>
+            <a class="btn secondary cancel-button cancel-light-red-button" href="beneficiary.php?id=<?= $beneficiaryId ?>#health">Cancel</a>
             <button class="btn primary">Save Changes</button>
         </div>
     </form>

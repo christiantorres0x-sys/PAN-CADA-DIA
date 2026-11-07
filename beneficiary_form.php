@@ -247,7 +247,7 @@ require __DIR__ . '/partials/header.php';
         <br>If this is genuinely a different person, you can save anyway.
     </div>
     <?php endif; ?>
-    <form method="post">
+    <form method="post" class="beneficiary-entry-form">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <?php if ($duplicateMatch): ?><input type="hidden" name="confirm_duplicate" value="1"><?php endif; ?>
 
@@ -366,8 +366,8 @@ require __DIR__ . '/partials/header.php';
         </div>
 
         <div class="form-actions">
-            <a class="btn secondary cancel-button" href="<?= $isEdit ? 'beneficiary.php?id=' . $id : 'beneficiaries.php' ?>">Cancel</a>
-            <?php if (!$isEdit && !$duplicateMatch): ?><button class="btn secondary" name="add_another" value="1">Save &amp; Add Another</button><?php endif; ?>
+            <a class="btn secondary cancel-button cancel-light-red-button" href="<?= $isEdit ? 'beneficiary.php?id=' . $id : 'beneficiaries.php' ?>">Cancel</a>
+            <?php if (!$isEdit && !$duplicateMatch): ?><button class="btn secondary add-another-button" name="add_another" value="1">Save &amp; Add Another</button><?php endif; ?>
             <button class="btn primary"><?= $duplicateMatch ? 'Save Anyway' : ($isEdit ? 'Update Beneficiary' : 'Add Beneficiary') ?></button>
         </div>
     </form>
