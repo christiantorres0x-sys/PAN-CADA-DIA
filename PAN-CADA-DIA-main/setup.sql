@@ -1,0 +1,205 @@
+CREATE TABLE IF NOT EXISTS users (
+    user_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    username VARCHAR(80) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(30) NOT NULL DEFAULT 'Admin',
+    status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+    date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS feeding_sites (
+    site_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    site_name VARCHAR(150) NOT NULL,
+    address VARCHAR(255) NULL,
+    barangay VARCHAR(120) NULL,
+    municipality VARCHAR(120) NULL,
+    status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE'
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS feeding_programs (
+    program_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    program_name VARCHAR(150) NOT NULL,
+    description TEXT NULL,
+    duration_days INT UNSIGNED NULL,
+    start_date DATE NULL,
+    end_date DATE NULL,
+    status ENUM('ACTIVE','COMPLETED','INACTIVE') NOT NULL DEFAULT 'ACTIVE'
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS beneficiaries (
+    beneficiary_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    site_id INT UNSIGNED NULL,
+    program_id INT UNSIGNED NULL,
+    full_name VARCHAR(180) NOT NULL,
+    first_name VARCHAR(80) NULL,
+    middle_name VARCHAR(80) NULL,
+    last_name VARCHAR(100) NULL,
+    parent_guardian_name VARCHAR(180) NULL,
+    parent_contact_number VARCHAR(30) NULL,
+    beneficiary_code VARCHAR(10) NULL,
+    birth_date DATE NOT NULL,
+    sex ENUM('Male','Female') NOT NULL,
+    program_status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+    inactive_since DATE NULL,
+    date_enlisted DATE NULL,
+    remarks TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_beneficiary_site
+        FOREIGN KEY (site_id) REFERENCES feeding_sites(site_id)
+        ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_beneficiary_program
+        FOREIGN KEY (program_id) REFERENCES feeding_programs(program_id)
+        ON DELETE SET NULL ON UPDATE CASCADE,
+    UNIQUE KEY uq_beneficiary_code (beneficiary_code),
+    INDEX idx_beneficiary_name (full_name),
+    INDEX idx_beneficiary_birthdate (birth_date)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS health_records (
+    record_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    beneficiary_id INT UNSIGNED NOT NULL,
+    record_date DATE NOT NULL,
+    milestone ENUM('BASELINE','MIDLINE','ENDLINE') NULL,
+    height_cm DECIMAL(5,2) NOT NULL,
+    weight_kg DECIMAL(5,2) NOT NULL,
+    bmi DECIMAL(5,2) NOT NULL,
+    nutritional_status VARCHAR(80) NULL,
+    record_status ENUM('ACTIVE','INACTIVE') NULL,
+    remarks TEXT NULL,
+    recorded_by INT UNSIGNED NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_health_beneficiary
+        FOREIGN KEY (beneficiary_id) REFERENCES beneficiaries(beneficiary_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_health_user
+        FOREIGN KEY (recorded_by) REFERENCES users(user_id)
+        ON DELETE SET NULL ON UPDATE CASCADE,
+    UNIQUE KEY uq_health_beneficiary_milestone (beneficiary_id, milestone),
+    INDEX idx_health_beneficiary_date (beneficiary_id, record_date),
+    INDEX idx_health_milestone (milestone)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS attendance_records (
+    attendance_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    beneficiary_id INT UNSIGNED NOT NULL,
+    attendance_date DATE NOT NULL,
+    attendance_status ENUM('PRESENT','ABSENT') NOT NULL DEFAULT 'PRESENT',
+    remarks VARCHAR(255) NULL,
+    recorded_by INT UNSIGNED NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_attendance_beneficiary
+        FOREIGN KEY (beneficiary_id) REFERENCES beneficiaries(beneficiary_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_attendance_user
+        FOREIGN KEY (recorded_by) REFERENCES users(user_id)
+        ON DELETE SET NULL ON UPDATE CASCADE,
+    UNIQUE KEY uq_attendance_beneficiary_date (beneficiary_id, attendance_date),
+    INDEX idx_attendance_date_status (attendance_date, attendance_status)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    log_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NULL,
+    action VARCHAR(100) NOT NULL,
+    entity VARCHAR(80) NULL,
+    entity_id INT UNSIGNED NULL,
+    details TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_audit_user
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- Beneficiary status is Active / Inactive only. The app converts older databases
+-- automatically (Enrolled -> Active, Completed -> Inactive; see
+-- beneficiaries_ensure_active_inactive() in config.php). To do it by hand instead:
+--   ALTER TABLE beneficiaries MODIFY program_status ENUM('ENROLLED','COMPLETED','ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE';
+--   UPDATE beneficiaries SET program_status='ACTIVE'   WHERE program_status='ENROLLED';
+--   UPDATE beneficiaries SET program_status='INACTIVE' WHERE program_status='COMPLETED';
+--   ALTER TABLE beneficiaries MODIFY program_status ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'ACTIVE';
+
+-- Failed-login counters used to temporarily lock a username / IP after repeated
+-- wrong passwords (see LOGIN_* settings in config.php). The app also creates
+-- this table automatically on first login attempt, so existing databases do not
+-- need to re-run this file.
+CREATE TABLE IF NOT EXISTS login_throttle (
+    throttle_key VARCHAR(190) NOT NULL PRIMARY KEY,
+    fail_count INT UNSIGNED NOT NULL DEFAULT 0,
+    last_failed_at INT UNSIGNED NOT NULL DEFAULT 0,
+    locked_until INT UNSIGNED NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
+
+INSERT INTO users (full_name, username, password_hash, role)
+SELECT 'System Administrator', 'admin',
+       '$2y$12$Brmg1..UVzMoaLtjOGHg7e72HSMnDnocdyX/GLfWNk2qdGVbNdFMu',
+       'Admin'
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
+
+-- Staff accounts (change these passwords after first login)
+INSERT INTO users (full_name, username, password_hash, role)
+SELECT * FROM (
+    SELECT 'Ma. Isabel D. Pantaleon' AS full_name, 'isabel.pantaleon' AS username,
+           '$2y$12$KUyCtbNXY0jZXvnl1s8XS.4wZbdFJS/nfxZgzm.zXrlbnZm/a45cO' AS password_hash, 'Staff' AS role
+    UNION ALL
+    SELECT 'Welma L. Omboy' AS full_name, 'welma.omboy' AS username,
+           '$2y$12$Fm2dFEoDFvjePt3dmojFs.gl8BYbTzRPLmW.UWBHBSNTEP6LgOHSe' AS password_hash, 'Staff' AS role
+    UNION ALL
+    SELECT 'Gilbert A. Rio' AS full_name, 'gilbert.rio' AS username,
+           '$2y$12$29ylFoMxJqWC14noV52eLOpkZ0MUbrPy0pOqQt46OPEBf5r6z7zSS' AS password_hash, 'Admin' AS role
+) AS new_users
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.username = new_users.username);
+
+-- ---------------------------------------------------------------------
+-- User roles: Admin, Staff, Program Officer (PO), BLGU
+--
+-- users.role is a free-text VARCHAR(30) (not an ENUM or foreign key), so the
+-- Program Officer and BLGU roles need no schema change. They are registered
+-- in PHP (USER_ROLES in config.php). Spelling is matched case-insensitively
+-- at login, and 'PO' is accepted as 'Program Officer'.
+--
+-- There is no "create user" screen; accounts are added with SQL. To add one:
+-- 1) Generate a bcrypt hash (PHP 8):
+--        php -r "echo password_hash('CHOOSE-A-PASSWORD', PASSWORD_BCRYPT, ['cost' => 12]), PHP_EOL;"
+-- 2) Uncomment the block below, fill it in, and run it. It is safe to re-run:
+--    an existing username is never touched.
+--
+-- INSERT INTO users (full_name, username, password_hash, role)
+-- SELECT * FROM (
+--     SELECT 'Full Name Here' AS full_name,
+--            'username.here' AS username,
+--            'PASTE_BCRYPT_HASH_HERE' AS password_hash,
+--            'Program Officer' AS role          -- 'Program Officer' | 'BLGU'
+-- ) AS new_user
+-- WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.username = new_user.username);
+--
+-- To give an existing account one of the new roles:
+-- UPDATE users SET role = 'BLGU' WHERE username = 'username.here';
+--
+-- Note: the role column defaults to 'Admin', so an INSERT that omits the role
+-- creates an administrator. Always name the role explicitly.
+-- ---------------------------------------------------------------------
+
+INSERT INTO feeding_sites (site_name, barangay, municipality)
+SELECT 'Main Feeding Site', 'To be configured', 'To be configured'
+WHERE NOT EXISTS (SELECT 1 FROM feeding_sites LIMIT 1);
+
+INSERT INTO feeding_programs (program_name, description, duration_days)
+SELECT 'PAN CADA DIA – Initial Program', 'Configure the actual CCES feeding period here.', NULL
+WHERE NOT EXISTS (SELECT 1 FROM feeding_programs LIMIT 1);
+
+
+-- Weight status uses the Asian (WHO Asia-Pacific) BMI cut-offs, set
+-- automatically by the app. This labels any existing records the same way.
+-- Safe to run again: it always gives the same result for the same BMI.
+UPDATE health_records
+SET nutritional_status = CASE
+    WHEN bmi < 14   THEN 'Severely Wasted'
+    WHEN bmi < 16   THEN 'Severely Underweight'
+    WHEN bmi < 18.5 THEN 'Moderately Underweight'
+    WHEN bmi < 23   THEN 'Normal'
+    WHEN bmi < 25   THEN 'Overweight'
+    ELSE 'Obese'
+END;

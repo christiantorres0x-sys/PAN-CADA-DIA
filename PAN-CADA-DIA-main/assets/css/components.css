@@ -1,0 +1,2392 @@
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cards.cards-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.cards.cards-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.cards.cards-2.attendance-summary-cards {
+  grid-template-columns: repeat(4, 1fr);
+  justify-content: start;
+  margin-left: 16px;
+}
+
+.attendance-summary-cards .stat {
+  box-sizing: border-box;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.attendance-summary-cards .stat span {
+  font-size: 12px;
+}
+
+.attendance-summary-cards .stat strong {
+  font-size: 48px;
+}
+
+.stat,
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin: 0 16px 0 16px;
+}
+
+.stat {
+  padding: 12px 14px;
+  position: relative;
+}
+
+.stat span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.stat strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 4px;
+  line-height: 1;
+  color: var(--text);
+}
+
+.stat small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.5px;
+}
+
+.stat.blue span {
+  color: var(--blue-tone);
+}
+
+.stat.green span {
+  color: var(--green);
+}
+
+.stat.red span {
+  color: var(--red);
+}
+
+.stat.orange span {
+  color: var(--orange);
+}
+
+.stat.gray span {
+  color: var(--gray-tone);
+}
+
+.stat.purple span {
+  color: var(--purple);
+}
+
+.stat.teal span {
+  color: var(--teal);
+}
+
+/* Dashboard header + top grid: Pending Enrollments/Add Beneficiary on the
+   left, Quick Actions on the right — mirrors the reference layout without
+   the oversized buttons. */
+.dash-section-title {
+  margin: 0 0 8px;
+}
+
+.dash-top-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: stretch;
+  margin-top: 36px;
+  margin-left: 16px;
+  margin-bottom: 18px;
+}
+
+.dash-top-right {
+  position: relative;
+  display: flex;
+}
+
+.dash-top-right .filter-label {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin-bottom: 10px;
+  white-space: nowrap;
+}
+
+.btn.dash-add-beneficiary {
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  max-height: 135px;
+  width: 135px;
+  max-width: 135px;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.btn.dash-add-beneficiary .icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  color: #fff;
+  align-self: center;
+}
+
+.quick-actions-body {
+  display: flex;
+  align-items: stretch;
+}
+
+.quick-actions-grid {
+  width: max-content;
+  display: grid;
+  grid-template-columns: repeat(2, 135px);
+  grid-auto-rows: 135px;
+  gap: 10px;
+}
+
+/* Square quick-action tiles: icon over label, centered */
+.quick-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.quick-tile:hover,
+.quick-tile:focus-visible {
+  text-decoration: none;
+}
+
+.quick-tile .icon {
+  display: block;
+  width: 36px;
+  height: 36px;
+  align-self: center;
+}
+
+.quick-tile span {
+  white-space: nowrap;
+}
+
+.quick-tile-add {
+  background: var(--success);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(34, 164, 93, .3);
+  font-size: 13.5px;
+}
+
+.quick-tile-add:hover,
+.quick-tile-add:focus-visible {
+  background: var(--success-dark);
+}
+
+.quick-tile-attendance {
+  background: #e6f6f1;
+  color: #0d5a47;
+  border-color: #b7e3d6;
+}
+
+.quick-tile-attendance:hover,
+.quick-tile-attendance:focus-visible {
+  background: #d3efe6;
+}
+
+/* Dashboard overview: one wide panel (same width as Recent Report) split into
+   four cells by 1px hairlines. The panel background shows through the grid gap. */
+.overview-panel {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.overview-panel .stat {
+  background: var(--card);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.overview-panel .stat span {
+  font-size: 12px;
+}
+
+.overview-panel .stat strong {
+  font-size: 42px;
+  font-size: clamp(30px, 3.6cqw, 46px);
+  margin-top: 8px;
+}
+
+.overview-panel .stat small {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.btn.quick-primary {
+  background: #e6f6f1;
+  color: #0d5a47;
+  border-color: #b7e3d6;
+  font-size: 16px;
+  padding: 14px 18px;
+  min-height: 135px;
+  width: 135px;
+  border-radius: 10px;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.3;
+  margin-right: 0;
+}
+
+.btn.quick-primary:hover {
+  background: #d3efe6;
+  text-decoration: none;
+}
+
+/* Scope/filter panel used above list pages: one field + an action button */
+.scope-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.scope-row .field {
+  flex: 1;
+  min-width: min(200px, 100%);
+}
+
+.scope-row .btn {
+  flex: none;
+}
+
+.scope-row .btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.filter-requirement-notice {
+  flex: 1 0 100%;
+  margin: 0 4px 2px;
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.scope-row[data-required-labels] label.is-required-missing {
+  color: var(--red);
+}
+
+.attendance-filter-panel .scope-row > .btn.primary,
+.reports-filter-panel .scope-row > .btn.primary {
+  margin-right: 0;
+}
+
+.beneficiary-search-row {
+  margin-bottom: 10px;
+}
+
+.list-count {
+  color: var(--text);
+  font-weight: 800;
+  font-size: 12.5px;
+  margin: 0 0 8px;
+}
+
+.beneficiaries-page .beneficiaries-scope {
+  background: #e1e7f0;
+  border-color: #b8c4d6;
+  margin-bottom: 14px;
+}
+
+.beneficiaries-page .filter-label,
+.attendance-filter-panel .filter-label,
+.reports-filter-panel .filter-label {
+  margin: 4px 4px 10px 4px;
+}
+
+.beneficiaries-page .beneficiary-search-row {
+  margin: 10px 0 8px 0;
+}
+
+.beneficiaries-page .beneficiary-search-row .field,
+.beneficiaries-page .search,
+.dashboard-page .beneficiary-search-row .field,
+.dashboard-page .search {
+  width: 100%;
+  max-width: none;
+}
+
+.beneficiaries-page .search,
+.dashboard-page .search {
+  width: calc(100% - 32px);
+  box-sizing: border-box;
+  min-height: 36px;
+  padding-right: 6px;
+  border: 1px solid #a4a4a4;
+  border-radius: 20px;
+  box-shadow: none;
+  margin: 0 16px;
+  margin-bottom: 6px;
+  margin-top: 20px;
+}
+
+.beneficiaries-page .search:focus-within,
+.dashboard-page .search:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.beneficiaries-page .search input,
+.dashboard-page .search input {
+  min-height: 34px;
+  padding-left: 10px;
+}
+
+.beneficiaries-page .search-submit,
+.dashboard-page .search-submit {
+  width: 30px;
+  height: 30px;
+  color: var(--muted);
+}
+
+.beneficiaries-page .search-submit:hover,
+.beneficiaries-page .search-submit:focus-visible,
+.dashboard-page .search-submit:hover,
+.dashboard-page .search-submit:focus-visible {
+  color: var(--text);
+  background: transparent;
+}
+
+.beneficiaries-results {
+  display: flex;
+  flex-direction: column;
+  min-height: 475px;
+}
+
+.beneficiaries-results .table-wrap {
+  flex: 1;
+}
+
+.beneficiaries-results .list-count {
+  margin: 10px 0 2px 2px;
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.beneficiary-nutrition-alert {
+  color: var(--red);
+}
+
+@media (max-width: 760px) {
+  .beneficiaries-results {
+    min-height: 0;
+  }
+
+}
+
+/* Simple CSS conic-gradient pie chart, built server-side from real counts */
+.pie-wrap {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.pie-chart {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pie-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.pie-legend-item .swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.pie-legend-item strong {
+  margin-left: 3px;
+}
+
+tbody tr.clickable-row {
+  cursor: pointer;
+}
+
+/* Program Setup: identity card for the overall feeding program */
+.program-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.program-info .brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: none;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.program-info .brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+
+}
+
+.program-info h3 {
+  margin: 0 0 2px;
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+.program-info p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  max-width: 60ch;
+}
+
+.panel {
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.filters-panel {
+  padding: 14px 16px;
+}
+
+.panel h2 {
+  margin: 0 0 2px;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.program-setup-panel h2 {
+  margin: 2px 0 12px 2px;
+}
+
+.program-summary-cards .stat strong {
+  font-size: 48px;
+}
+
+.program-summary-cards .stat:first-child span {
+  color: var(--green);
+}
+
+.program-summary-cards .stat:nth-child(2) span {
+  color: var(--gray-tone);
+}
+
+.program-summary-cards .stat {
+  margin: 0;
+}
+
+.program-summary-cards .stat:first-child {
+  margin-left: 2px;
+}
+
+/* Collapsed state: a compact button-sized panel resting on the left edge.
+   Once opened it goes back to full width so the form has room. */
+.program-setup-add-panel:has(> details.collapsible:not([open])) {
+  background: var(--green-bg);
+  width: calc((100% - 96px) / 4 + 17px);
+  padding: 4px 14px;
+}
+
+@media (max-width: 1280px) {
+  .program-setup-add-panel:has(> details.collapsible:not([open])) {
+    width: calc((100% - 76px) / 2 + 17px);
+  }
+}
+
+.program-setup-add-panel:has(> details.collapsible:not([open])) details.collapsible > summary {
+  min-height: 34px;
+  gap: 14px;
+}
+
+.program-setup-add-panel details.collapsible > summary h2 {
+  font-size: 14px;
+}
+
+.program-setup-add-panel:has(> details.collapsible[open]) {
+  background: var(--card);
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 4px 2px;
+}
+
+.panel-head h2 {
+  margin: 0;
+}
+
+.attendance-panel .panel-head {
+  margin-left: 0;
+}
+
+.attendance-panel .panel-head h2 {
+  margin: 2px 0 0 2px;
+}
+
+.attendance-panel > .table-wrap {
+  margin-top: 12px;
+  margin-left: 2px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.milestone-chart {
+  text-align: center;
+}
+
+.milestone-chart h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.milestone-chart .bmi-bars,
+.age-chart-bars {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+  min-height: 180px;
+}
+
+.milestone-chart .bmi-bars {
+  justify-content: flex-start;
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  overflow-x: auto;
+}
+
+.milestone-chart .bmi-bar-row,
+.age-chart-bar-row {
+  display: grid;
+  flex: 0 0 58px;
+  grid-template-rows: 14px 120px 2.5em;
+  justify-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 11px;
+}
+
+.milestone-chart .bmi-bar-row strong,
+.age-chart-bar-row strong {
+  line-height: 1;
+}
+
+.milestone-chart .bmi-bar-label,
+.age-chart-bar-label {
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.milestone-chart .bmi-bar-row {
+  flex: 0 0 max-content;
+  min-width: 58px;
+}
+
+.milestone-chart .bmi-bar-label {
+  white-space: nowrap;
+}
+
+.age-chart-bar-row {
+  flex: 0 0 max-content;
+  min-width: 58px;
+}
+
+.age-chart-bar-label {
+  white-space: nowrap;
+}
+
+.milestone-chart .bmi-bar-track,
+.age-chart-bar-track {
+  display: flex;
+  align-items: flex-end;
+  align-self: end;
+  width: 18px;
+  height: 120px;
+  overflow: hidden;
+  border-radius: 0;
+  background: #eef1f6;
+}
+
+.milestone-chart .bmi-bar-fill,
+.age-chart-bar-fill {
+  display: block;
+  width: 100%;
+  border-radius: 0;
+}
+
+.pie-chart.sm {
+  width: 96px;
+  height: 96px;
+}
+
+.attendance-line-chart {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  overflow: visible;
+  flex: none;
+}
+
+.attendance-chart-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.attendance-chart-axis {
+  fill: var(--muted);
+  font-size: 10px;
+}
+
+.attendance-chart-line {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.attendance-chart-line.present {
+  stroke: #1a9c53;
+}
+
+.attendance-chart-point.present {
+  fill: #1a9c53;
+  stroke: #1a9c53;
+}
+
+.attendance-chart-line.absent {
+  stroke: #e53e3e;
+}
+
+.attendance-chart-point.absent {
+  fill: #e53e3e;
+  stroke: #e53e3e;
+}
+
+.big-number {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 8px 0 4px;
+  color: var(--navy-900);
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.filter-label {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 10px 16px;
+  min-height: 40px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.2;
+  justify-content: center;
+}
+
+.btn .icon {
+  width: 14px;
+  height: 14px;
+  align-items: center;
+}
+
+.btn.primary {
+  background: var(--success);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(74, 95, 223, .3);
+  margin-right: 16px;
+}
+
+.btn.primary:hover {
+  background: var(--success-dark);
+  text-decoration: none;
+}
+
+.beneficiaries-scope .scope-row > .btn.primary {
+  background: var(--primary);
+  margin:  0 2px 0 2px;
+}
+
+.beneficiaries-scope .scope-row > .btn.primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn.success {
+  background: var(--success);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(34, 164, 93, .3);
+}
+
+.btn.success:hover {
+  background: var(--success-dark);
+  text-decoration: none;
+}
+
+.btn.quick {
+  background: var(--quick-action);
+  color: var(--navy-900);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .18);
+}
+
+.btn.quick:hover {
+  background: var(--quick-action-dark);
+  text-decoration: none;
+}
+
+.btn.secondary {
+  background: #fff;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn.secondary:hover {
+  background: #f5f7fb;
+  text-decoration: none;
+}
+
+.btn.cancel-light-red-button {
+  background: #fff0f0;
+  border-color: #f3c6c6;
+  color: #8a2323;
+}
+
+.btn.cancel-light-red-button:hover,
+.btn.cancel-light-red-button:focus-visible {
+  background: #ffe2e2;
+  border-color: #e9aaaa;
+  color: #721c1c;
+  text-decoration: none;
+}
+
+.beneficiary-entry-form .btn.add-another-button {
+  background: #e7f8ee;
+  border-color: #b7e3c8;
+  color: #176b3a;
+}
+
+.beneficiary-entry-form .btn.add-another-button:hover,
+.beneficiary-entry-form .btn.add-another-button:focus-visible {
+  background: #d5f1df;
+  border-color: #9ed6b2;
+  color: #12572f;
+  text-decoration: none;
+}
+
+.btn.sm {
+  padding: 7px 12px;
+  min-height: 36px;
+  font-size: 12.5px;
+  border-radius: 7px;
+}
+
+.btn.full {
+  width: 100%;
+  justify-content: center;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+  max-width: 600px;
+  background: #fff;
+  border: 1.5px solid var(--blue-tone);
+  border-radius: 8px;
+  padding: 0 5px 0 12px;
+  box-shadow: var(--shadow);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.search:focus-within {
+  border-color: var(--blue-tone);
+  box-shadow: 0 0 0 3px var(--blue-tone-bg);
+}
+
+.search .icon {
+  color: var(--blue-tone);
+}
+
+.search input {
+  border: 0;
+  padding: 8px 4px;
+  box-shadow: none !important;
+  flex: 1;
+}
+
+.search input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.search button {
+  margin-left: auto;
+}
+
+.search-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.search-submit:hover,
+.search-submit:focus-visible {
+  color: var(--text);
+  background: #f5f7fb;
+}
+
+.search-submit .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.btn.icon-only {
+  background: transparent;
+  border: 0;
+  color: var(--muted-2);
+  padding: 9px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 7px;
+}
+
+.btn.icon-only:hover {
+  background: #f5f7fb;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* A filter field with a value selected gets a subtle colored border + tint
+   so it's obvious at a glance which filters are actually narrowing the
+   results, instead of every dropdown looking the same regardless of state. */
+.filter-field.is-active label {
+  color: var(--primary);
+}
+
+.filter-field.is-active select,
+.filter-field.is-active input {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.active-filters .label {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-right: 2px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--blue-tone-bg);
+  color: var(--blue-tone);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 6px 3px 10px;
+  border-radius: 999px;
+}
+
+.filter-chip a {
+  color: inherit;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1;
+  opacity: .8;
+  padding: 8px 10px;
+  margin: -6px -4px -6px 0;
+}
+
+.filter-chip a:hover {
+  opacity: 1;
+  text-decoration: none;
+}
+
+/* Rows worth a second look at a glance in a results table: an
+   under/severely-under BMI status, or an unrecorded attendance status. */
+tr.row-flag td:first-child {
+  box-shadow: inset 3px 0 0 var(--red);
+}
+
+.table-wrap {
+  overflow: auto;
+  margin: -2px;
+}
+
+.dashboard-recent-table {
+  margin-top: 12px;
+  margin-left: 2px;
+  margin-right: 2px;
+  padding-top: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  vertical-align: top;
+}
+
+th {
+  font-size: 12px;
+  color: var(--muted);
+  background: #f8fafc;
+  text-transform: uppercase;
+  font-weight: 700;
+  text-align: center;
+}
+
+thead tr:first-child th {
+  background: #eef1f6;
+}
+
+td {
+  font-size: 13px;
+}
+
+.single-line-cell {
+  white-space: nowrap;
+}
+
+.attendance-table th,
+.attendance-table td,
+.attendance-table td.num {
+  text-align: center;
+  vertical-align: middle;
+  margin: 2px 0 4px 2px;
+}
+
+.attendance-table .status-cell {
+  justify-content: center;
+}
+
+.attendance-table tbody td a {
+  color: #000;
+}
+
+.attendance-save-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  margin-right: -2px;
+}
+
+.attendance-save-actions form {
+  margin: 0;
+}
+
+.btn.attendance-change-filters {
+  background: #e7f8ee;
+  border-color: #b7e3c8;
+  color: #176b3a;
+  margin-right: 16px;
+}
+
+.btn.attendance-change-filters:hover,
+.btn.attendance-change-filters:focus-visible {
+  background: #d5f1df;
+  border-color: #9ed6b2;
+  color: #12572f;
+  text-decoration: none;
+}
+
+tbody tr:hover {
+  background: #f1f3f7;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge.green {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.badge.red {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+.badge.orange {
+  background: var(--orange-bg);
+  color: var(--orange);
+}
+
+.badge.blue {
+  background: var(--blue-tone-bg);
+  color: var(--blue-tone);
+}
+
+.badge.gray {
+  background: var(--gray-tone-bg);
+  color: var(--gray-tone);
+}
+
+.badge.purple {
+  background: var(--purple-bg);
+  color: var(--purple);
+}
+
+/* Plain colored status text (no pill/background) — matches the reference UI's
+   Weight Status / Program Status columns. */
+.status-text {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.status-text.green { color: var(--green); }
+.status-text.red { color: var(--red); }
+.status-text.orange { color: var(--orange); }
+.status-text.blue { color: var(--blue-tone); }
+.status-text.gray { color: var(--muted-2); }
+.status-text.dark { color: var(--text); }
+.status-text.purple { color: var(--purple); }
+
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pill.green {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.pill.orange {
+  background: var(--orange-bg);
+  color: var(--orange);
+}
+
+.pill.gray {
+  background: var(--gray-tone-bg);
+  color: var(--gray-tone);
+}
+
+.status-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Fixed-width label column so the Present/Absent buttons never shift when
+   the badge text changes length (e.g. "Unrecorded" vs "Present"). */
+.status-cell .badge {
+  min-width: 82px;
+}
+
+.status-quick {
+  display: flex;
+  gap: 8px;
+}
+
+.status-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted-2);
+  padding: 0;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.status-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.status-btn.present:hover {
+  background: var(--green-bg);
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.status-btn.present.active {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+
+.status-btn.absent:hover {
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.status-btn.absent.active {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+}
+
+.milestone-panel {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.milestone-slot {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.milestone-slot h3 {
+  margin: 0 0 5px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  color: var(--muted);
+}
+
+.milestone-slot .milestone-meta {
+  font-size: 12px;
+  color: var(--muted-2);
+  margin-top: 5px;
+}
+
+.milestone-slot > div:last-of-type {
+  margin-bottom: 6px;
+}
+
+/* Edit / Record buttons sit at the bottom of every card so they line up
+   across Baseline, Midline and Endline whatever text is above them. */
+.milestone-slot .btn {
+  margin-top: auto;
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted-2);
+  padding: 20px;
+}
+
+.alert {
+  padding: 9px 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.attendance-alert {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.alert.success {
+  background: var(--green-bg);
+  color: #0f7a37;
+}
+
+.alert.danger {
+  background: var(--red-bg);
+  color: #a01e1e;
+}
+
+.attendance-save-alert {
+  background: var(--red);
+  color: #fff;
+}
+
+.notice {
+  background: #fff8e1;
+  border: 1px solid #f3e2a0;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: #6a5411;
+  margin-top: 10px;
+  font-size: 12.5px;
+}
+
+section.notice {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 14px;
+  margin-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.pagination .page-nav {
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background .15s ease, color .15s ease;
+}
+
+.pagination a.page-nav:hover {
+  background: var(--blue-50);
+  color: var(--primary);
+}
+
+.pagination .page-nav.disabled {
+  color: var(--muted-2);
+  cursor: default;
+}
+
+.pagination .page-num {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  transition: background .15s ease, color .15s ease;
+}
+
+.pagination a.page-num:hover {
+  background: var(--blue-50);
+  color: var(--primary);
+}
+
+.pagination .page-num.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.pagination .page-ellipsis {
+  min-width: 20px;
+  text-align: center;
+  color: var(--muted-2);
+  font-size: 13px;
+}
+
+
+
+/* Slide-over panel: used to open the Add/Edit Beneficiary form (and any
+   other page loaded via data-slideover) without a full navigation. The
+   fetched page's own content (see the ?panel=1 short-circuit in
+   partials/header.php and footer.php) is injected straight into
+   .slideover-body. */
+.slideover-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+
+.slideover-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.slideover-panel {
+  background: #fff;
+  width: min(760px, 100%);
+  max-height: 100%;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, .28);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(40px);
+  transition: transform .25s ease;
+}
+
+.slideover-backdrop.open .slideover-panel {
+  transform: translateY(0);
+}
+
+.slideover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.slideover-title {
+  margin: 0;
+  font-size: 17px;
+}
+
+.slideover-close {
+  background: transparent;
+  border: 0;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.slideover-close:hover {
+  background: #f1f3f8;
+}
+
+.slideover-body {
+  padding: 18px 20px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.slideover-loading {
+  color: var(--muted);
+  padding: 20px 0;
+  text-align: center;
+}
+
+.slideover-error {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* The form content wasn't designed for a ~760px-wide panel — drop the
+   width caps and force single-column so nothing gets cramped. */
+.slideover-body .form-panel,
+.slideover-body .form-panel-wide {
+  max-width: none;
+}
+
+.slideover-body .beneficiary-form-grid {
+  grid-template-columns: 1fr;
+}
+
+/* ---- Usability refinements ------------------------------------------ */
+
+/* Save/Cancel stay visible while a long slide-over form scrolls. */
+.slideover-body .form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: #fff;
+  border-top: 1px solid var(--border);
+  margin: 12px -20px 0;
+  padding: 12px 20px;
+}
+
+/* Numbers line up on the right so columns can be compared at a glance. */
+th.num,
+td.num {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stat.gray strong,
+.stat strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.hint-line {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.jump-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 0 0 10px;
+  font-size: 12.5px;
+}
+
+.jump-nav .label {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.jump-nav a {
+  background: var(--primary-light);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-weight: 700;
+}
+
+.jump-nav a:hover {
+  text-decoration: none;
+  background: #dfe3fb;
+}
+
+details.collapsible > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  min-height: 40px;
+}
+
+details.collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.collapsible > summary h2 {
+  margin: 0;
+}
+
+details.collapsible > summary::after {
+  content: "+";
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+details.collapsible[open] > summary::after {
+  content: "\2212";
+}
+
+details.collapsible[open] > summary {
+  margin-bottom: 8px;
+}
+
+.batch-form {
+  display: inline;
+  margin: 0;
+}
+
+.toast-stack {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 3000;
+  max-width: min(360px, calc(100vw - 32px));
+}
+
+.toast {
+  background: var(--navy-900);
+  color: #fff;
+  padding: 11px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(10, 20, 40, .3);
+}
+
+.toast.error {
+  background: #a01e1e;
+}
+
+/* Attendance instructions: a clearly visible callout above the table. */
+.attendance-guide {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: var(--primary-light);
+  border: 1px solid #c9d0f6;
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+  color: var(--navy-900);
+}
+
+.attendance-guide .guide-icon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  color: var(--primary);
+  margin-top: 1px;
+}
+
+.attendance-guide strong {
+  display: block;
+  font-size: 14.5px;
+  margin-bottom: 6px;
+  color: var(--primary-dark);
+}
+
+.attendance-guide ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  font-size: 14px;
+}
+
+.attendance-guide li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attendance-guide .guide-key {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  color: #fff;
+  flex: none;
+}
+
+.attendance-guide .guide-key svg {
+  width: 13px;
+  height: 13px;
+}
+
+.attendance-guide .guide-key.present { background: var(--green); }
+.attendance-guide .guide-key.absent { background: var(--red); }
+
+/* Reports > Health Monitoring Records: one row per beneficiary. Baseline /
+   Midline / Endline come first (3 compact columns each); the profile columns
+   (age, birth date, sex, program status) sit at the far right. Sized to fit
+   a normal desktop width without sideways scrolling; .table-wrap still
+   scrolls as a fallback on very narrow screens. */
+table.milestone-table {
+  min-width: 900px;
+  font-size: 12px;
+}
+
+.reports-health-records-wrap.is-scrollable {
+  max-height: 460px;
+  overflow: auto;
+}
+
+.reports-attendance-wrap {
+  max-height: 520px;
+  overflow: auto;
+}
+
+.reports-attendance-table {
+  width: 100%;
+  min-width: 100%;
+  table-layout: fixed;
+}
+
+.reports-attendance-table .attendance-id-column {
+  width: 84px;
+}
+
+.reports-attendance-table .attendance-beneficiary-column {
+  width: 180px;
+}
+
+.reports-attendance-table .attendance-count-column {
+  width: 90px;
+}
+
+.reports-attendance-table .attendance-rate-column {
+  width: 110px;
+}
+
+.reports-attendance-table .attendance-active-days-column {
+  width: 140px;
+}
+
+.reports-attendance-table td.attendance-count-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.reports-attendance-table tfoot th,
+.reports-attendance-table tfoot td {
+  font-weight: 800;
+}
+
+.reports-attendance-table tfoot th {
+  text-align: center;
+}
+
+.reports-attendance-table tfoot td {
+  text-align: center;
+}
+
+.reports-attendance-table th:first-child,
+.reports-attendance-table td:first-child {
+  white-space: nowrap;
+}
+
+.reports-attendance-table th:nth-child(2),
+.reports-attendance-table td:nth-child(2) {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.reports-attendance-table td.attendance-name-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+table.milestone-table th,
+table.milestone-table td {
+  padding: 7px 5px;
+}
+
+table.milestone-table th {
+  font-size: 10.5px;
+  letter-spacing: .2px;
+}
+
+table.milestone-table td {
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+table.milestone-table tr.group-start td:nth-child(2) {
+  white-space: nowrap;
+}
+
+table.milestone-table th.ms-group {
+  text-align: center;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+table.milestone-table .ms-start {
+  border-left: 2px solid var(--border);
+}
+
+table.milestone-table td.ms-pending {
+  text-align: center;
+  font-style: italic;
+  color: var(--muted);
+}
+
+table.milestone-table td.is-flag {
+  box-shadow: inset 3px 0 0 var(--red);
+}
+
+/* Stacked cells: height over weight, BMI over weight status. */
+table.milestone-table td.ms-hw,
+table.milestone-table td.ms-bmi {
+  line-height: 1.35;
+}
+
+table.milestone-table td.ms-hw span,
+table.milestone-table td.ms-bmi span {
+  display: block;
+  white-space: nowrap;
+}
+
+table.milestone-table td.ms-bmi span {
+  font-size: 11px;
+}
+
+/* Dates may wrap onto two lines ("Oct 12," / "2026") — rows are two lines tall anyway. */
+table.milestone-table td.ms-date {
+  min-width: 48px;
+}
+
+table.milestone-table tr.group-start td {
+  border-top: 1px solid var(--border);
+}
+
+table.milestone-table tr.unlabeled-row td {
+  font-size: 11.5px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+/* ---- Remarks: always show the full text ------------------------------ */
+.remarks-text {
+  white-space: pre-wrap;          /* keep the line breaks that were typed */
+  overflow-wrap: anywhere;        /* long words / URLs wrap instead of overflowing */
+  word-break: break-word;
+  font-size: 14px;
+  line-height: 1.55;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.remarks-empty {
+  margin: 0;
+}
+
+td.remarks-cell {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 200px;
+  line-height: 1.5;
+}
+
+/* Milestone remarks: clipped to two lines; a long one is clickable to read it all. */
+.remark-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  max-width: 280px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.remark-text.is-truncatable {
+  cursor: pointer;
+}
+
+.remark-text.is-truncatable:hover,
+.remark-text.is-truncatable:focus-visible {
+  color: var(--primary);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.remark-text.is-open {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+textarea.remarks-input {
+  overflow: hidden;               /* grows with its content (see pcdWireAutogrow) */
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+}
+
+/* Phones: each history row becomes a stacked card so the remarks get the
+   full width instead of a sliver of a sideways-scrolling table. */
+@media (max-width: 640px) {
+  table.history-table,
+  table.history-table tbody,
+  table.history-table tr,
+  table.history-table td {
+    display: block;
+    width: 100%;
+  }
+
+  table.history-table thead {
+    display: none;
+  }
+
+  table.history-table tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    margin-bottom: 10px;
+  }
+
+  table.history-table td,
+  table.history-table td.num {
+    border-bottom: 0;
+    padding: 4px 0;
+    text-align: center;
+    white-space: normal;
+    min-width: 0;
+  }
+
+  table.history-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    color: var(--muted);
+  }
+
+  table.history-table td.remarks-cell {
+    white-space: pre-wrap;
+  }
+
+  .remark-text {
+    max-width: none;
+  }
+
+  table.history-table td:empty {
+    display: none;
+  }
+}
+
+/* ---- Delete / deactivate beneficiary --------------------------------- */
+.btn.danger {
+  background: var(--red);
+  color: #fff;
+}
+
+.btn.danger:hover {
+  background: #9b2c2c;
+  text-decoration: none;
+}
+
+.btn.danger-outline {
+  color: var(--red);
+  border-color: #f1b8b8;
+}
+
+.btn.danger-outline:hover {
+  background: var(--red-bg);
+}
+
+.delete-facts {
+  margin: 8px 0 12px;
+  padding-left: 18px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.delete-choice {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-weight: 400;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.delete-choice input {
+  width: auto;
+  min-height: 0;
+  margin-right: 6px;
+}
+
+.delete-choice strong {
+  font-weight: 700;
+}
+/* Beneficiaries page: Filter button */
+.btn.primary.btn-filter {
+  background: #4b5ee4;
+  box-shadow: 0 1px 2px rgba(75, 94, 228, .3);
+  margin-right: 0;
+}
+
+.btn.primary.btn-filter:hover {
+  background: #3f51cf;
+}
+
+/* ---- Beneficiary profile: one box, side column + main column ---------- */
+.bp {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 32px;
+  padding: 24px;
+  align-items: start;
+}
+
+.bp-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 16px;
+}
+
+.bp-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  background: var(--card);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, .07);
+}
+
+.bp-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.bp-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #cfd5de 0%, #bcc4d0 100%);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.bp-avatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bp-name {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.bp-role {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.bp-stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  width: 100%;
+  justify-content: center;
+}
+
+.bp-stats div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bp-stats strong {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.bp-stats span {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.bp-info h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.bp-info dl {
+  margin: 0;
+}
+
+.bp-info dl > div {
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+
+.bp-info dl > div:first-child {
+  border-top: 0;
+}
+
+.bp-info dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.bp-info dd {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.bp-main {
+  min-width: 0;
+}
+
+.bp-title {
+  margin: 0 0 16px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.page-actions .profile-delete-action {
+  margin-right: 16px;
+}
+
+.bp-section {
+  padding: 22px 0;
+  border-top: 1px solid var(--border);
+}
+
+.bp-section .panel-head h2 {
+  font-size: 18px;
+}
+
+@media (max-width: 900px) {
+  .bp {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 16px;
+  }
+
+  .bp-side {
+    position: static;
+  }
+
+  .bp-title {
+    font-size: 22px;
+  }
+}
+
+/* Keep profile history table headers centered like the other tables. */
+table.history-table th {
+  text-align: center;
+}
+
+table.history-table th.num {
+  text-align: center;
+}
+
+table.history-table td {
+  vertical-align: middle;
+}
+
+/* Delete confirmation: short message + Cancel (green) / Delete (red) */
+.delete-msg {
+  margin: 4px 0 6px;
+  font-size: 15px;
+}
+
+.delete-sub {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.form-panel .form-actions .btn.danger {
+  min-width: 96px;
+  justify-content: center;
+}
+
+/* Beneficiary profile: remarks card (only rendered when remarks exist) */
+.bp-remarks h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.bp-remarks p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Reports: Attendance Participation and Age Distribution side by side */
+.chart-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 16px 10px;
+  align-items: stretch;
+}
+
+.chart-pair > .panel {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .chart-pair {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Reports: Attendance, Age and Gender side by side (3 across, stacked on narrower screens) */
+.chart-pair.chart-trio {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  .chart-pair.chart-trio {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Reports: one big container (.report-shell) holding profile-style cards. */
+.report-shell {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.report-shell-head {
+  margin: 0 0 14px 2px;
+}
+
+.report-shell-head .active-filters {
+  margin: 0;
+}
+
+.report-shell > .bp-card,
+.report-shell > .chart-pair {
+  margin: 0 0 16px;
+}
+
+.report-shell-foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.report-shell .bp-card {
+  margin: 0;
+}
+
+.report-shell > .bp-card {
+  margin-bottom: 16px;
+}
+
+.report-shell .chart-pair {
+  gap: 16px;
+}
+
+.report-shell .panel-head h2 {
+  font-size: 16px;
+}
+
+/* Report Analysis heading matches other report card headings. */
+.report-shell .report-analysis-head {
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+/* Attendance + Age live inside the one Report Analysis card: no cards of their own */
+.report-shell .report-analysis-card .chart-pair {
+  margin: 20px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.report-shell .report-analysis-card .chart-pair > .bp-card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+.report-shell .report-summary-chart .pie-wrap {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding-top: 12px;
+  gap: 0;
+}
+
+.report-shell .report-summary-chart .panel-head h2 {
+  font-size: 13px;
+  width: 100%;
+  text-align: center;
+}
+
+.report-shell .report-summary-chart .pie-chart {
+  margin: 0 auto 8px;
+}
+
+.report-shell .report-summary-chart .pie-legend {
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .report-shell {
+    padding: 16px;
+  }
+}

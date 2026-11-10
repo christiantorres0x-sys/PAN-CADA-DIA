@@ -1,0 +1,107 @@
+<?php
+require_once __DIR__ . '/db.php';
+require_login();
+
+$q = trim($_GET['q'] ?? '');
+$siteId = (int)($_GET['site_id'] ?? 0);
+$total = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries")->fetchColumn();
+$enrolled = (int)$pdo->query("SELECT COUNT(*) FROM beneficiaries WHERE program_status='ACTIVE'")->fetchColumn();
+$sites = (int)$pdo->query("SELECT COUNT(*) FROM feeding_sites WHERE status='ACTIVE'")->fetchColumn();
+$records = (int)$pdo->query("SELECT COUNT(*) FROM health_records")->fetchColumn();
+$baselineDone = (int)$pdo->query("SELECT COUNT(*) FROM health_records WHERE milestone='BASELINE'")->fetchColumn();
+// Search box: only names where a word starts with what was typed
+// (typing "k" shows Kyle / Anna Kim, not "Mika"). Case-insensitive.
+$searchSql = '';
+$searchParams = [];
+if ($q !== '') {
+    $esc = addcslashes($q, '\\%_');
+    $searchSql = 'WHERE (b.full_name LIKE ? OR b.full_name LIKE ?)';
+    $searchParams = [$esc . '%', '% ' . $esc . '%'];
+}
+$latestStmt = $pdo->prepare("
+    SELECT hr.*, b.full_name, b.beneficiary_code, b.birth_date, b.sex, b.program_status, s.site_name
+    FROM beneficiaries b
+    JOIN health_records hr ON hr.record_id = (
+        SELECT latest.record_id
+        FROM health_records latest
+        WHERE latest.beneficiary_id = b.beneficiary_id
+        ORDER BY latest.record_date DESC, latest.record_id DESC
+        LIMIT 1
+    )
+    LEFT JOIN feeding_sites s ON s.site_id = b.site_id
+    $searchSql
+    ORDER BY hr.record_date DESC, hr.record_id DESC
+    LIMIT 5
+");
+$latestStmt->execute($searchParams);
+$latest = $latestStmt->fetchAll();
+
+$pageTitle = 'Dashboard';
+$activeNav = 'dashboard.php';
+require __DIR__ . '/partials/header.php';
+?>
+<div class="dashboard-page">
+    <div class="dash-top-grid">
+        <section class="dash-top-right">
+            <span class="filter-label">Quick Actions</span>
+            <div class="quick-actions-body">
+                <div class="quick-actions-grid">
+                    <a class="quick-tile quick-tile-add" href="beneficiary_form.php" data-slideover="beneficiary_form.php?panel=1" data-slideover-title="Add Beneficiary"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Beneficiary</span></a>
+                    <a class="quick-tile quick-tile-attendance" href="attendance.php?date=<?= date('Y-m-d') ?>"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5h6M8 12l2.5 2.5L16 9"/></svg><span>Take Attendance</span></a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <form class="scope-row beneficiary-search-row" method="get">
+        <input type="hidden" name="site_id" value="<?= $siteId ?>">
+        <div class="field">
+            <label class="sr-only" for="beneficiary-search">Search beneficiaries by name</label>
+            <div class="search">
+                <input id="beneficiary-search" type="search" name="q" value="<?= e($q) ?>" placeholder="Enter Beneficiary Name">
+                <button class="search-submit" type="submit" aria-label="Search beneficiaries" title="Search beneficiaries">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<section class="panel">
+    <div class="panel-head">
+        <div>
+            <h2 style="font-size:16px; margin: 2px 0 2px 2px">Recently Added Beneficiaries</h2>
+            <span class="muted" style="font-size:12.5px; margin: 4px 0 4px 2px;">Latest beneficiaries across all sites</span>
+        </div>
+        <a href="beneficiaries.php" style="font-size:12.5px; margin: 2px 2px 0 0; font-weight:800; text-transform:uppercase;">View All Beneficiaries</a>
+    </div>
+    <?php if (!$latest): ?>
+        <p class="empty"><?= $q !== '' ? 'No records found for names starting with &ldquo;' . e($q) . '&rdquo;.' : 'No beneficiaries added yet.' ?></p>
+    <?php else: ?>
+    <div class="table-wrap dashboard-recent-table">
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Name</th><th>Site</th><th>Age</th><th>Birth Date</th><th>Sex</th><th class="num">Height</th><th class="num">Weight</th><th class="num">BMI</th><th>Weight Status</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                <?php foreach ($latest as $r): ?>
+                <tr class="clickable-row" data-href="beneficiary.php?id=<?= (int)$r['beneficiary_id'] ?>" onclick="window.location=this.dataset.href">
+                    <td><?= $r['beneficiary_code'] ? '<span class="code-tag">' . e($r['beneficiary_code']) . '</span>' : '<span class="muted">—</span>' ?></td>
+                    <td class="single-line-cell"><strong><?= e($r['full_name']) ?></strong></td>
+                    <td><?= e($r['site_name'] ?? '—') ?></td>
+                    <td class="single-line-cell"><?= e(age_label($r['birth_date'])) ?></td>
+                    <td class="single-line-cell"><?= e(format_display_date($r['birth_date'])) ?></td>
+                    <td><?= e($r['sex']) ?></td>
+                    <td class="num"><?= e($r['height_cm']) ?> cm</td>
+                    <td class="num"><?= e($r['weight_kg']) ?> kg</td>
+                    <td class="num"><?= e($r['bmi']) ?> kg/m<sup>2</sup></td>
+                    <td><?= $r['nutritional_status'] ? pcd_badge($r['nutritional_status']) : '<span class="muted">Pending</span>' ?></td>
+                    <td><?= pcd_badge($r['program_status']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+</section>
+<?php require __DIR__ . '/partials/footer.php'; ?>
