@@ -101,6 +101,7 @@ $pcd_css = static fn(string $f): string => 'assets/css/' . $f . '?v=' . (@filemt
         <a class="signout" href="logout.php"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5.5A1.5 1.5 0 0 1 4 19.5v-15A1.5 1.5 0 0 1 5.5 3H9"/><path d="M16 17l5-5-5-5M21 12H9"/></svg><span>Sign Out</span></a>
     </div>
 </aside>
+<div class="content-col">
 <main class="content" id="main">
 <?php $flash = get_flash(); ?>
 <?php if ($flash): ?><div class="alert <?= e($flash['type']) ?><?= $activeNav === 'attendance.php' ? ' attendance-alert' : '' ?>"><?= e($flash['message']) ?></div><?php endif; ?>

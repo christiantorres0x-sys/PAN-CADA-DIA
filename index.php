@@ -121,6 +121,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="login-foot">Center for Community Extension Services<br>Ateneo de Zamboanga University</p>
     </div>
 </main>
+
+<footer class="login-legal">
+    <p class="login-legal__copy">&copy; 2026 PAN CADA DIA. All Rights Reserved.</p>
+    <p class="login-legal__credit">Developed and maintained by <strong>Christian Torres</strong>, <strong>Yasmien Maali</strong>, and <strong>Kristian Dominic Aizon</strong>.</p>
+    <p class="login-legal__rights">All rights to the original design, source code, and system implementation are reserved by the developers, subject to applicable institutional requirements.</p>
+</footer>
 <script>
 (function () {
     // Show / hide password. Keeps the caret where it was and never changes the typed value.
