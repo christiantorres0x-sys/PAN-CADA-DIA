@@ -123,9 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </main>
 
 <footer class="login-legal">
-    <p class="login-legal__copy">&copy; 2026 PAN CADA DIA. All Rights Reserved.</p>
-    <p class="login-legal__credit">Developed and maintained by <strong>Christian Torres</strong>, <strong>Yasmien Maali</strong>, and <strong>Kristian Dominic Aizon</strong>.</p>
-    <p class="login-legal__rights">All rights to the original design, source code, and system implementation are reserved by the developers, subject to applicable institutional requirements.</p>
+    <p>PAN CADA DIA | FEEDING PROGRAM HEALTH MONITORING SYSTEM</p>
+    <p>Designed &amp; Developed by Christian Torres, Yasmien Maali, Kristian Dominic Aizon</p>
+    <p>&copy; 2026 PAN CADA DIA | All Rights Reserved.</p>
 </footer>
 <script>
 (function () {

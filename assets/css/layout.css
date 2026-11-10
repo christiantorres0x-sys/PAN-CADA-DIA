@@ -227,75 +227,23 @@
 }
 
 .site-footer {
-  position: relative;
-  padding: 18px 20px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
-  overflow: hidden;
-}
-
-/* Thin accent along the top edge, in the app's blue. */
-.site-footer::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--primary), #789ce4);
-}
-
-.site-footer__top {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.site-footer__mark {
-  flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 0 1px var(--border);
-}
-
-.site-footer__text p,
-.site-footer__legal {
-  margin: 0;
-}
-
-.site-footer__copy {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.site-footer__credit {
-  margin-top: 2px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-.site-footer__credit strong {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.site-footer__legal {
-  margin-top: 12px;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--border);
-  font-size: 12px;
-  line-height: 1.55;
+  font-size: 11px;
+  line-height: 1.5;
   color: var(--muted-2);
+  text-align: center;
+}
+
+.site-footer p {
+  margin: 0;
 }
 
 /* Lines up with .content's side padding (and its width cap on very wide screens). */
 .site-footer-wrap {
   flex: none;
   width: 100%;
-  padding: 0 20px 24px;
+  padding: 0 20px 14px;
 }
 
 @media (max-width: 760px) {
@@ -308,23 +256,6 @@
   .site-footer-wrap {
     max-width: 1600px;
     margin: 0 auto;
-  }
-}
-
-@media (max-width: 560px) {
-  .site-footer {
-    padding: 16px 14px 14px;
-  }
-  .site-footer__top {
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .site-footer__mark {
-    width: 34px;
-    height: 34px;
-  }
-  .site-footer__credit {
-    font-size: 12.5px;
   }
 }
 
